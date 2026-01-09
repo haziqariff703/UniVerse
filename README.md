@@ -7,9 +7,9 @@ UniVerse is a MERN-stack application designed for UiTM Puncak Perdana students t
 ## 👥 Team (Group 4)
 
 - **Project Leader:** Muhammad Haziq Bin Ariff 'Ariffin
-- **Member 2:** [Muhammad Amirul Rasyid Bin Rosli]
-- **Member 3:** [Muhamad Zulfadli Bin Jumaat]
-- **Member 4:** [Safa Muhammad Raziq Bin Abd Rafar]
+- **Member 2:** Muhammad Amirul Rasyid Bin Rosli
+- **Member 3:** Muhamad Zulfadli Bin Jumaat
+- **Member 4:** Safa Muhammad Raziq Bin Abd Rafar
 
 ## 🛠️ Tech Stack
 
@@ -20,6 +20,6 @@ UniVerse is a MERN-stack application designed for UiTM Puncak Perdana students t
 
 ## 🏃 How to Run
 
-1. Clone the repo: `git clone [your-link]`
+1. Clone the repo: `git clone [https://github.com/haziqariff703/UniVerse.git]`
 2. **Backend:** `cd universe-server && npm install && npm start`
 3. **Frontend:** `cd universe-client && npm install && npm run dev`
