@@ -1,19 +1,45 @@
 const mongoose = require('mongoose');
 
 const registrationSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  booking_time: { type: Date, default: Date.now },
+  // Relationships
+  event_id: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Event', 
+    required: true 
+  },
+  user_id: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
   
-  // --- ADVANCED CONCEPT: SNAPSHOTS ---
-  // We save the title and venue name HERE so if the original event 
-  // is deleted, the student still has their record. 
-  // This satisfies the "Advanced Concepts" rubric point.
+  // Registration Details
+  status: { 
+    type: String, 
+    enum: ['Confirmed', 'Waitlist', 'CheckedIn', 'Cancelled'], 
+    default: 'Confirmed' 
+  },
+  booking_time: { 
+    type: Date, 
+    default: Date.now 
+  },
+  qr_code_string: { 
+    type: String 
+  },
+  
+  // Denormalized Snapshots (NoSQL Pattern for read performance)
   event_snapshot: {
     title: String,
-    venue_name: String,
+    venue: String,
     date: Date
+  },
+  user_snapshot: {
+    name: String,
+    student_id: String
   }
 });
+
+// Compound index to prevent duplicate registrations
+registrationSchema.index({ event_id: 1, user_id: 1 }, { unique: true });
 
 module.exports = mongoose.model('Registration', registrationSchema);

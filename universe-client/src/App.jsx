@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import EventCard from "./components/EventCard";
+import Stats from "./components/Stats";
+import Categories from "./components/Categories";
+import Testimonials from "./components/Testimonials";
+import Newsletter from "./components/Newsletter";
 import Footer from "./components/Footer";
 import Dither from "./components/Dither";
-import { motion } from "framer-motion";
 
 function App() {
   const [events, setEvents] = useState([]);
@@ -57,6 +60,9 @@ function App() {
       <Dither />
       <Navbar />
       <Hero />
+      <Stats />
+
+      <Categories />
 
       <main className="max-w-7xl mx-auto px-6 py-20" id="events">
         <div className="flex justify-between items-end mb-12">
@@ -96,6 +102,8 @@ function App() {
         )}
       </main>
 
+      <Testimonials />
+      <Newsletter />
       <Footer />
     </div>
   );

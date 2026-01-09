@@ -1,0 +1,7 @@
+
+11. **CHANGELOG LOGGING**: After completing any task that involves adding, changing, fixing, or deleting code/files, you MUST update the `CHANGELOG.md` file in the project root with a brief entry. Use the format:
+    - **Added**: New features, files, or functionality
+    - **Changed**: Updates to existing features or code
+    - **Fixed**: Bug fixes or corrections
+    - **Removed**: Deleted files, features, or deprecated code
+    Include the date (YYYY-MM-DD format) with each entry.

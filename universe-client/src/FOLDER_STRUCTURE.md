@@ -1,0 +1,144 @@
+# UniVerse Client - Folder Structure Guide
+
+This document explains the purpose of each folder in the `src` directory.
+
+## 📁 Folder Structure
+
+```
+src/
+├── assets/          # Static files (images, fonts, icons)
+├── components/      # Reusable UI components
+├── constants/       # App-wide constants and config
+├── context/         # React Context providers (global state)
+├── hooks/           # Custom React hooks
+├── pages/           # Page-level components (routes)
+├── services/        # API calls and external service integrations
+├── styles/          # Global and shared CSS/SCSS files
+├── utils/           # Helper/utility functions
+├── App.jsx          # Main application component
+├── main.jsx         # Application entry point
+└── index.css        # Global Tailwind styles
+```
+
+---
+
+## 📦 Folder Details
+
+### `/assets`
+
+Static files like images, SVGs, fonts, and icons.
+
+```
+assets/
+├── images/
+├── icons/
+└── fonts/
+```
+
+### `/components`
+
+Reusable UI components that can be used across multiple pages.
+
+```
+components/
+├── Navbar.jsx
+├── Footer.jsx
+├── EventCard.jsx
+├── Hero.jsx
+└── Dither.jsx       # 3D background effect
+```
+
+### `/constants`
+
+Application-wide constants, configuration values, and enums.
+
+```
+constants/
+├── apiEndpoints.js  # API URLs
+├── routes.js        # Route paths
+└── config.js        # App configuration
+```
+
+### `/context`
+
+React Context providers for global state management.
+
+```
+context/
+├── AuthContext.jsx  # Authentication state
+├── ThemeContext.jsx # Theme preferences
+└── EventContext.jsx # Events data
+```
+
+### `/hooks`
+
+Custom React hooks for reusable logic.
+
+```
+hooks/
+├── useAuth.js       # Authentication hook
+├── useFetch.js      # Data fetching hook
+└── useLocalStorage.js
+```
+
+### `/pages`
+
+Page-level components that represent routes/views.
+
+```
+pages/
+├── Home.jsx
+├── Events.jsx
+├── EventDetails.jsx
+├── Login.jsx
+├── Register.jsx
+└── Profile.jsx
+```
+
+### `/services`
+
+API calls and external service integrations.
+
+```
+services/
+├── api.js           # Axios instance setup
+├── authService.js   # Auth-related API calls
+└── eventService.js  # Event-related API calls
+```
+
+### `/styles`
+
+Global styles, CSS modules, and theme variables.
+
+```
+styles/
+├── globals.css
+├── variables.css
+└── animations.css
+```
+
+### `/utils`
+
+Helper functions and utility methods.
+
+```
+utils/
+├── formatDate.js
+├── validators.js
+└── helpers.js
+```
+
+---
+
+## 🎯 Quick Reference
+
+| Type                  | Location      |
+| --------------------- | ------------- |
+| Reusable button/card  | `/components` |
+| Full page view        | `/pages`      |
+| API fetch function    | `/services`   |
+| Date formatter        | `/utils`      |
+| Custom `useXxx` hook  | `/hooks`      |
+| Global state provider | `/context`    |
+| API URLs              | `/constants`  |
+| Images/icons          | `/assets`     |
