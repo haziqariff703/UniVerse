@@ -52,7 +52,7 @@ const Stats = () => {
               >
                 <stat.icon size={32} />
               </div>
-              <div className="text-3xl md:text-4xl font-orbitron font-bold text-white mb-2">
+              <div className="text-3xl md:text-4xl font-neuemontreal font-bold text-white mb-2">
                 {stat.value}
               </div>
               <div className="text-starlight/70 text-sm uppercase tracking-wider font-medium">

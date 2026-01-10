@@ -20,7 +20,7 @@ const EventCard = ({ event, index }) => {
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-bold font-orbitron mb-2 group-hover:text-accent transition-colors truncate">
+        <h3 className="text-xl font-bold font-neuemontreal mb-2 group-hover:text-accent transition-colors truncate">
           {event.title}
         </h3>
         <p className="text-starlight/60 text-sm mb-4 line-clamp-2">

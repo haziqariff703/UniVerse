@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import EventCard from "./components/EventCard";
-import Stats from "./components/Stats";
-import Categories from "./components/Categories";
-import Testimonials from "./components/Testimonials";
-import Newsletter from "./components/Newsletter";
-import Footer from "./components/Footer";
-import Dither from "./components/Dither";
+import Navbar from "./components/layout/Navbar";
+import Hero from "./components/home/Hero";
+import EventCard from "./components/common/EventCard";
+import Stats from "./components/home/Stats";
+import Categories from "./components/home/Categories";
+import Testimonials from "./components/home/Testimonials";
+import Newsletter from "./components/home/Newsletter";
+import Footer from "./components/layout/Footer";
+import Dither from "./components/backgrounds/Dither";
 
 function App() {
   const [events, setEvents] = useState([]);
@@ -67,7 +67,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-20" id="events">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-orbitron font-bold text-white mb-2">
+            <h2 className="text-4xl font-neuemontreal font-bold text-white mb-2">
               Upcoming Events
             </h2>
             <p className="text-starlight/60">

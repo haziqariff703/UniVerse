@@ -45,7 +45,7 @@ const Testimonials = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-orbitron font-bold text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-neuemontreal font-bold text-white mb-4">
             Voices from the Void
           </h2>
           <p className="text-starlight/60">

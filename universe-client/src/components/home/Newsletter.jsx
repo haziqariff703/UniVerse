@@ -16,7 +16,7 @@ const Newsletter = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-accent/10 to-purple-500/10 z-0" />
 
           <div className="relative z-10">
-            <h2 className="text-3xl md:text-5xl font-orbitron font-bold text-white mb-6">
+            <h2 className="text-3xl md:text-5xl font-neuemontreal font-bold text-white mb-6">
               Join the Galaxy
             </h2>
             <p className="text-starlight/70 text-lg mb-8 max-w-xl mx-auto">
