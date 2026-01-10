@@ -32,6 +32,7 @@ All notable changes to this project will be documented in this file.
 
 - **2026-01-10**: Fixed Dither background not covering full page (z-index and transparency issues)
 - **2026-01-11**: Fixed incorrect `.env` file path in `universe-server/index.js` causing database connection errors
+- **2026-01-11**: Resolved missing `tailwindcss-animate` dependency in `universe-client` by running `npm install`
 
 ### Added (Models)
 
