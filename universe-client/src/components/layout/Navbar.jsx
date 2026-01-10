@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Rocket, Calendar, User, Menu } from "lucide-react";
+import GradientText from "@/components/ui/GradientText";
 
 const Navbar = () => {
   return (
@@ -12,10 +13,17 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto glass-panel rounded-2xl px-6 py-3 flex justify-between items-center">
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="flex items-center gap-2 text-2xl font-orbitron font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent-glow"
+          className="flex items-center gap-2"
         >
           <Rocket className="text-accent" />
-          UniVerse
+          <GradientText
+            colors={["#7c3aed", "#a78bfa", "#7c3aed", "#a78bfa", "#7c3aed"]}
+            animationSpeed={3}
+            showBorder={false}
+            className="text-2xl font-neuemontreal font-bold"
+          >
+            UniVerse
+          </GradientText>
         </motion.div>
 
         <div className="hidden md:flex gap-8 items-center">

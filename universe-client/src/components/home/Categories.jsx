@@ -60,7 +60,7 @@ const Categories = () => {
           <span className="text-accent tracking-widest uppercase text-sm font-semibold">
             Discover
           </span>
-          <h2 className="text-4xl md:text-5xl font-orbitron font-bold text-white mt-2 mb-4">
+          <h2 className="text-4xl md:text-5xl font-neuemontreal font-bold text-white mt-2 mb-4">
             Browse by Category
           </h2>
           <p className="text-starlight/60 max-w-2xl mx-auto">

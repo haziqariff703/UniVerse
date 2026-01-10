@@ -17,7 +17,7 @@ const Hero = () => {
           <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent-glow text-sm font-medium mb-6">
             Explore the Infinite
           </span>
-          <h1 className="text-5xl md:text-7xl font-orbitron font-bold mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold mb-6 leading-tight">
             Discover Events <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-purple-500 to-pink-500 animate-pulse-slow">
               Beyond Boundaries
