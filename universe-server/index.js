@@ -1,23 +1,24 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config({ path: "./config/.env" });
 
 const app = express();
-const eventRoutes = require('./routes/eventRoutes');
+const eventRoutes = require("./routes/eventRoutes");
 
 // Middleware
 app.use(cors());
 app.use(express.json()); // Allows the server to read JSON
-app.use('/api/events', eventRoutes);
+app.use("/api/events", eventRoutes);
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("UniVerse Database Connected! ✅"))
-  .catch(err => console.log("Database Connection Error: ❌", err));
+  .catch((err) => console.log("Database Connection Error: ❌", err));
 
 // Basic Route for Testing
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.send("UniVerse Backend is Online and Optimized! 🚀");
 });
 

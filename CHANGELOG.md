@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - **2026-01-10**: Fixed Dither background not covering full page (z-index and transparency issues)
+- **2026-01-11**: Fixed incorrect `.env` file path in `universe-server/index.js` causing database connection errors
 
 ### Added (Models)
 
