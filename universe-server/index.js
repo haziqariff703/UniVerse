@@ -5,6 +5,8 @@ require("dotenv").config();
 
 const app = express();
 const eventRoutes = require("./routes/eventRoutes");
+-require("dotenv").config();
++require("dotenv").config({ path: "./config/.env" });
 
 // Middleware
 app.use(cors());
