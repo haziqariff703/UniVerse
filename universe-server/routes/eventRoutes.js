@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const eventController = require('../controllers/eventController');
+const { auth, authorize } = require('../middleware/auth');
 
-// Define the endpoints
+// Public routes
 router.get('/', eventController.getAllEvents);
-router.post('/', eventController.createEvent);
+router.get('/:id', eventController.getEventById);
+
+// Protected routes (require authentication)
+router.post('/', auth, authorize('admin', 'staff'), eventController.createEvent);
+router.put('/:id', auth, eventController.updateEvent);
+router.delete('/:id', auth, authorize('admin'), eventController.deleteEvent);
 
 module.exports = router;

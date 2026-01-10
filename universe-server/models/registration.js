@@ -31,7 +31,7 @@ const registrationSchema = new mongoose.Schema({
   event_snapshot: {
     title: String,
     venue: String,
-    date: Date
+    date_time: Date
   },
   user_snapshot: {
     name: String,
