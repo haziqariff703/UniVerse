@@ -54,25 +54,23 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex gap-8 items-center">
-          {["Events", "Community", "About"].map((item) =>
-            item === "Events" ? (
+          {["Events", "My Bookings", "Admin", "Create Event"].map((item) => {
+            const pathMap = {
+              Events: "/events",
+              "My Bookings": "/my-bookings",
+              Admin: "/admin/dashboard",
+              "Create Event": "/organizer/create-event",
+            };
+            return (
               <Link
                 key={item}
-                to="/events"
+                to={pathMap[item]}
                 className="text-starlight/80 hover:text-white transition-colors font-medium cursor-pointer"
               >
                 {item}
               </Link>
-            ) : (
-              <a
-                key={item}
-                href={`/#${item.toLowerCase()}`}
-                className="text-starlight/80 hover:text-white transition-colors font-medium cursor-pointer"
-              >
-                {item}
-              </a>
-            )
-          )}
+            );
+          })}
           <Link to="/login">
             <motion.button
               whileHover={{ scale: 1.05 }}

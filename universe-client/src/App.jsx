@@ -8,6 +8,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
+import MyBookings from "./pages/MyBookings";
+import AdminDashboard from "./pages/AdminDashboard";
+import CreateEvent from "./pages/CreateEvent";
 
 const Layout = ({ children }) => {
   return (
@@ -34,6 +37,9 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/organizer/create-event" element={<CreateEvent />} />
           </Routes>
         </Layout>
       </div>

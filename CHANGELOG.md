@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
 - **2026-01-13**: Integrated routing for `/events` and `/events/:id` in `App.jsx`.
 - **2026-01-13**: Fixed blank screen issue on Events page by correcting imports and restore full implementation in `EventCard.jsx`.
 - **2026-01-13**: Configured "Events" link in `Navbar.jsx` and "View All" button in `Home.jsx` to correctly navigate to `/events`.
+- **2026-01-13**: Implemented `MyBookings.jsx` page for user registration history with glassmorphism styling.
+- **2026-01-13**: Created `AdminDashboard.jsx` featuring system statistics, performance leaderboards, and cosmic activity feed.
+- **2026-01-13**: Designed `CreateEvent.jsx` with a multi-step "Launch" flow for event organizers.
+- **2026-01-13**: Updated `App.jsx` and `Navbar.jsx` to include routing and navigation for the new pages.
 
 - **2026-01-10**: Configured project for shadcn/ui:
   - Created `jsconfig.json` with `@` alias pointing to `./src`.
