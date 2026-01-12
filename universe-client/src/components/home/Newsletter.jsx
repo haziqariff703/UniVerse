@@ -31,12 +31,12 @@ const Newsletter = () => {
               <input
                 type="email"
                 placeholder="Enter your email address"
-                className="flex-1 bg-white/5 border border-white/10 rounded-full px-6 py-3 text-white placeholder-starlight/40 focus:outline-none focus:border-accent transition-colors"
+                className="flex-1 bg-white/5 border border-white/10 rounded-full px-6 py-3 text-white placeholder-starlight/40 focus:outline-none focus:border-violet-500 transition-colors"
                 required
               />
               <button
                 type="submit"
-                className="bg-accent hover:bg-accent/80 text-white px-8 py-3 rounded-full font-bold transition-all shadow-lg shadow-accent/25 flex items-center justify-center gap-2 group"
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-8 py-3 rounded-full font-bold transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2 group"
               >
                 <span>Subscribe</span>
                 <Send

@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **2026-01-12**: Replaced `Dither` background component with "Liquid Ether" from React Bits.
+- **2026-01-12**: Fixed visibility issue with Liquid Ether background by making body background transparent and moving background color to the component container.
+- **2026-01-13**: Renamed `Dither` component file and export to `LiquidEther` (`src/components/backgrounds/Liquid_Ether.jsx`).
+- **2026-01-13**: Implemented Dynamic UI updates (staggered text, 3D tilt cards, scroll-aware navbar).
+- **2026-01-13**: Replaced `LiquidEther` with `DarkVeil` component for improved background aesthetics.
+- **2026-01-13**: Added `react-router-dom` and implemented client-side routing (`Home`, `Login`, `Signup`).
+- **2026-01-13**: Created authentication pages (`Login.jsx`, `Signup.jsx`) with glassmorphism design.
+- **2026-01-13**: Enhanced UI buttons with vibrant gradients in Navbar and Hero sections.
+- **2026-01-13**: Updated `App.jsx` to show Navbar on authentication pages for better navigation.
+- **2026-01-13**: Increased top padding in `Login.jsx` and `Signup.jsx` for better visual separation from the Navbar.
+- **2026-01-13**: Updated `App.jsx` to show Footer on authentication pages, making the layout consistent globally.
+- **2026-01-13**: Implemented minimalist, Gen-Z styled `Events.jsx` page with search, categories, and grid view.
+- **2026-01-13**: Created `EventDetails.jsx` page with immersive hero section, glassmorphic panels, and registration flow.
+- **2026-01-13**: Integrated routing for `/events` and `/events/:id` in `App.jsx`.
+- **2026-01-13**: Fixed blank screen issue on Events page by correcting imports and restore full implementation in `EventCard.jsx`.
+- **2026-01-13**: Configured "Events" link in `Navbar.jsx` and "View All" button in `Home.jsx` to correctly navigate to `/events`.
+
 - **2026-01-10**: Configured project for shadcn/ui:
   - Created `jsconfig.json` with `@` alias pointing to `./src`.
   - Updated `vite.config.js` to resolve `@` alias using `path` and `url` (ESM compatible).
