@@ -161,7 +161,7 @@ const Events = () => {
             onClick={() => setSelectedCategory(category)}
             className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
               selectedCategory === category
-                ? "bg-accent text-white shadow-lg shadow-accent/25"
+                ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25"
                 : "bg-white/5 text-starlight/70 hover:bg-white/10 hover:text-white border border-white/5"
             }`}
           >

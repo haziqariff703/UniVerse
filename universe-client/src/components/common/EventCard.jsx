@@ -83,7 +83,7 @@ const EventCard = ({ event, index }) => {
             </div>
           </div>
 
-          <div className="w-full py-3 rounded-xl bg-white/5 group-hover:bg-accent group-hover:text-white border border-white/10 group-hover:border-accent transition-all duration-300 flex items-center justify-center gap-2 font-medium transform-z-30">
+          <div className="w-full py-3 rounded-xl bg-white/5 group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-indigo-600 group-hover:text-white border border-white/10 group-hover:border-violet-500 transition-all duration-300 flex items-center justify-center gap-2 font-medium transform-z-30 shadow-lg shadow-transparent group-hover:shadow-violet-500/25">
             View Details
             <ArrowRight
               size={16}

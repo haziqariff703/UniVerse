@@ -26,6 +26,19 @@ All notable changes to this project will be documented in this file.
 - **2026-01-13**: Created `AdminDashboard.jsx` featuring system statistics, performance leaderboards, and cosmic activity feed.
 - **2026-01-13**: Designed `CreateEvent.jsx` with a multi-step "Launch" flow for event organizers.
 - **2026-01-13**: Updated `App.jsx` and `Navbar.jsx` to include routing and navigation for the new pages.
+- **2026-01-13**: Created `News.jsx` displaying university updates with animated cards and `GradientText`.
+- **2026-01-13**: Created `Communities.jsx` for browsing student clubs.
+- **2026-01-13**: Implemented `ClubDetails.jsx` dynamic page for viewing specific club information.
+- **2026-01-13**: Developed `JoinClubModal` for membership applications with success animation.
+- **2026-01-13**: Fixed blank screen issue on Club Details page by replacing `framer-motion` components with CSS-only animations to improve stability.
+- **2026-01-13**: Removed "Admin" and "Create Event" links from the main Navbar to streamline user navigation.
+- **2026-01-13**: Updated active category button on `Events.jsx` to use a purple gradient for better visibility.
+- **2026-01-13**: Enhanced `EventCard` "View Details" button with a purple gradient on hover for better visual feedback.
+- **2026-01-13**: Implemented **Venues System**: Created `Venues.jsx` listing page and `VenueDetails.jsx` with facility icons and relevant mock events.
+- **2026-01-13**: Implemented **Speakers System**: Developed `Speakers.jsx` grid view and `SpeakerDetails.jsx` profile page with bio and event history.
+- **2026-01-13**: Implemented **Notifications System**: Created `Notifications.jsx` center with filtering and "mark as read" functionality.
+- **2026-01-13**: Fixed blank screen issue by correcting syntax error in `Notifications.jsx` and replacing `framer-motion` with CSS animations for better stability.
+- **2026-01-13**: Updated **Navbar** to include links for "Venues" and "Speakers", and added a Notification bell icon.
 
 - **2026-01-10**: Configured project for shadcn/ui:
   - Created `jsconfig.json` with `@` alias pointing to `./src`.

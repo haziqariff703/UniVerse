@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Rocket, Menu } from "lucide-react";
+import { Rocket, Menu, Bell } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 
 const Navbar = () => {
@@ -54,12 +54,21 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex gap-8 items-center">
-          {["Events", "My Bookings", "Admin", "Create Event"].map((item) => {
+          {[
+            "News",
+            "Communities",
+            "Events",
+            "Venues",
+            "Speakers",
+            "My Bookings",
+          ].map((item) => {
             const pathMap = {
+              News: "/news",
+              Communities: "/communities",
               Events: "/events",
+              Venues: "/venues",
+              Speakers: "/speakers",
               "My Bookings": "/my-bookings",
-              Admin: "/admin/dashboard",
-              "Create Event": "/organizer/create-event",
             };
             return (
               <Link
@@ -71,6 +80,14 @@ const Navbar = () => {
               </Link>
             );
           })}
+
+          <Link
+            to="/notifications"
+            className="text-starlight/80 hover:text-white transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+          </Link>
+
           <Link to="/login">
             <motion.button
               whileHover={{ scale: 1.05 }}
