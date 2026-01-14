@@ -19,6 +19,8 @@ import VenueDetails from "./pages/VenueDetails";
 import Speakers from "./pages/Speakers";
 import SpeakerDetails from "./pages/SpeakerDetails";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const Layout = ({ children }) => {
   return (
@@ -40,6 +42,7 @@ function App() {
 
         <Layout>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -48,14 +51,56 @@ function App() {
             <Route path="/communities/:id" element={<ClubDetails />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/organizer/create-event" element={<CreateEvent />} />
             <Route path="/venues" element={<Venues />} />
             <Route path="/venues/:id" element={<VenueDetails />} />
             <Route path="/speakers" element={<Speakers />} />
             <Route path="/speakers/:id" element={<SpeakerDetails />} />
-            <Route path="/notifications" element={<Notifications />} />
+
+            {/* Protected Routes - Any Logged In User */}
+            <Route
+              path="/my-bookings"
+              element={
+                <ProtectedRoute>
+                  <MyBookings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected Routes - Admin Only */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected Routes - Organizer Only */}
+            <Route
+              path="/organizer/create-event"
+              element={
+                <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <CreateEvent />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Layout>
       </div>

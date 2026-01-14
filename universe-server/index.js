@@ -1,17 +1,25 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+require("dotenv").config({ path: "./config/.env" });
 
 const app = express();
+
+// Route imports
 const eventRoutes = require("./routes/eventRoutes");
--require("dotenv").config();
-+require("dotenv").config({ path: "./config/.env" });
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Allows the server to read JSON
+app.use(express.json());
+
+// API Routes
 app.use("/api/events", eventRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 // Database Connection
 mongoose

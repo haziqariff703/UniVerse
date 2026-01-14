@@ -1,18 +1,50 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Rocket, Menu, Bell } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Rocket, Menu, Bell, LogOut, User, X } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const { scrollY } = useScroll();
+  const [user, setUser] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Check for user on mount
+    const checkUser = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
+      }
+    };
+
+    checkUser();
+
+    // Listen for auth changes (custom event from Login/Signup)
+    window.addEventListener("authChange", checkUser);
+    window.addEventListener("storage", checkUser);
+
+    return () => {
+      window.removeEventListener("authChange", checkUser);
+      window.removeEventListener("storage", checkUser);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/login");
+  };
 
   // Transition from subtle glass to stronger "veil" as you scroll
   const bgOpacity = useTransform(scrollY, [0, 100], [0.1, 0.8]);
   const borderOpacity = useTransform(scrollY, [0, 100], [0.1, 0.3]);
   const blurValue = useTransform(scrollY, [0, 100], [4, 12]);
 
-  // Dynamic style object for the motion div
   const navStyle = {
     backgroundColor: useTransform(bgOpacity, (v) => `rgba(10, 10, 20, ${v})`),
     borderColor: useTransform(
@@ -22,16 +54,43 @@ const Navbar = () => {
     backdropFilter: useTransform(blurValue, (v) => `blur(${v}px)`),
   };
 
+  // Define navigation items based on role
+  const getNavItems = () => {
+    if (!user) {
+      // Guest
+      return [];
+    }
+
+    if (user.role === "admin") {
+      return [{ label: "Dashboard", path: "/admin/dashboard" }];
+    }
+
+    if (user.role === "organizer") {
+      return [
+        { label: "My Events", path: "/events" },
+        { label: "Create Event", path: "/organizer/create-event" },
+      ];
+    }
+
+    // Student (default)
+    return [
+      { label: "News", path: "/news" },
+      { label: "Communities", path: "/communities" },
+      { label: "Events", path: "/events" },
+      { label: "Venues", path: "/venues" },
+      { label: "Speakers", path: "/speakers" },
+      { label: "My Bookings", path: "/my-bookings" },
+    ];
+  };
+
+  const navItems = getNavItems();
+
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className="fixed top-0 w-full z-50 px-4 md:px-6 py-4 pointer-events-none"
     >
-      {/* 
-        We use pointer-events-auto on the inner container so clicks work, 
-        but the full-width nav container doesn't block clicks beneath it (on sides of the pill)
-      */}
       <motion.div
         style={navStyle}
         className="max-w-7xl mx-auto rounded-2xl px-6 py-3 flex justify-between items-center pointer-events-auto border transition-colors duration-300"
@@ -53,56 +112,115 @@ const Navbar = () => {
           </motion.div>
         </Link>
 
-        <div className="hidden md:flex gap-8 items-center">
-          {[
-            "News",
-            "Communities",
-            "Events",
-            "Venues",
-            "Speakers",
-            "My Bookings",
-          ].map((item) => {
-            const pathMap = {
-              News: "/news",
-              Communities: "/communities",
-              Events: "/events",
-              Venues: "/venues",
-              Speakers: "/speakers",
-              "My Bookings": "/my-bookings",
-            };
-            return (
-              <Link
-                key={item}
-                to={pathMap[item]}
-                className="text-starlight/80 hover:text-white transition-colors font-medium cursor-pointer"
-              >
-                {item}
-              </Link>
-            );
-          })}
-
-          <Link
-            to="/notifications"
-            className="text-starlight/80 hover:text-white transition-colors"
-          >
-            <Bell className="w-5 h-5" />
-          </Link>
-
-          <Link to="/login">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-all shadow-lg shadow-violet-500/25"
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex gap-6 items-center">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="text-starlight/80 hover:text-white transition-colors font-medium cursor-pointer"
             >
-              Connect
-            </motion.button>
-          </Link>
+              {item.label}
+            </Link>
+          ))}
+
+          {user && (
+            <>
+              <Link
+                to="/notifications"
+                className="text-starlight/80 hover:text-white transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/profile"
+                className="text-starlight/80 hover:text-white transition-colors"
+                title="Edit Profile"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {!user && (
+            <Link to="/login">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-all shadow-lg shadow-violet-500/25"
+              >
+                Connect
+              </motion.button>
+            </Link>
+          )}
         </div>
 
-        <button className="md:hidden text-starlight hover:text-white transition-colors">
-          <Menu />
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-starlight hover:text-white transition-colors"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X /> : <Menu />}
         </button>
       </motion.div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden mt-2 mx-4 glass-panel rounded-2xl p-4 pointer-events-auto"
+        >
+          <div className="flex flex-col gap-3">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="text-starlight/80 hover:text-white transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {user && (
+              <>
+                <Link
+                  to="/profile"
+                  className="text-starlight/80 hover:text-white transition-colors font-medium py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Edit Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-rose-400 hover:text-rose-300 transition-colors font-medium py-2 text-left"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+            {!user && (
+              <Link
+                to="/login"
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2 rounded-full font-medium text-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Connect
+              </Link>
+            )}
+          </div>
+        </motion.div>
+      )}
     </motion.nav>
   );
 };

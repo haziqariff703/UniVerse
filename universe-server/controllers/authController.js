@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
  */
 exports.register = async (req, res) => {
   try {
-    const { student_id, name, email, password, preferences } = req.body;
+    const { student_id, name, email, password, role, preferences } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -26,12 +26,17 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Validate role (defaults to student if invalid or admin)
+    const validRoles = ['student', 'organizer'];
+    const assignedRole = validRoles.includes(role) ? role : 'student';
+
     // Create new user
     const user = new User({
       student_id,
       name,
       email,
       password: hashedPassword,
+      role: assignedRole,
       preferences: preferences || []
     });
 

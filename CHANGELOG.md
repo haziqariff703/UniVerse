@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-01-15
+
+### Added
+
+- **2026-01-15**: Created `adminController.js` with dashboard stats, user management (CRUD), and event listing endpoints.
+- **2026-01-15**: Created `adminRoutes.js` with RBAC-protected routes (admin-only access).
+- **2026-01-15**: Created `UsersList.jsx` component with search, role filter, pagination, role update, and delete functionality.
+- **2026-01-15**: Created `seedAdmin.js` utility script to generate initial admin account.
+
+### Changed
+
+- **2026-01-15**: Refactored `AdminDashboard.jsx` to fetch real data from API, added view switching for Overview/Users List/Events Control.
+- **2026-01-15**: Updated `universe-server/index.js` to register `authRoutes` and `adminRoutes`, fixed duplicate dotenv config.
+- **2026-01-15**: Fixed `MONGO_URI` in `.env` to explicitly target `UniVerse` database instead of default `test`.
+- **2026-01-15**: Implemented `Login.jsx` with full API integration, error handling, loading states, and role-based navigation.
+- **2026-01-15**: Implemented `Signup.jsx` with full API integration, student ID field, error handling, and loading states.
+- **2026-01-15**: Updated `AdminDashboard.jsx` with client-side RBAC protection (redirects unauthorized users) and added a Logout function.
+- **2026-01-15**: Updated `User` model to include 'organizer' in role enum.
+- **2026-01-15**: Updated `authController.js` to allow role selection (Student/Organizer) during registration.
+- **2026-01-15**: Updated `Signup.jsx` to include role selection dropdown.
+- **2026-01-15**: Created `ProtectedRoute.jsx` for authentication and role-based route protection.
+- **2026-01-15**: Refactored `Navbar.jsx` with dynamic role-based navigation (Guest/Student/Admin/Organizer views).
+- **2026-01-15**: Updated `App.jsx` to wrap sensitive routes with `ProtectedRoute`.
+- **2026-01-15**: Created `Profile.jsx` page for users to edit their name and password.
+- **2026-01-15**: Created `userController.js` with `updateProfile` endpoint.
+- **2026-01-15**: Created `userRoutes.js` and registered in `index.js`.
+
 ## [Unreleased] - 2026-01-10
 
 ### Changed
