@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - **2026-01-15**: Refactored `AdminDashboard.jsx` to fetch real data from API, added view switching for Overview/Users List/Events Control.
 - **2026-01-15**: Updated `universe-server/index.js` to register `authRoutes` and `adminRoutes`, fixed duplicate dotenv config.
 - **2026-01-15**: Fixed `MONGO_URI` in `.env` to explicitly target `UniVerse` database instead of default `test`.
+- **2026-01-15**: Added explicit `dbName: 'UniVerse'` option to `mongoose.connect` and logging to verify connected database name.
 - **2026-01-15**: Implemented `Login.jsx` with full API integration, error handling, loading states, and role-based navigation.
 - **2026-01-15**: Implemented `Signup.jsx` with full API integration, student ID field, error handling, and loading states.
 - **2026-01-15**: Updated `AdminDashboard.jsx` with client-side RBAC protection (redirects unauthorized users) and added a Logout function.

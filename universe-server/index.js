@@ -23,8 +23,11 @@ app.use("/api/users", userRoutes);
 
 // Database Connection
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("UniVerse Database Connected! ✅"))
+  .connect(process.env.MONGO_URI, { dbName: 'UniVerse' })
+  .then(() => {
+    console.log("UniVerse Database Connected! ✅");
+    console.log("Connected to Database:", mongoose.connection.name);
+  })
   .catch((err) => console.log("Database Connection Error: ❌", err));
 
 // Basic Route for Testing
