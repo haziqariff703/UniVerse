@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Event = require('../models/event');
 const Registration = require('../models/registration');
+const Venue = require('../models/venue');
 
 /**
  * Admin Controller
@@ -14,15 +15,15 @@ const Registration = require('../models/registration');
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    // Aggregate counts
-    const [totalUsers, totalEvents, totalBookings, activeEvents] = await Promise.all([
+    const [totalUsers, totalEvents, totalBookings, activeEvents, pendingEvents, pendingOrganizers] = await Promise.all([
       User.countDocuments(),
       Event.countDocuments(),
       Registration.countDocuments(),
-      Event.countDocuments({ date_time: { $gte: new Date() } })
+      Event.countDocuments({ date_time: { $gte: new Date() }, status: 'approved' }),
+      Event.countDocuments({ status: 'pending' }),
+      User.countDocuments({ role: 'student', organizerRequest: true })
     ]);
 
-    // Get recent activity (last 10 registrations)
     const recentActivity = await Registration.find()
       .sort({ booking_time: -1 })
       .limit(10)
@@ -35,7 +36,8 @@ exports.getDashboardStats = async (req, res) => {
         totalEvents,
         totalBookings,
         activeEvents,
-        // Revenue placeholder - implement when payment model exists
+        pendingEvents,
+        pendingOrganizers,
         revenue: 0
       },
       recentActivity: recentActivity.map(reg => ({
@@ -54,14 +56,11 @@ exports.getDashboardStats = async (req, res) => {
 
 /**
  * Get All Users
- * @route GET /api/admin/users
- * @access Admin only
  */
 exports.getAllUsers = async (req, res) => {
   try {
     const { search, role, page = 1, limit = 20 } = req.query;
     
-    // Build query
     const query = {};
     if (search) {
       query.$or = [
@@ -98,21 +97,19 @@ exports.getAllUsers = async (req, res) => {
 
 /**
  * Update User Role
- * @route PUT /api/admin/users/:id/role
- * @access Admin only
  */
 exports.updateUserRole = async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!['student', 'staff', 'admin'].includes(role)) {
+    if (!['student', 'organizer', 'admin'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
 
     const user = await User.findByIdAndUpdate(
       id,
-      { role },
+      { role, organizerRequest: false },
       { new: true }
     ).select('-password');
 
@@ -129,14 +126,11 @@ exports.updateUserRole = async (req, res) => {
 
 /**
  * Delete User
- * @route DELETE /api/admin/users/:id
- * @access Admin only
  */
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Prevent self-deletion
     if (id === req.user.id) {
       return res.status(400).json({ message: 'Cannot delete your own account' });
     }
@@ -147,7 +141,6 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Also delete user's registrations
     await Registration.deleteMany({ user_id: id });
 
     res.json({ message: 'User deleted successfully' });
@@ -158,9 +151,7 @@ exports.deleteUser = async (req, res) => {
 };
 
 /**
- * Get All Events (Admin view with extra details)
- * @route GET /api/admin/events
- * @access Admin only
+ * Get All Events
  */
 exports.getAllEvents = async (req, res) => {
   try {
@@ -175,11 +166,12 @@ exports.getAllEvents = async (req, res) => {
     }
 
     const events = await Event.find(query)
+      .populate('organizer_id', 'name email')
+      .populate('venue_id', 'name location_code')
       .sort({ date_time: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
-    // Get registration counts for each event
     const eventsWithStats = await Promise.all(
       events.map(async (event) => {
         const registrationCount = await Registration.countDocuments({ event_id: event._id });
@@ -205,3 +197,228 @@ exports.getAllEvents = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch events' });
   }
 };
+
+// ==================== EVENT APPROVAL ====================
+
+/**
+ * Get Pending Events
+ * @route GET /api/admin/events/pending
+ */
+exports.getPendingEvents = async (req, res) => {
+  try {
+    const events = await Event.find({ status: 'pending' })
+      .populate('organizer_id', 'name email')
+      .populate('venue_id', 'name location_code')
+      .sort({ created_at: -1 });
+
+    res.json({ events });
+  } catch (error) {
+    console.error('Get pending events error:', error);
+    res.status(500).json({ message: 'Failed to fetch pending events' });
+  }
+};
+
+/**
+ * Approve Event
+ * @route PATCH /api/admin/events/:id/approve
+ */
+exports.approveEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const event = await Event.findByIdAndUpdate(
+      id,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    res.json({ message: 'Event approved successfully', event });
+  } catch (error) {
+    console.error('Approve event error:', error);
+    res.status(500).json({ message: 'Failed to approve event' });
+  }
+};
+
+/**
+ * Reject Event
+ * @route PATCH /api/admin/events/:id/reject
+ */
+exports.rejectEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const event = await Event.findByIdAndUpdate(
+      id,
+      { status: 'rejected' },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    res.json({ message: 'Event rejected', event });
+  } catch (error) {
+    console.error('Reject event error:', error);
+    res.status(500).json({ message: 'Failed to reject event' });
+  }
+};
+
+// ==================== ORGANIZER APPROVAL ====================
+
+/**
+ * Get Pending Organizer Requests
+ * @route GET /api/admin/organizers/pending
+ */
+exports.getPendingOrganizers = async (req, res) => {
+  try {
+    const users = await User.find({ role: 'student', organizerRequest: true })
+      .select('-password')
+      .sort({ created_at: -1 });
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Get pending organizers error:', error);
+    res.status(500).json({ message: 'Failed to fetch pending organizers' });
+  }
+};
+
+/**
+ * Approve Organizer Request
+ * @route PATCH /api/admin/organizers/:id/approve
+ */
+exports.approveOrganizer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role: 'organizer', organizerRequest: false },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Organizer approved successfully', user });
+  } catch (error) {
+    console.error('Approve organizer error:', error);
+    res.status(500).json({ message: 'Failed to approve organizer' });
+  }
+};
+
+/**
+ * Reject Organizer Request
+ * @route PATCH /api/admin/organizers/:id/reject
+ */
+exports.rejectOrganizer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { organizerRequest: false },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Organizer request rejected', user });
+  } catch (error) {
+    console.error('Reject organizer error:', error);
+    res.status(500).json({ message: 'Failed to reject organizer' });
+  }
+};
+
+// ==================== VENUE MANAGEMENT ====================
+
+/**
+ * Get All Venues
+ * @route GET /api/admin/venues
+ */
+exports.getAllVenues = async (req, res) => {
+  try {
+    const venues = await Venue.find().sort({ name: 1 });
+    res.json({ venues });
+  } catch (error) {
+    console.error('Get venues error:', error);
+    res.status(500).json({ message: 'Failed to fetch venues' });
+  }
+};
+
+/**
+ * Create Venue
+ * @route POST /api/admin/venues
+ */
+exports.createVenue = async (req, res) => {
+  try {
+    const { name, location_code, capacity } = req.body;
+
+    if (!name || !location_code) {
+      return res.status(400).json({ message: 'Name and location code are required' });
+    }
+
+    const venue = new Venue({ name, location_code, capacity: capacity || 100 });
+    await venue.save();
+
+    res.status(201).json({ message: 'Venue created successfully', venue });
+  } catch (error) {
+    console.error('Create venue error:', error);
+    res.status(500).json({ message: 'Failed to create venue' });
+  }
+};
+
+/**
+ * Update Venue
+ * @route PUT /api/admin/venues/:id
+ */
+exports.updateVenue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, location_code, capacity } = req.body;
+
+    const venue = await Venue.findByIdAndUpdate(
+      id,
+      { name, location_code, capacity },
+      { new: true }
+    );
+
+    if (!venue) {
+      return res.status(404).json({ message: 'Venue not found' });
+    }
+
+    res.json({ message: 'Venue updated successfully', venue });
+  } catch (error) {
+    console.error('Update venue error:', error);
+    res.status(500).json({ message: 'Failed to update venue' });
+  }
+};
+
+/**
+ * Delete Venue
+ * @route DELETE /api/admin/venues/:id
+ */
+exports.deleteVenue = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const venue = await Venue.findByIdAndDelete(id);
+
+    if (!venue) {
+      return res.status(404).json({ message: 'Venue not found' });
+    }
+
+    res.json({ message: 'Venue deleted successfully' });
+  } catch (error) {
+    console.error('Delete venue error:', error);
+    res.status(500).json({ message: 'Failed to delete venue' });
+  }
+};
+

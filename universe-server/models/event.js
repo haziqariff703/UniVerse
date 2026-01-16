@@ -42,8 +42,8 @@ const eventSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['Open', 'SoldOut', 'Cancelled'], 
-    default: 'Open' 
+    enum: ['pending', 'approved', 'rejected', 'Open', 'SoldOut', 'Cancelled'], 
+    default: 'pending' 
   },
   tags: [String]
 });

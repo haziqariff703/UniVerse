@@ -16,7 +16,21 @@ router.get('/users', auth, authorize('admin'), adminController.getAllUsers);
 router.put('/users/:id/role', auth, authorize('admin'), adminController.updateUserRole);
 router.delete('/users/:id', auth, authorize('admin'), adminController.deleteUser);
 
-// Event Management (Admin view)
+// Event Management
 router.get('/events', auth, authorize('admin'), adminController.getAllEvents);
+router.get('/events/pending', auth, authorize('admin'), adminController.getPendingEvents);
+router.patch('/events/:id/approve', auth, authorize('admin'), adminController.approveEvent);
+router.patch('/events/:id/reject', auth, authorize('admin'), adminController.rejectEvent);
+
+// Organizer Approval
+router.get('/organizers/pending', auth, authorize('admin'), adminController.getPendingOrganizers);
+router.patch('/organizers/:id/approve', auth, authorize('admin'), adminController.approveOrganizer);
+router.patch('/organizers/:id/reject', auth, authorize('admin'), adminController.rejectOrganizer);
+
+// Venue Management
+router.get('/venues', auth, authorize('admin'), adminController.getAllVenues);
+router.post('/venues', auth, authorize('admin'), adminController.createVenue);
+router.put('/venues/:id', auth, authorize('admin'), adminController.updateVenue);
+router.delete('/venues/:id', auth, authorize('admin'), adminController.deleteVenue);
 
 module.exports = router;

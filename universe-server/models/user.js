@@ -27,8 +27,12 @@ const userSchema = new mongoose.Schema({
     default: 'student' 
   },
   preferences: {
-    type: [String], // Array of interests (e.g., ['Tech', 'Sports'])
+    type: [String],
     default: []
+  },
+  organizerRequest: {
+    type: Boolean,
+    default: false
   },
   created_at: { 
     type: Date, 

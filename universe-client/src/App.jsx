@@ -3,23 +3,33 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 const DarkVeil = lazy(() => import("./components/backgrounds/Dark_Veil"));
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import News from "./pages/News";
-import Communities from "./pages/Communities";
-import ClubDetails from "./pages/ClubDetails";
-import Events from "./pages/Events";
-import EventDetails from "./pages/EventDetails";
-import MyBookings from "./pages/MyBookings";
-import AdminDashboard from "./pages/AdminDashboard";
-import CreateEvent from "./pages/CreateEvent";
-import Venues from "./pages/Venues";
-import VenueDetails from "./pages/VenueDetails";
-import Speakers from "./pages/Speakers";
-import SpeakerDetails from "./pages/SpeakerDetails";
-import Notifications from "./pages/Notifications";
-import Profile from "./pages/Profile";
+
+// Auth Pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+
+// Student/Public Pages
+import Home from "./pages/student/Home";
+import News from "./pages/student/News";
+import Communities from "./pages/student/Communities";
+import ClubDetails from "./pages/student/ClubDetails";
+import Events from "./pages/student/Events";
+import EventDetails from "./pages/student/EventDetails";
+import Venues from "./pages/student/Venues";
+import VenueDetails from "./pages/student/VenueDetails";
+import Speakers from "./pages/student/Speakers";
+import SpeakerDetails from "./pages/student/SpeakerDetails";
+import MyBookings from "./pages/student/MyBookings";
+import Notifications from "./pages/student/Notifications";
+import Profile from "./pages/student/Profile";
+
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
+// Organizer Pages
+import CreateEvent from "./pages/organizer/CreateEvent";
+
+// Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const Layout = ({ children }) => {

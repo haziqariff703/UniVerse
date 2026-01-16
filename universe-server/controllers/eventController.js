@@ -1,4 +1,5 @@
 const Event = require('../models/event');
+const Speaker = require('../models/speaker'); // Required for populate
 
 /**
  * @desc    Get all events (with optional filters)
