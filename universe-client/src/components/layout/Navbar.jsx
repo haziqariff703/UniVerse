@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Rocket, Menu, Bell, LogOut, User, X } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { scrollY } = useScroll();
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     // Check for user on mount
@@ -49,7 +59,7 @@ const Navbar = () => {
     backgroundColor: useTransform(bgOpacity, (v) => `rgba(10, 10, 20, ${v})`),
     borderColor: useTransform(
       borderOpacity,
-      (v) => `rgba(255, 255, 255, ${v})`
+      (v) => `rgba(255, 255, 255, ${v})`,
     ),
     backdropFilter: useTransform(blurValue, (v) => `blur(${v}px)`),
   };
@@ -91,9 +101,12 @@ const Navbar = () => {
       animate={{ y: 0 }}
       className="fixed top-0 w-full z-50 px-4 md:px-6 py-4 pointer-events-none"
     >
-      <motion.div
-        style={navStyle}
-        className="max-w-7xl mx-auto rounded-2xl px-6 py-3 flex justify-between items-center pointer-events-auto border transition-colors duration-300"
+      <div
+        className={`max-w-7xl mx-auto rounded-md px-6 py-3 flex justify-between items-center pointer-events-auto transition-all duration-300 ${
+          scrolled
+            ? "bg-[#0A0A0A] border border-[#1E293B]"
+            : "bg-transparent border-transparent"
+        }`}
       >
         <Link to="/">
           <motion.div
@@ -113,16 +126,23 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex gap-6 items-center">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="text-starlight/80 hover:text-white transition-colors font-medium cursor-pointer"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="hidden md:flex gap-8 items-center">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`text-sm font-medium transition-all duration-300 ${
+                  isActive
+                    ? "text-purple-400 border-b-2 border-purple-600 underline-offset-8"
+                    : "text-starlight/70 hover:text-white"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
 
           {user && (
             <>
@@ -169,7 +189,7 @@ const Navbar = () => {
         >
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
-      </motion.div>
+      </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (

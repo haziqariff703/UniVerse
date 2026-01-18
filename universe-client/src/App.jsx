@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-const DarkVeil = lazy(() => import("./components/backgrounds/Dark_Veil"));
+import Squares from "@/components/backgrounds/Squares";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 
@@ -46,9 +46,16 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen relative">
-        <Suspense fallback={<div className="fixed inset-0 bg-black -z-10" />}>
-          <DarkVeil />
-        </Suspense>
+        <div className="fixed inset-0 -z-10">
+          <Squares
+            squareSize={40}
+            borderColor="#1e293b"
+            hoverFillColor="#1e293b"
+            speed={0.3}
+            direction="diagonal"
+            flickerProbability={0.1}
+          />
+        </div>
 
         <Layout>
           <Routes>

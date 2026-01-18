@@ -1,94 +1,88 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
+import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
+import { Calendar, MapPin, Clock } from "lucide-react";
 
 const EventCard = ({ event, index }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
-  const rotateX = useSpring(useTransform(y, [-100, 100], [5, -5]), {
-    stiffness: 150,
-    damping: 15,
-  });
-  const rotateY = useSpring(useTransform(x, [-100, 100], [-5, 5]), {
-    stiffness: 150,
-    damping: 15,
-  });
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct * 200);
-    y.set(yPct * 200);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+  function handleMouseMove({ currentTarget, clientX, clientY }) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d",
-      }}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="glass-panel rounded-2xl overflow-hidden group hover:border-accent/30 transition-all duration-300 relative perspective-1000"
+      className="group relative border border-slate-800 bg-white/5 overflow-hidden rounded-sm hover:border-slate-600 transition-colors duration-500"
     >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-sm opacity-0 transition duration-300 group-hover:opacity-100"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              650px circle at ${mouseX}px ${mouseY}px,
+              rgba(124, 58, 237, 0.15),
+              transparent 80%
+            )
+          `,
+        }}
+      />
+
       <Link
         to={`/events/${event._id || event.id}`}
-        className="block h-full cursor-pointer"
+        className="block h-full relative z-10"
       >
-        <div className="relative h-48 overflow-hidden transform-style-3d">
-          {/* Placeholder image related to 'universe' or 'tech' - using a gradient for now as fallback */}
-          <div className="absolute inset-0 bg-gradient-to-br from-nebula via-purple-900/40 to-black group-hover:scale-110 transition-transform duration-500" />
-          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold border border-white/10 z-10">
-            {event.category || "General"}
+        <div className="relative h-48 overflow-hidden bg-black/40">
+          {/* Noise/Abstract Placeholder Pattern */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] to-transparent" />
+
+          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 border border-white/10">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-300">
+              {event.category || "General"}
+            </span>
           </div>
         </div>
 
-        <div className="p-6 transform-style-3d">
-          <h3 className="text-xl font-bold font-neuemontreal mb-2 group-hover:text-accent transition-colors truncate transform-z-20">
+        <div className="p-6">
+          <h3 className="text-lg font-black font-inter mb-3 text-white group-hover:text-purple-400 transition-colors truncate">
             {event.title}
           </h3>
-          <p className="text-starlight/60 text-sm mb-4 line-clamp-2 transform-z-10">
+          <p className="text-slate-500 text-sm mb-6 line-clamp-2 leading-relaxed">
             {event.description ||
               "Join us for an amazing experience where we explore the depths of this topic."}
           </p>
 
-          <div className="space-y-2 mb-6">
-            <div className="flex items-center gap-2 text-sm text-starlight/80">
-              <Calendar size={16} className="text-accent" />
+          <div className="space-y-3 mb-6 border-l-2 border-slate-800 pl-4">
+            <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-wider text-slate-400">
+              <Calendar size={14} className="text-purple-500" />
               <span>{new Date(event.date).toLocaleDateString()}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-starlight/80">
-              <Clock size={16} className="text-accent" />
+            <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-wider text-slate-400">
+              <Clock size={14} className="text-purple-500" />
               <span>{event.time || "TBA"}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-starlight/80">
-              <MapPin size={16} className="text-accent" />
+            <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-wider text-slate-400">
+              <MapPin size={14} className="text-purple-500" />
               <span>{event.location || event.venue?.name || "Online"}</span>
             </div>
           </div>
 
-          <div className="w-full py-3 rounded-xl bg-white/5 group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-indigo-600 group-hover:text-white border border-white/10 group-hover:border-violet-500 transition-all duration-300 flex items-center justify-center gap-2 font-medium transform-z-30 shadow-lg shadow-transparent group-hover:shadow-violet-500/25">
-            View Details
-            <ArrowRight
-              size={16}
-              className="group-hover:translate-x-1 transition-transform"
-            />
+          <div className="w-full py-3 bg-white/5 border border-white/5 flex items-center justify-center gap-2 text-slate-400 group-hover:text-white group-hover:border-purple-500/30 transition-all duration-300">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em]">
+              [ VIEW DETAILS ]
+            </span>
           </div>
         </div>
       </Link>

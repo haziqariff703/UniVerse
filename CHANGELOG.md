@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **2026-01-18**: Refactored `Categories.jsx` to "Bento Grid" layout with blueprint styling and `+` corner markers.
+- **2026-01-18**: Upgraded `EventCard.jsx` with "Spotlight" mouse-tracking effect, monochrome glass aesthetic, and noise placeholders.
+- **2026-01-18**: Replaced static Hero image with interactive **Spline 3D Scene** (Glass Torus) using `@splinetool/react-spline`. Implemented layout overlap strategy for unified design.
+- **2026-01-18**: Refactored `Hero.jsx` to "High-End Engineering" asymmetrical split-screen layout with left-aligned typography and integrated student image (glow/mask effects).
+- **2026-01-18**: Implemented "Live Metrics" section in `Stats.jsx`, replacing static icons with physics-based counting animations (`CountUp.jsx`) and corporate-styled `StatCard.jsx`.
+- **2026-01-18**: Updated `Squares` background with "living" flicker effect (`flickerProbability`) and memoization for performance.
+- **2026-01-18**: Refined global typography (`Inter` font weights/tracking) and button interactions ("solid-to-invert" physics).
 - **2026-01-15**: Created `adminController.js` with dashboard stats, user management (CRUD), and event listing endpoints.
 - **2026-01-15**: Created `adminRoutes.js` with RBAC-protected routes (admin-only access).
 - **2026-01-15**: Created `UsersList.jsx` component with search, role filter, pagination, role update, and delete functionality.

@@ -1,29 +1,9 @@
-import React, { useRef } from "react";
+import React, { useRef, Suspense } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import Spline from "@splinetool/react-spline";
 
-const StaggeredText = ({ text, className, delay = 0 }) => {
-  const words = text.split(" ");
-  return (
-    <motion.h1 className={className}>
-      {words.map((word, i) => (
-        <span key={i} className="inline-block overflow-hidden">
-          <motion.span
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            transition={{
-              duration: 0.5,
-              delay: delay + i * 0.05,
-              ease: [0.33, 1, 0.68, 1],
-            }}
-            className="inline-block mr-2 sm:mr-4"
-          >
-            {word}
-          </motion.span>
-        </span>
-      ))}
-    </motion.h1>
-  );
-};
+import SplitText from "@/components/ui/SplitText";
+import BlurText from "@/components/ui/BlurText";
 
 const Hero = () => {
   const containerRef = useRef(null);
@@ -38,87 +18,92 @@ const Hero = () => {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden"
+      className="relative min-h-[90vh] flex flex-col md:flex-row items-center justify-between overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-void/20 z-0" />
 
+      {/* Left Column: Typography & Actions */}
       <motion.div
-        style={{ y, opacity }}
-        className="relative z-10 text-center px-4 max-w-5xl mx-auto"
+        style={{ opacity }}
+        className="w-full md:w-3/5 pl-6 md:pl-20 py-20 md:py-0 text-center md:text-left relative z-20 flex flex-col justify-center h-full items-center md:items-start"
       >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-8"
         >
-          <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent-glow text-sm font-medium mb-6 backdrop-blur-md">
-            Explore the Infinite
+          <span className="text-[10px] font-mono border border-slate-800 px-3 py-1.5 rounded-full text-slate-500 uppercase tracking-[0.3em] font-medium">
+            v1.0.4 // Active Network
           </span>
         </motion.div>
 
-        <div className="mb-6">
-          <StaggeredText
-            text="Discover Events"
-            className="text-5xl md:text-7xl font-neuemontreal font-bold leading-tight"
-            delay={0.1}
+        <div className="mb-8 max-w-5xl">
+          <SplitText
+            text="Direct. Find. Host. Experience."
+            className="text-6xl md:text-8xl font-black tracking-[-0.05em] leading-[1.1] text-white"
+            splitType="words"
+            staggerDelay={0.05}
+            from={{ opacity: 0, y: 15 }}
+            to={{ opacity: 1, y: 0 }}
           />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <span className="text-5xl md:text-7xl font-neuemontreal font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent via-purple-500 to-pink-500 animate-pulse-slow">
-              Beyond Boundaries
-            </span>
-          </motion.div>
         </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="text-starlight/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
-        >
-          Join the UniVerse community to find, host, and experience stellar
-          events across the galaxy. Your journey starts here.
-        </motion.p>
+        <div className="font-mono text-[12px] font-medium text-slate-500 uppercase tracking-[0.2em] max-w-[400px] mb-12 text-center md:text-left">
+          UNIFIED ECOSYSTEM // THE ALL-IN-ONE HUB FOR UITM PUNCAK PERDANA
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="flex gap-4 relative z-20"
         >
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-violet-500/25 transition-all"
+            className="relative overflow-hidden group bg-white text-black px-8 py-3 rounded-sm font-bold text-xs uppercase tracking-widest transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] z-10"
           >
-            Explore Events
+            <span className="relative z-10 group-hover:text-black transition-colors">
+              Explore Events
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-slate-300/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,#E2E8F0_0%,#501fce_50%,#E2E8F0_100%)] opacity-0 group-hover:opacity-10 mix-blend-overlay transition-opacity duration-300 pointer-events-none" />
           </motion.button>
           <motion.button
             whileHover={{
               scale: 1.05,
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              backgroundColor: "#ffffff",
+              color: "#000000",
             }}
             whileTap={{ scale: 0.95 }}
-            className="glass-panel px-8 py-4 rounded-full font-bold text-lg hover:border-accent/50 transition-all"
+            className="px-8 py-3 rounded-sm font-bold text-xs uppercase tracking-widest border border-slate-700 text-starlight hover:border-white transition-all duration-300"
           >
             Create Event
           </motion.button>
         </motion.div>
       </motion.div>
 
-      {/* Decorative floating elements */}
+      {/* Right Column: Visual Integration (The Overlap) */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+        className="w-full md:w-1/2 h-[600px] md:h-[85vh] relative md:absolute md:bottom-0 md:right-0 z-10 flex items-center justify-center pointer-events-auto md:-translate-x-[15%]"
+      >
+        <Suspense fallback={<div className="w-full h-full bg-transparent" />}>
+          <Spline
+            scene="https://prod.spline.design/VcfDGBmrN3GYOnOh/scene.splinecode"
+            className="w-full h-full"
+          />
+        </Suspense>
+      </motion.div>
+
+      {/* Decorative floating elements (Subtle) */}
       <motion.div
         animate={{ y: [-20, 20, -20] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 left-10 w-20 h-20 bg-accent/20 rounded-full blur-3xl pointer-events-none"
-      />
-      <motion.div
-        animate={{ y: [20, -20, 20] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-1/4 right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-1/4 left-10 w-20 h-20 bg-accent/10 rounded-full blur-3xl pointer-events-none z-0"
       />
     </section>
   );
