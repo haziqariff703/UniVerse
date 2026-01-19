@@ -1,5 +1,16 @@
-import React from "react";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
+import { motion } from "framer-motion"; // Actually it IS used in CommunityCard (L18), wait.
+// Ah, the lint error said line 2, but CommunityCard uses it. Let me check the file content again.
+// Line 18: <motion.div ...
+// It IS used. The lint error might be stale or referring to a specific import if I used destructuring?
+// "import { motion } from "framer-motion";"
+// I will just leave it if it is used.
+// Wait, looking at previous output for Communities.jsx:
+// 2: import { motion } from "framer-motion";
+// ...
+// 18: <motion.div
+// It is used. I will ignore the lint error for now if it persists.
+
 import { Users, ExternalLink, Heart, Star } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 
@@ -19,36 +30,36 @@ const CommunityCard = ({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay }}
-      className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors group h-full flex flex-col"
+      className="bg-card backdrop-blur-xl border border-border rounded-2xl p-6 hover:bg-accent transition-colors group h-full flex flex-col shadow-lg"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white/20 group-hover:border-violet-500 transition-colors">
+        <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-border group-hover:border-violet-500 transition-colors">
           <img src={image} alt={name} className="w-full h-full object-cover" />
         </div>
-        <button className="p-2 bg-white/5 rounded-full hover:bg-violet-500 hover:text-white text-gray-400 transition-all">
+        <button className="p-2 bg-muted rounded-full hover:bg-violet-500 hover:text-white text-muted-foreground transition-all">
           <ExternalLink className="w-4 h-4" />
         </button>
       </div>
 
       <div className="mb-2">
-        <span className="text-xs font-semibold text-violet-400 uppercase tracking-wider">
+        <span className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider">
           {category}
         </span>
-        <h3 className="text-xl font-bold text-white mt-1 group-hover:text-violet-300 transition-colors">
+        <h3 className="text-xl font-bold text-card-foreground mt-1 group-hover:text-violet-500 dark:group-hover:text-violet-300 transition-colors">
           {name}
         </h3>
       </div>
 
-      <p className="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow">
+      <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-grow">
         {description}
       </p>
 
-      <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
-        <div className="flex items-center gap-1.5 text-sm text-gray-400">
-          <Users className="w-4 h-4 text-emerald-400" />
+      <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Users className="w-4 h-4 text-emerald-500" />
           <span>{members} Members</span>
         </div>
-        <div className="text-gray-500 hover:text-pink-500 transition-colors">
+        <div className="text-muted-foreground hover:text-pink-500 transition-colors">
           <Heart className="w-5 h-5" />
         </div>
       </div>
@@ -121,7 +132,7 @@ const Communities = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-4 md:px-6">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -129,7 +140,7 @@ const Communities = () => {
           className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6"
         >
           <div>
-            <h1 className="text-4xl md:text-6xl font-neuemontreal font-bold text-white mb-4 flex flex-col md:block">
+            <h1 className="text-4xl md:text-6xl font-neuemontreal font-bold text-foreground mb-4 flex flex-col md:block">
               Explore{" "}
               <GradientText
                 colors={["#7c3aed", "#a78bfa", "#7c3aed", "#a78bfa", "#7c3aed"]}
@@ -140,7 +151,7 @@ const Communities = () => {
                 Communities
               </GradientText>
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl">
+            <p className="text-xl text-muted-foreground max-w-2xl">
               Connect with like-minded students, join clubs, and be part of the
               vibrant campus culture.
             </p>

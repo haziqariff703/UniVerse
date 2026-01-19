@@ -58,7 +58,7 @@ exports.getEventById = async (req, res) => {
 /**
  * @desc    Create a new event
  * @route   POST /api/events
- * @access  Private (Admin/Staff)
+ * @access  Private (Admin/Organizer)
  */
 exports.createEvent = async (req, res) => {
   try {

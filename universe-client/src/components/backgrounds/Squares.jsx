@@ -17,17 +17,21 @@ const Squares = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      // Use offsetWidth/Height if available, else fallback to window inner dimensions
+      // This solves the issue where offset is 0 on initial mount
+      canvas.width = canvas.offsetWidth || window.innerWidth;
+      canvas.height = canvas.offsetHeight || window.innerHeight;
+
       numSquaresX.current = Math.ceil(canvas.width / squareSize) + 1;
       numSquaresY.current = Math.ceil(canvas.height / squareSize) + 1;
     };
 
     window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    resizeCanvas(); // Initial call
 
     const drawGrid = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -10,6 +10,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
+const auditRoutes = require("./routes/auditRoutes");
 
 // Middleware
 app.use(cors());
@@ -20,6 +21,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin/audit-logs", auditRoutes);
 
 // Database Connection
 mongoose

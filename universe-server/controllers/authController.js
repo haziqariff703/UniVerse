@@ -9,16 +9,35 @@ const jwt = require('jsonwebtoken');
  */
 exports.register = async (req, res) => {
   try {
-    const { student_id, name, email, password, role, preferences } = req.body;
+    const { 
+      student_id, 
+      name, 
+      email, 
+      password, 
+      role, 
+      preferences,
+      ic_number,
+      gender,
+      date_of_birth
+    } = req.body;
+
+    // Sanitize unique fields: convert empty strings to undefined
+    const sanitizedStudentId = student_id === "" ? undefined : student_id;
+    const sanitizedIcNumber = ic_number === "" ? undefined : ic_number;
 
     // Check if user already exists
+    // Build query dynamically based on what's provided
+    const orConditions = [{ email }];
+    if (sanitizedStudentId) orConditions.push({ student_id: sanitizedStudentId });
+    if (sanitizedIcNumber) orConditions.push({ ic_number: sanitizedIcNumber });
+
     const existingUser = await User.findOne({ 
-      $or: [{ email }, { student_id }] 
+      $or: orConditions
     });
     
     if (existingUser) {
       return res.status(400).json({ 
-        message: 'User with this email or student ID already exists.' 
+        message: 'User with this email, student ID, or IC number already exists.' 
       });
     }
 
@@ -32,12 +51,15 @@ exports.register = async (req, res) => {
 
     // Create new user
     const user = new User({
-      student_id,
+      student_id: sanitizedStudentId,
       name,
       email,
       password: hashedPassword,
       role: assignedRole,
-      preferences: preferences || []
+      preferences: preferences || [],
+      ic_number: sanitizedIcNumber,
+      gender,
+      date_of_birth
     });
 
     await user.save();
@@ -58,7 +80,9 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        preferences: user.preferences
+        preferences: user.preferences,
+        ic_number: user.ic_number,
+        gender: user.gender
       }
     });
   } catch (error) {

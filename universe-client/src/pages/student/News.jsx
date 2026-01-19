@@ -1,61 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, ChevronRight, Share2, MessageCircle } from "lucide-react";
-import GradientText from "@/components/ui/GradientText";
-
-const NewsCard = ({ title, date, category, excerpt, image, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay }}
-    className="group relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden hover:border-violet-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/10"
-  >
-    <div className="aspect-video overflow-hidden">
-      <img
-        src={image}
-        alt={title}
-        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-      />
-      <div className="absolute top-4 left-4">
-        <span className="px-3 py-1 text-xs font-semibold bg-violet-600/90 text-white rounded-full backdrop-blur-sm">
-          {category}
-        </span>
-      </div>
-    </div>
-
-    <div className="p-6">
-      <div className="flex items-center gap-4 text-gray-400 text-sm mb-3">
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-4 h-4 text-violet-400" />
-          <span>{date}</span>
-        </div>
-      </div>
-
-      <h3 className="text-xl font-bold text-white mb-3 group-hover:text-violet-300 transition-colors">
-        {title}
-      </h3>
-
-      <p className="text-gray-400 mb-6 text-sm leading-relaxed">{excerpt}</p>
-
-      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-        <button className="text-sm font-medium text-white hover:text-violet-300 flex items-center gap-1 transition-colors">
-          Read More <ChevronRight className="w-4 h-4" />
-        </button>
-        <div className="flex gap-3">
-          <button className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors">
-            <Share2 className="w-4 h-4" />
-          </button>
-          <button className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors">
-            <MessageCircle className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  </motion.div>
-);
+import HeroCarousel from "@/components/news/HeroCarousel";
+import SearchFilter from "@/components/news/SearchFilter";
+import NewsCard from "@/components/news/NewsCard";
+import Sidebar from "@/components/news/Sidebar";
 
 const News = () => {
-  const newsItems = [
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // Mock Data
+  const carouselSlides = [
     {
       id: 1,
       title: "University Announces New AI Research Center",
@@ -64,7 +19,7 @@ const News = () => {
       excerpt:
         "A state-of-the-art facility dedicated to advancing artificial intelligence research and development has been approved for construction.",
       image:
-        "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1200",
     },
     {
       id: 2,
@@ -74,7 +29,7 @@ const News = () => {
       excerpt:
         "Join us for the biggest sporting event of the year. Competitions include football, basketball, athletics, and e-sports.",
       image:
-        "https://images.unsplash.com/photo-1461896836934-ffe607ba0111?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1461896836934-ffe607ba0111?auto=format&fit=crop&q=80&w=1200",
     },
     {
       id: 3,
@@ -84,15 +39,18 @@ const News = () => {
       excerpt:
         "Three student-led startups have secured seed funding after an intense pitch competition judged by industry leaders.",
       image:
-        "https://images.unsplash.com/photo-1559136555-9303dff5a98b?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1559136555-9303dff5a98b?auto=format&fit=crop&q=80&w=1200",
     },
+  ];
+
+  const newsItems = [
     {
       id: 4,
       title: "Library Hours Extended for Finals",
       date: "March 08, 2026",
       category: "Campus Life",
       excerpt:
-        "Starting next week, the central library will remain open 24/7 to support students preparing for end-of-semester examinations.",
+        "Starting next week, the central library will remain open 24/7 to support students preparing for end-of-semester examinations. The new schedule accommodates late-night study sessions.",
       image:
         "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=800",
     },
@@ -102,7 +60,7 @@ const News = () => {
       date: "March 05, 2026",
       category: "Events",
       excerpt:
-        "Students from over 50 countries showcased their traditions, food, and music in a vibrant celebration of diversity.",
+        "Students from over 50 countries showcased their traditions, food, and music in a vibrant celebration of diversity. The event drew a record crowd of over 5,000 attendees.",
       image:
         "https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&q=80&w=800",
     },
@@ -112,55 +70,123 @@ const News = () => {
       date: "March 01, 2026",
       category: "Sustainability",
       excerpt:
-        "The campus is going green with the installation of solar panels and a new recycling program aimed at reducing carbon footprint.",
+        "The campus is going green with the installation of solar panels and a new recycling program aimed at reducing our carbon footprint by 30% over the next five years.",
       image:
         "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
     },
+    {
+      id: 7,
+      title: "Computer Science Department Hackathon",
+      date: "Feb 28, 2026",
+      category: "Academic",
+      excerpt:
+        "Over 200 students participated in the 24-hour hackathon, developing innovative solutions for local community problems. The winning team created an app for food waste reduction.",
+      image:
+        "https://images.unsplash.com/photo-1504384308090-c54be3855833?auto=format&fit=crop&q=80&w=800",
+    },
   ];
 
+  const popularPosts = [
+    {
+      id: 101,
+      title: "Top 10 Study Spots on Campus",
+      date: "Feb 20, 2026",
+      category: "Guide",
+      image:
+        "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=200",
+    },
+    {
+      id: 102,
+      title: "Alumni Success Story: Sarah Chen",
+      date: "Feb 18, 2026",
+      category: "Alumni",
+      image:
+        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200",
+    },
+    {
+      id: 103,
+      title: "Guide to Campus Clubs & Societies",
+      date: "Feb 15, 2026",
+      category: "Life",
+      image:
+        "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=200",
+    },
+    {
+      id: 104,
+      title: "Internship Opportunities Fair",
+      date: "Feb 10, 2026",
+      category: "Career",
+      image:
+        "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=200",
+    },
+  ];
+
+  const categories = [
+    "Academic",
+    "Sports",
+    "Innovation",
+    "Campus Life",
+    "Events",
+    "Sustainability",
+  ];
+
+  const filteredNews = newsItems.filter((item) => {
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
-    <div className="min-h-screen pt-28 pb-20 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
-        >
-          <h1 className="text-4xl md:text-6xl font-neuemontreal font-bold text-white mb-6 flex flex-col md:block items-center">
-            Campus{" "}
-            <GradientText
-              colors={["#7c3aed", "#a78bfa", "#7c3aed", "#a78bfa", "#7c3aed"]}
-              animationSpeed={3}
-              showBorder={false}
-              className="px-0"
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
+      <div className="max-w-7xl mx-auto space-y-12">
+        {/* Hero Section */}
+        <section>
+          <HeroCarousel slides={carouselSlides} />
+        </section>
+
+        {/* Main Content Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+          {/* Main Feed */}
+          <div className="lg:col-span-2 space-y-8">
+            <SearchFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              onSearch={setSearchTerm}
+            />
+
+            <div className="space-y-8">
+              {filteredNews.length > 0 ? (
+                filteredNews.map((item, index) => (
+                  <NewsCard key={item.id} {...item} delay={index * 0.1} />
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-10">
+                  No news found matching your criteria.
+                </p>
+              )}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="mt-12 text-center"
             >
-              News
-            </GradientText>
-          </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Stay updated with the latest happenings, achievements, and
-            announcements from around the university.
-          </p>
-        </motion.div>
+              <button className="bg-muted hover:bg-accent text-foreground px-8 py-3 rounded-full font-medium transition-colors border border-border hover:border-violet-500/50">
+                Load More Stories
+              </button>
+            </motion.div>
+          </div>
 
-        {/* Featured News / Hero Section could go here if requested, keeping it simple grid for now */}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {newsItems.map((item, index) => (
-            <NewsCard key={item.id} {...item} delay={index * 0.1} />
-          ))}
+          {/* Sidebar */}
+          <aside className="lg:col-span-1">
+            <Sidebar popularPosts={popularPosts} categories={categories} />
+          </aside>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
-          <button className="bg-white/5 hover:bg-white/10 text-white px-8 py-3 rounded-full font-medium transition-colors border border-white/10 hover:border-violet-500/50">
-            Load More Stories
-          </button>
-        </motion.div>
       </div>
     </div>
   );

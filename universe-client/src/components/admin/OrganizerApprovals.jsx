@@ -29,13 +29,13 @@ const OrganizerApprovals = ({ onBack }) => {
         "http://localhost:5000/api/admin/organizers/pending",
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to fetch pending organizers");
 
       const data = await response.json();
-      setOrganizers(data.organizers);
+      setOrganizers(data.users || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,7 +52,7 @@ const OrganizerApprovals = ({ onBack }) => {
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to approve organizer");
@@ -74,7 +74,7 @@ const OrganizerApprovals = ({ onBack }) => {
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to reject organizer");

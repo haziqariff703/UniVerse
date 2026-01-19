@@ -61,18 +61,18 @@ const ClubDetails = () => {
 
   if (!club)
     return (
-      <div className="min-h-screen pt-28 flex justify-center text-white text-xl">
+      <div className="min-h-screen pt-28 flex justify-center text-foreground text-xl">
         Loading...
       </div>
     );
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-6">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate("/communities")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Communities
         </button>
@@ -84,24 +84,26 @@ const ClubDetails = () => {
           {/* Left Column: Details & Perks */}
           <div className="lg:col-span-2 space-y-8">
             <section>
-              <h2 className="text-2xl font-bold text-white mb-4">About Us</h2>
-              <p className="text-gray-300 leading-relaxed text-lg">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                About Us
+              </h2>
+              <p className="text-muted-foreground leading-relaxed text-lg">
                 {club.description}
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-bold text-white mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Member Perks
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {club.perks.map((perk, idx) => (
                   <div
                     key={idx}
-                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center gap-3"
+                    className="bg-card border border-border p-4 rounded-xl flex items-center gap-3"
                   >
                     <div className="w-2 h-2 rounded-full bg-violet-500" />
-                    <span className="text-gray-200">{perk}</span>
+                    <span className="text-muted-foreground">{perk}</span>
                   </div>
                 ))}
               </div>
@@ -109,15 +111,17 @@ const ClubDetails = () => {
 
             {/* Vibe Check Gallery (Placeholder) */}
             <section>
-              <h2 className="text-2xl font-bold text-white mb-4">Vibe Check</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                Vibe Check
+              </h2>
               <div className="grid grid-cols-3 gap-4 h-48">
-                <div className="bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-500">
+                <div className="bg-muted rounded-xl border border-border flex items-center justify-center text-muted-foreground">
                   Gallery Img 1
                 </div>
-                <div className="bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-500">
+                <div className="bg-muted rounded-xl border border-border flex items-center justify-center text-muted-foreground">
                   Gallery Img 2
                 </div>
-                <div className="bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-500">
+                <div className="bg-muted rounded-xl border border-border flex items-center justify-center text-muted-foreground">
                   Gallery Img 3
                 </div>
               </div>

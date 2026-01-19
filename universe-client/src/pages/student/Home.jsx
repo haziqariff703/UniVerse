@@ -66,16 +66,16 @@ const Home = () => {
       <main className="max-w-7xl mx-auto px-6 py-20" id="events">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-neuemontreal font-bold text-white mb-2">
+            <h2 className="text-4xl font-neuemontreal font-bold text-foreground mb-2">
               Upcoming Events
             </h2>
-            <p className="text-starlight/60">
+            <p className="text-muted-foreground">
               Curated experiences from across the universe.
             </p>
           </div>
           <Link
             to="/events"
-            className="hidden md:block text-accent hover:text-white transition-colors"
+            className="hidden md:block text-primary hover:text-foreground transition-colors"
           >
             View All &rarr;
           </Link>

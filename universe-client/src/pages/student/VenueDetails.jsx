@@ -83,17 +83,17 @@ const VenueDetails = () => {
 
   if (!venue)
     return (
-      <div className="min-h-screen pt-28 flex justify-center text-white text-xl">
+      <div className="min-h-screen pt-28 flex justify-center text-foreground text-xl">
         Loading Venue...
       </div>
     );
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-6">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         <button
           onClick={() => navigate("/venues")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Venues
         </button>
@@ -111,7 +111,7 @@ const VenueDetails = () => {
               <span className="px-3 py-1 bg-violet-600/90 backdrop-blur-md rounded-full text-xs font-mono text-white border border-white/10">
                 {venue.location_code}
               </span>
-              <span className="flex items-center gap-1 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs font-medium text-starlight border border-white/10">
+              <span className="flex items-center gap-1 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs font-medium text-white/90 border border-white/10">
                 <Users className="w-3 h-3" /> {venue.max_capacity} Capacity
               </span>
             </div>
@@ -127,13 +127,15 @@ const VenueDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Col: Facilities & Info */}
           <div className="lg:col-span-1 space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
-            <div className="glass-panel p-6 rounded-2xl">
-              <h3 className="text-xl font-bold text-white mb-4">Facilities</h3>
+            <div className="glass-panel p-6 rounded-2xl border border-border bg-card">
+              <h3 className="text-xl font-bold text-card-foreground mb-4">
+                Facilities
+              </h3>
               <div className="grid grid-cols-1 gap-3">
                 {venue.facilities.map((facility, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 text-starlight/80 p-2 rounded-lg bg-white/5 border border-white/5"
+                    className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted border border-border"
                   >
                     {getIconForFacility(facility)}
                     <span>{facility}</span>
@@ -143,16 +145,16 @@ const VenueDetails = () => {
             </div>
 
             <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-violet-900/20 to-indigo-900/20 border-violet-500/20">
-              <h3 className="text-lg font-bold text-white mb-2">
+              <h3 className="text-lg font-bold text-foreground mb-2">
                 Book This Venue?
               </h3>
-              <p className="text-sm text-starlight/70 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Organizers can request this venue when creating an event. Check
                 availability in the event creation flow.
               </p>
               <button
                 onClick={() => navigate("/organizer/create-event")}
-                className="w-full py-2 bg-accent hover:bg-accent/80 text-white rounded-lg font-medium transition-colors"
+                className="w-full py-2 bg-accent hover:bg-accent/80 text-accent-foreground rounded-lg font-medium transition-colors"
               >
                 Create Event Here
               </button>
@@ -161,8 +163,8 @@ const VenueDetails = () => {
 
           {/* Right Col: Upcoming Events */}
           <div className="lg:col-span-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 delay-300">
-            <h3 className="text-2xl font-bold text-white">
-              Upcoming Events_at {venue.name}
+            <h3 className="text-2xl font-bold text-foreground">
+              Upcoming Events at {venue.name}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {venue.upcomingEvents.map((event, idx) => (
@@ -174,7 +176,7 @@ const VenueDetails = () => {
               ))}
             </div>
             {venue.upcomingEvents.length === 0 && (
-              <div className="p-8 text-center border border-white/10 rounded-2xl bg-white/5 border-dashed text-gray-400">
+              <div className="p-8 text-center border border-border rounded-2xl bg-muted border-dashed text-muted-foreground">
                 No upcoming events scheduled at this venue.
               </div>
             )}

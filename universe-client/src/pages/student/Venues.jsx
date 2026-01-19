@@ -70,14 +70,14 @@ const Venues = () => {
   });
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
         <div>
-          <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold text-white mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold text-foreground mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             Venues
           </h1>
-          <p className="text-starlight/60 text-lg max-w-md animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
+          <p className="text-muted-foreground text-lg max-w-md animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
             Find the perfect space for your next event, from grand halls to
             intimate meeting rooms.
           </p>
@@ -86,22 +86,22 @@ const Venues = () => {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/40 w-5 h-5 group-focus-within:text-accent transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within:text-primary transition-colors" />
             <input
               type="text"
               placeholder="Search venues..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 bg-white/5 border border-white/10 px-12 py-3 text-white placeholder-starlight/30 focus:outline-none focus:border-accent transition-colors rounded-xl"
+              className="w-full sm:w-64 bg-background border border-border px-12 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors rounded-xl hover:bg-accent/50"
             />
           </div>
 
           <div className="relative">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/40 w-5 h-5" />
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <select
               value={capacityFilter}
               onChange={(e) => setCapacityFilter(e.target.value)}
-              className="appearance-none w-full sm:w-48 bg-white/5 border border-white/10 px-12 py-3 text-white focus:outline-none focus:border-accent transition-colors rounded-xl cursor-pointer"
+              className="appearance-none w-full sm:w-48 bg-background border border-border px-12 py-3 text-foreground focus:outline-none focus:border-primary transition-colors rounded-xl cursor-pointer hover:bg-accent/50"
             >
               <option className="bg-nebula" value="All">
                 All Sizes
@@ -137,7 +137,7 @@ const Venues = () => {
           </div>
         ))}
         {filteredVenues.length === 0 && (
-          <div className="col-span-full text-center py-20 text-starlight/50">
+          <div className="col-span-full text-center py-20 text-muted-foreground">
             No venues found matching your criteria.
           </div>
         )}

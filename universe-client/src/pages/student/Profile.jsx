@@ -23,12 +23,18 @@ import {
   Clock,
   LogOut,
   ChevronRight,
+  Zap,
+  Briefcase,
+  Users,
 } from "lucide-react";
+import { Navbar07 } from "@/components/ui/shadcn-io/navbar-07";
+import Lanyard from "@/components/ui/Lanyard";
+import StatCard from "@/components/profile/StatCard";
 
-// Minimalist Card Component
+// Minimalist Card Component for inner content
 const Card = ({ children, className = "" }) => (
   <div
-    className={`bg-neutral-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6 ${className}`}
+    className={`bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-sm ${className}`}
   >
     {children}
   </div>
@@ -55,6 +61,13 @@ const Profile = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Mock Stats (In a real app, these would come from the API)
+  const stats = [
+    { label: "Events Joined", value: "12", icon: Calendar },
+    { label: "Active Score", value: "850", progress: 85, icon: Zap },
+    { label: "Club Interviews", value: "3", suffix: "Pending", icon: Users },
+  ];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -172,7 +185,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-starlight animate-spin" />
+        <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     );
   }
@@ -182,294 +195,366 @@ const Profile = () => {
       onClick={() => setActiveTab(id)}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
         activeTab === id
-          ? "bg-white/10 text-white"
-          : "text-starlight/40 hover:text-white hover:bg-white/5"
+          ? "bg-accent text-accent-foreground border border-border/50"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
       }`}
     >
       <Icon className="w-4 h-4" />
       <span>{label}</span>
       {activeTab === id && (
-        <ChevronRight className="w-4 h-4 ml-auto text-starlight/50" />
+        <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50" />
       )}
     </button>
   );
 
+  const profileTabs = [
+    { id: "overview", label: "Overview", icon: Grid },
+    { id: "events", label: "My Events", icon: Calendar },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
   return (
-    <div className="min-h-screen pt-28 pb-16 px-4 sm:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Section */}
-          <div className="w-full lg:w-72 flex-shrink-0 space-y-6">
-            {/* Profile Snapshot */}
-            <Card className="flex flex-col items-center text-center p-8">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center mb-4 text-3xl font-bold text-white">
-                {formData.name?.charAt(0).toUpperCase() || "U"}
+    <div className="min-h-screen bg-background">
+      {/* Top Navigation specifically for Profile */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+        <Navbar07
+          logo={
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <User className="w-5 h-5 text-primary" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-1">
-                {formData.name}
-              </h2>
-              <p className="text-sm text-starlight/40 mb-4 capitalize">
-                {formData.role}
-              </p>
+              <span>My Profile</span>
+            </div>
+          }
+          tabs={profileTabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          userName={formData.name}
+          userEmail={formData.email}
+          userAvatar={null}
+          onSignOut={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigate("/login");
+          }}
+          className="border-none bg-transparent"
+        />
+      </div>
 
-              <div className="flex gap-2 mb-2">
-                {formData.socialLinks.linkedin && (
-                  <a
-                    href={formData.socialLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white/5 hover:text-blue-400 rounded-full transition-colors text-starlight/40"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                  </a>
-                )}
-                {formData.socialLinks.instagram && (
-                  <a
-                    href={formData.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white/5 hover:text-pink-400 rounded-full transition-colors text-starlight/40"
-                  >
-                    <Instagram className="w-4 h-4" />
-                  </a>
-                )}
-                {formData.socialLinks.tiktok && (
-                  <a
-                    href={formData.socialLinks.tiktok}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white/5 hover:text-white rounded-full transition-colors text-starlight/40"
-                  >
-                    <LinkIcon className="w-4 h-4" />
-                  </a>
-                )}
+      <div className="py-8 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            {/* LEFT COLUMN: Lanyard Only */}
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
+              <div className="relative w-full z-10 lg:sticky lg:top-24 h-[500px] lg:h-[650px] pointer-events-none">
+                <div className="absolute inset-0 pointer-events-auto">
+                  <Lanyard>
+                    <div className="w-full h-full bg-[#1a1a2e] text-white p-6 flex flex-col items-center justify-between shadow-2xl relative overflow-hidden">
+                      {/* Decor */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl -mr-10 -mt-10" />
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -ml-10 -mb-10" />
+
+                      {/* Header */}
+                      <div className="w-full flex justify-between items-start z-10">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-md border border-white/10">
+                            <Sparkles className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <span className="font-bold tracking-[0.2em] text-[10px] opacity-60">
+                            UNIVERSE
+                          </span>
+                        </div>
+                        <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-[10px] font-bold uppercase border border-emerald-500/30 flex items-center gap-1 backdrop-blur-md">
+                          <Shield className="w-3 h-3" />
+                          Verified
+                        </div>
+                      </div>
+
+                      {/* Profile Info */}
+                      <div className="flex flex-col items-center gap-5 my-4 z-10 w-full">
+                        <div className="w-32 h-32 rounded-[2rem] p-1.5 relative bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg shadow-violet-500/20">
+                          <div className="w-full h-full rounded-[1.7rem] bg-[#0f0f1b] flex items-center justify-center text-5xl font-black text-white overflow-hidden relative">
+                            {/* If image exists, use it, else initial */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/50 to-indigo-600/50 mix-blend-overlay" />
+                            {formData.name?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                          <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white text-violet-600 rounded-full border-[6px] border-[#1a1a2e] flex items-center justify-center shadow-sm">
+                            <CheckCircle className="w-5 h-5 fill-current" />
+                          </div>
+                        </div>
+                        <div className="text-center w-full">
+                          <h2 className="text-3xl font-black tracking-tight leading-none mb-2 truncate px-2">
+                            {formData.name || "Student"}
+                          </h2>
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-mono text-white/70">
+                            {formData.role || "Developer"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer Info */}
+                      <div className="w-full space-y-3 z-10">
+                        {/* Socials Row inside card */}
+                        <div className="flex justify-center gap-3">
+                          {Object.entries(formData.socialLinks).map(
+                            ([key, url]) =>
+                              url && (
+                                <div
+                                  key={key}
+                                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/5"
+                                >
+                                  {key === "linkedin" && (
+                                    <Linkedin className="w-4 h-4 text-white/70" />
+                                  )}
+                                  {key === "instagram" && (
+                                    <Instagram className="w-4 h-4 text-white/70" />
+                                  )}
+                                  {key === "tiktok" && (
+                                    <LinkIcon className="w-4 h-4 text-white/70" />
+                                  )}
+                                </div>
+                              ),
+                          )}
+                        </div>
+
+                        <div className="p-3 bg-black/20 rounded-xl border border-white/5 backdrop-blur-sm">
+                          <div className="flex justify-between items-center text-[10px] opacity-40 uppercase font-bold tracking-wider mb-1">
+                            <span>Student ID</span>
+                            <span>UniVerse 2026</span>
+                          </div>
+                          <div className="font-mono text-xl tracking-widest text-center opacity-90">
+                            {formData.student_id || "7209341"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Lanyard>
+                </div>
               </div>
-            </Card>
-
-            {/* Navigation */}
-            <div className="space-y-1">
-              <SidebarItem id="overview" label="Overview" icon={Grid} />
-              <SidebarItem id="events" label="My Events" icon={Calendar} />
-              <SidebarItem id="settings" label="Settings" icon={Settings} />
             </div>
 
-            {/* Sign Out (Example) */}
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-400/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </button>
-          </div>
+            {/* RIGHT COLUMN: Dashboard & Content */}
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6 pt-0">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {stats.map((stat, i) => (
+                  <StatCard key={i} {...stat} />
+                ))}
+              </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
-                {activeTab === "overview" && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Card className="p-6">
-                        <div className="flex items-center gap-3 mb-4 text-starlight/60">
-                          <Mail className="w-4 h-4" />
-                          <span className="text-sm font-medium">
-                            Email Address
-                          </span>
-                        </div>
-                        <p className="text-lg text-white font-medium">
-                          {formData.email}
-                        </p>
-                      </Card>
-                      <Card className="p-6">
-                        <div className="flex items-center gap-3 mb-4 text-starlight/60">
-                          <IdCard className="w-4 h-4" />
-                          <span className="text-sm font-medium">
-                            Student ID
-                          </span>
-                        </div>
-                        <p className="text-lg text-white font-medium">
-                          {formData.student_id}
-                        </p>
-                      </Card>
-                    </div>
-
-                    <Card>
-                      <h3 className="text-lg font-semibold text-white mb-6">
-                        Recent Activity
-                      </h3>
-                      <div className="text-center py-12 text-starlight/20">
-                        <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No recent activity</p>
-                      </div>
-                    </Card>
-                  </>
-                )}
-
-                {activeTab === "events" && (
-                  <Card className="min-h-[400px] flex flex-col items-center justify-center text-center">
-                    <Calendar className="w-12 h-12 text-starlight/20 mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      No events found
-                    </h3>
-                    <p className="text-starlight/40 max-w-sm">
-                      You haven't registered for any events yet. Check out the
-                      Events page to explore!
-                    </p>
-                  </Card>
-                )}
-
-                {activeTab === "settings" && (
-                  <div className="space-y-6">
-                    {error && (
-                      <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-300 text-sm">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                        {error}
-                      </div>
-                    )}
-                    {success && (
-                      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3 text-emerald-300 text-sm">
-                        <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                        {success}
-                      </div>
-                    )}
-
-                    <form onSubmit={handleSubmit}>
-                      <Card className="space-y-8">
-                        {/* Profile Details */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">
-                            Profile Details
-                          </h3>
-                          <div className="grid gap-6">
-                            <div className="space-y-2">
-                              <label className="text-xs font-medium text-starlight/40 uppercase tracking-wide">
-                                Display Name
-                              </label>
-                              <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all"
-                              />
-                            </div>
+              {/* Main Tab Content */}
+              {/* No Sidebar logic anymore, strictly Navbar driven */}
+              <div className="w-full min-h-[400px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {activeTab === "overview" && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 rounded-2xl bg-muted/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                              Email Address
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {formData.email}
+                            </p>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-muted/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                              Role
+                            </p>
+                            <p className="font-medium text-foreground capitalize">
+                              {formData.role}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="h-px bg-white/5" />
-
-                        {/* Social Links */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">
-                            Social Links
-                          </h3>
-                          <div className="grid gap-4">
-                            <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                <Linkedin className="w-5 h-5 text-starlight/60" />
-                              </div>
-                              <input
-                                type="url"
-                                name="social_linkedin"
-                                value={formData.socialLinks.linkedin}
-                                onChange={handleChange}
-                                placeholder="LinkedIn Profile URL"
-                                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all placeholder:text-starlight/20"
-                              />
-                            </div>
-                            <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                <Instagram className="w-5 h-5 text-starlight/60" />
-                              </div>
-                              <input
-                                type="url"
-                                name="social_instagram"
-                                value={formData.socialLinks.instagram}
-                                onChange={handleChange}
-                                placeholder="Instagram Profile URL"
-                                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all placeholder:text-starlight/20"
-                              />
-                            </div>
-                            <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                <LinkIcon className="w-5 h-5 text-starlight/60" />
-                              </div>
-                              <input
-                                type="url"
-                                name="social_tiktok"
-                                value={formData.socialLinks.tiktok}
-                                onChange={handleChange}
-                                placeholder="TikTok Profile URL"
-                                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all placeholder:text-starlight/20"
-                              />
-                            </div>
+                        <Card>
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-semibold text-foreground">
+                              Recent Activity
+                            </h3>
+                            <button className="text-xs text-primary hover:underline">
+                              View All
+                            </button>
                           </div>
-                        </div>
-
-                        <div className="h-px bg-white/5" />
-
-                        {/* Security */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">
-                            Security
-                          </h3>
-                          <div className="grid gap-6">
-                            <div className="space-y-2">
-                              <label className="text-xs font-medium text-starlight/40 uppercase tracking-wide">
-                                New Password
-                              </label>
-                              <input
-                                type="password"
-                                name="newPassword"
-                                value={formData.newPassword}
-                                onChange={handleChange}
-                                placeholder="Enter new password to change"
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all placeholder:text-starlight/20"
-                              />
+                          <div className="text-center py-10">
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                              <Clock className="w-6 h-6 text-muted-foreground/50" />
                             </div>
-                            {formData.newPassword && (
+                            <p className="text-muted-foreground text-sm">
+                              No recent activity to show.
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+
+                    {activeTab === "events" && (
+                      <Card className="min-h-[300px] flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                          <Calendar className="w-8 h-8 text-muted-foreground/50" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          No events found
+                        </h3>
+                        <p className="text-muted-foreground max-w-sm text-sm">
+                          You haven't registered for any events yet. Check out
+                          the Events page to explore!
+                        </p>
+                        <button
+                          className="mt-6 px-6 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-full hover:bg-primary/90 transition-colors"
+                          onClick={() => navigate("/events")}
+                        >
+                          Browse Events
+                        </button>
+                      </Card>
+                    )}
+
+                    {activeTab === "settings" && (
+                      <div className="space-y-6">
+                        {error && (
+                          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 text-sm">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            {error}
+                          </div>
+                        )}
+                        {success && (
+                          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3 text-emerald-400 text-sm">
+                            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                            {success}
+                          </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                          {/* Profile Details */}
+                          <Card className="space-y-6">
+                            <div className="flex items-center gap-2 pb-4 border-b border-border">
+                              <User className="w-4 h-4 text-primary" />
+                              <h3 className="font-semibold text-foreground">
+                                Personal Details
+                              </h3>
+                            </div>
+                            <div className="space-y-4">
                               <div className="space-y-2">
-                                <label className="text-xs font-medium text-starlight/40 uppercase tracking-wide">
-                                  Current Password
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                  Display Name
+                                </label>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={formData.name}
+                                  onChange={handleChange}
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all focus:ring-1 focus:ring-primary/20"
+                                />
+                              </div>
+                            </div>
+                          </Card>
+
+                          {/* Social Links */}
+                          <Card className="space-y-6">
+                            <div className="flex items-center gap-2 pb-4 border-b border-border">
+                              <Briefcase className="w-4 h-4 text-primary" />
+                              <h3 className="font-semibold text-foreground">
+                                Social Links
+                              </h3>
+                            </div>
+                            <div className="grid gap-4">
+                              {["linkedin", "instagram", "tiktok"].map(
+                                (platform) => (
+                                  <div key={platform} className="flex gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                                      {platform === "linkedin" && (
+                                        <Linkedin className="w-5 h-5 text-muted-foreground" />
+                                      )}
+                                      {platform === "instagram" && (
+                                        <Instagram className="w-5 h-5 text-muted-foreground" />
+                                      )}
+                                      {platform === "tiktok" && (
+                                        <LinkIcon className="w-5 h-5 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <input
+                                      type="url"
+                                      name={`social_${platform}`}
+                                      value={formData.socialLinks[platform]}
+                                      onChange={handleChange}
+                                      placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
+                                      className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/50"
+                                    />
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </Card>
+
+                          {/* Security */}
+                          <Card className="space-y-6">
+                            <div className="flex items-center gap-2 pb-4 border-b border-border">
+                              <Shield className="w-4 h-4 text-primary" />
+                              <h3 className="font-semibold text-foreground">
+                                Security
+                              </h3>
+                            </div>
+                            <div className="grid gap-6">
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                  New Password
                                 </label>
                                 <input
                                   type="password"
-                                  name="currentPassword"
-                                  value={formData.currentPassword}
+                                  name="newPassword"
+                                  value={formData.newPassword}
                                   onChange={handleChange}
-                                  placeholder="Confirm with current password"
-                                  className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/20 transition-all placeholder:text-starlight/20"
+                                  placeholder="Enter new password to change"
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary/20"
                                 />
                               </div>
-                            )}
-                          </div>
-                        </div>
+                              {formData.newPassword && (
+                                <div className="space-y-2">
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    Current Password
+                                  </label>
+                                  <input
+                                    type="password"
+                                    name="currentPassword"
+                                    value={formData.currentPassword}
+                                    onChange={handleChange}
+                                    placeholder="Confirm with current password"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary/20"
+                                  />
+                                </div>
+                              )}
+                            </div>
 
-                        <div className="pt-4">
-                          <button
-                            type="submit"
-                            disabled={saving}
-                            className="px-8 py-3 bg-white text-black font-semibold rounded-xl hover:bg-starlight transition-colors disabled:opacity-50 flex items-center gap-2"
-                          >
-                            {saving ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Save className="w-4 h-4" />
-                            )}
-                            Save Changes
-                          </button>
-                        </div>
-                      </Card>
-                    </form>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
+                            <div className="pt-4 flex justify-end">
+                              <button
+                                type="submit"
+                                disabled={saving}
+                                className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-primary/25"
+                              >
+                                {saving ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Save className="w-4 h-4" />
+                                )}
+                                Save Changes
+                              </button>
+                            </div>
+                          </Card>
+                        </form>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
         </div>
       </div>

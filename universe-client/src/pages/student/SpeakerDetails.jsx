@@ -63,17 +63,17 @@ const SpeakerDetails = () => {
 
   if (!speaker)
     return (
-      <div className="min-h-screen pt-28 flex justify-center text-white text-xl">
+      <div className="min-h-screen pt-28 flex justify-center text-foreground text-xl">
         Loading Profile...
       </div>
     );
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-6">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         <button
           onClick={() => navigate("/speakers")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Speakers
         </button>
@@ -117,7 +117,7 @@ const SpeakerDetails = () => {
                     href={speaker.social_links.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-3 bg-white/5 rounded-full hover:bg-white hover:text-black text-gray-400 transition-all"
+                    className="p-3 bg-muted rounded-full hover:bg-white hover:text-black text-muted-foreground transition-all"
                   >
                     <Globe className="w-5 h-5" />
                   </a>
@@ -129,26 +129,26 @@ const SpeakerDetails = () => {
           {/* Right Col: Bio & Sessions */}
           <div className="lg:col-span-8 space-y-12">
             <div className="animate-in fade-in slide-in-from-right-6 duration-700 delay-200">
-              <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold text-white mb-2">
+              <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold text-foreground mb-2">
                 {speaker.name}
               </h1>
               <p className="text-xl text-violet-400 font-medium mb-6">
                 {speaker.role}
               </p>
 
-              <div className="glass-panel p-8 rounded-2xl relative overflow-hidden">
+              <div className="glass-panel p-8 rounded-2xl relative overflow-hidden bg-card border border-border">
                 <div className="absolute top-0 right-0 p-32 bg-violet-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <h3 className="text-2xl font-bold text-card-foreground mb-4 flex items-center gap-2">
                   <Award className="w-6 h-6 text-accent" /> About
                 </h3>
-                <p className="text-gray-300 leading-relaxed text-lg">
+                <p className="text-muted-foreground leading-relaxed text-lg">
                   {speaker.bio}
                 </p>
               </div>
             </div>
 
             <div className="animate-in fade-in slide-in-from-right-6 duration-700 delay-300">
-              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-accent" /> Speaking Activity
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

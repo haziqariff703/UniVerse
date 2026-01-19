@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Event = require('../models/event');
 const Registration = require('../models/registration');
 const Venue = require('../models/venue');
+const AuditLog = require('../models/auditLog');
 
 /**
  * Admin Controller
@@ -113,6 +114,17 @@ exports.updateUserRole = async (req, res) => {
       { new: true }
     ).select('-password');
 
+    if (user) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'UPDATE_USER_ROLE',
+        target_type: 'User',
+        target_id: user._id,
+        details: { role },
+        ip_address: req.ip
+      });
+    }
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -136,6 +148,17 @@ exports.deleteUser = async (req, res) => {
     }
 
     const user = await User.findByIdAndDelete(id);
+
+    if (user) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'DELETE_USER',
+        target_type: 'User',
+        target_id: id,
+        details: { email: user.email },
+        ip_address: req.ip
+      });
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -232,6 +255,17 @@ exports.approveEvent = async (req, res) => {
       { new: true }
     );
 
+    if (event) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'APPROVE_EVENT',
+        target_type: 'Event',
+        target_id: event._id,
+        details: { title: event.title },
+        ip_address: req.ip
+      });
+    }
+
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
@@ -256,6 +290,17 @@ exports.rejectEvent = async (req, res) => {
       { status: 'rejected' },
       { new: true }
     );
+
+    if (event) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'REJECT_EVENT',
+        target_type: 'Event',
+        target_id: event._id,
+        details: { title: event.title },
+        ip_address: req.ip
+      });
+    }
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
@@ -301,6 +346,17 @@ exports.approveOrganizer = async (req, res) => {
       { new: true }
     ).select('-password');
 
+    if (user) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'APPROVE_ORGANIZER',
+        target_type: 'User',
+        target_id: user._id,
+        details: { email: user.email },
+        ip_address: req.ip
+      });
+    }
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -325,6 +381,17 @@ exports.rejectOrganizer = async (req, res) => {
       { organizerRequest: false },
       { new: true }
     ).select('-password');
+
+    if (user) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'REJECT_ORGANIZER',
+        target_type: 'User',
+        target_id: user._id,
+        details: { email: user.email },
+        ip_address: req.ip
+      });
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -359,14 +426,29 @@ exports.getAllVenues = async (req, res) => {
  */
 exports.createVenue = async (req, res) => {
   try {
-    const { name, location_code, capacity } = req.body;
+    const { name, location_code, max_capacity, facilities, images } = req.body;
 
-    if (!name || !location_code) {
-      return res.status(400).json({ message: 'Name and location code are required' });
+    if (!name || !location_code || !max_capacity) {
+      return res.status(400).json({ message: 'Name, location code, and max capacity are required' });
     }
 
-    const venue = new Venue({ name, location_code, capacity: capacity || 100 });
+    const venue = new Venue({ 
+      name, 
+      location_code, 
+      max_capacity: parseInt(max_capacity),
+      facilities: facilities || [],
+      images: images || []
+    });
     await venue.save();
+
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'CREATE_VENUE',
+      target_type: 'Venue',
+      target_id: venue._id,
+      details: { name: venue.name },
+      ip_address: req.ip
+    });
 
     res.status(201).json({ message: 'Venue created successfully', venue });
   } catch (error) {
@@ -382,13 +464,30 @@ exports.createVenue = async (req, res) => {
 exports.updateVenue = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location_code, capacity } = req.body;
+    const { name, location_code, max_capacity, facilities, images } = req.body;
 
     const venue = await Venue.findByIdAndUpdate(
       id,
-      { name, location_code, capacity },
+      { 
+        name, 
+        location_code, 
+        max_capacity: max_capacity ? parseInt(max_capacity) : undefined,
+        facilities,
+        images
+      },
       { new: true }
     );
+
+    if (venue) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'UPDATE_VENUE',
+        target_type: 'Venue',
+        target_id: venue._id,
+        details: { name: venue.name },
+        ip_address: req.ip
+      });
+    }
 
     if (!venue) {
       return res.status(404).json({ message: 'Venue not found' });
@@ -410,6 +509,17 @@ exports.deleteVenue = async (req, res) => {
     const { id } = req.params;
 
     const venue = await Venue.findByIdAndDelete(id);
+
+    if (venue) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'DELETE_VENUE',
+        target_type: 'Venue',
+        target_id: id,
+        details: { name: venue.name },
+        ip_address: req.ip
+      });
+    }
 
     if (!venue) {
       return res.status(404).json({ message: 'Venue not found' });

@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   student_id: { 
     type: String, 
-    required: true, 
+    sparse: true, // Allows multiple null/undefined values
     unique: true,
-    trim: true 
+    trim: true,
+    minlength: 10,
+    maxlength: 10
   },
   name: { 
     type: String, 
@@ -29,6 +31,23 @@ const userSchema = new mongoose.Schema({
   preferences: {
     type: [String],
     default: []
+  },
+  ic_number: {
+    type: String,
+    sparse: true,
+    unique: true,
+    trim: true,
+    minlength: 12,
+    maxlength: 12
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female'],
+    required: false
+  },
+  date_of_birth: {
+    type: Date,
+    required: false
   },
   organizerRequest: {
     type: Boolean,

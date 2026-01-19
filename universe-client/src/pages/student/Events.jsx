@@ -106,14 +106,14 @@ const Events = () => {
   });
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-6 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
         <div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-neuemontreal font-bold text-white mb-4"
+            className="text-5xl md:text-7xl font-neuemontreal font-bold text-foreground mb-4"
           >
             Events
           </motion.h1>
@@ -121,7 +121,7 @@ const Events = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-starlight/60 text-lg max-w-md"
+            className="text-muted-foreground text-lg max-w-md"
           >
             Discover and join the most anticipated gatherings across the
             universe.
@@ -136,13 +136,13 @@ const Events = () => {
           className="flex flex-col sm:flex-row gap-4 w-full md:w-auto"
         >
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/40 w-5 h-5 group-focus-within:text-accent transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within:text-primary transition-colors" />
             <input
               type="text"
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 bg-white/5 border-b border-white/10 px-12 py-3 text-white placeholder-starlight/30 focus:outline-none focus:border-accent transition-colors bg-transparent rounded-t-lg hover:bg-white/5"
+              className="w-full sm:w-64 bg-background border-b border-border px-12 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors bg-transparent rounded-t-lg hover:bg-accent/50"
             />
           </div>
         </motion.div>
@@ -162,7 +162,7 @@ const Events = () => {
             className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
               selectedCategory === category
                 ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25"
-                : "bg-white/5 text-starlight/70 hover:bg-white/10 hover:text-white border border-white/5"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground border border-border"
             }`}
           >
             {category}
@@ -197,13 +197,13 @@ const Events = () => {
                 animate={{ opacity: 1 }}
                 className="col-span-full py-20 text-center"
               >
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="text-starlight/30 w-8 h-8" />
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="text-muted-foreground w-8 h-8" />
                 </div>
-                <h3 className="text-xl text-white font-medium mb-2">
+                <h3 className="text-xl text-foreground font-medium mb-2">
                   No events found
                 </h3>
-                <p className="text-starlight/50">
+                <p className="text-muted-foreground">
                   Try adjusting your search or category filters.
                 </p>
                 <button
@@ -211,7 +211,7 @@ const Events = () => {
                     setSearchTerm("");
                     setSelectedCategory("All");
                   }}
-                  className="mt-6 text-accent hover:text-white transition-colors text-sm font-medium"
+                  className="mt-6 text-primary hover:text-foreground transition-colors text-sm font-medium"
                 >
                   Clear all filters
                 </button>

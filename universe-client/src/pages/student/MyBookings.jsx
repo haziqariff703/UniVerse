@@ -50,13 +50,13 @@ const MyBookings = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "Upcoming":
-        return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+        return "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
       case "Past":
-        return "bg-starlight/10 text-starlight/60 border-starlight/20";
+        return "bg-muted text-muted-foreground border-border";
       case "Canceled":
-        return "bg-rose-500/20 text-rose-400 border-rose-500/30";
+        return "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30";
       default:
-        return "bg-starlight/10 text-starlight";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -64,27 +64,27 @@ const MyBookings = () => {
     <div className="pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold text-starlight mb-2 text-glow">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 text-glow">
             My{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
               Bookings
             </span>
           </h1>
-          <p className="text-starlight/60 max-w-md">
+          <p className="text-muted-foreground max-w-md">
             Relive your past experiences and track your upcoming cosmic
             adventures.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-nebula/30 p-1 rounded-xl border border-starlight/10 backdrop-blur-sm">
+        <div className="flex items-center gap-2 bg-secondary p-1 rounded-xl border border-white/10 backdrop-blur-sm">
           {["all", "upcoming", "past", "canceled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 capitalize ${
                 filter === tab
-                  ? "bg-starlight/10 text-starlight shadow-lg"
-                  : "text-starlight/50 hover:text-starlight/80"
+                  ? "bg-card text-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab}
@@ -115,29 +115,29 @@ const MyBookings = () => {
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                        booking.status
+                        booking.status,
                       )}`}
                     >
                       {booking.status}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-starlight/40">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Tag size={12} />
                       {booking.category}
                     </span>
                   </div>
-                  <h3 className="text-2xl font-bold text-starlight mb-4 group-hover:text-violet-400 transition-colors">
+                  <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors">
                     {booking.title}
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 text-starlight/60">
-                      <div className="w-8 h-8 rounded-lg bg-starlight/5 flex items-center justify-center text-violet-400 flex-shrink-0">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-violet-500 dark:text-violet-400 flex-shrink-0">
                         <Calendar size={16} />
                       </div>
                       <span className="text-sm">{booking.date}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-starlight/60">
-                      <div className="w-8 h-8 rounded-lg bg-starlight/5 flex items-center justify-center text-violet-400 flex-shrink-0">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-violet-500 dark:text-violet-400 flex-shrink-0">
                         <MapPin size={16} />
                       </div>
                       <span className="text-sm truncate">
@@ -148,10 +148,10 @@ const MyBookings = () => {
                 </div>
 
                 <div className="mt-6 flex items-center justify-between">
-                  <div className="text-xl font-bold text-starlight">
+                  <div className="text-xl font-bold text-foreground">
                     {booking.price}
                   </div>
-                  <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-starlight text-black font-semibold hover:bg-violet-400 hover:text-starlight transition-all duration-300">
+                  <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background font-semibold hover:bg-violet-500 hover:text-white dark:hover:bg-violet-400 dark:hover:text-black transition-all duration-300">
                     View Details
                     <ChevronRight size={18} />
                   </button>
@@ -160,14 +160,14 @@ const MyBookings = () => {
             </motion.div>
           ))
         ) : (
-          <div className="text-center py-20 glass-panel rounded-3xl border-dashed border-starlight/20">
-            <div className="w-20 h-20 bg-starlight/5 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Filter size={32} className="text-starlight/20" />
+          <div className="text-center py-20 glass-panel rounded-3xl border-dashed border-border">
+            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+              <Filter size={32} className="text-muted-foreground" />
             </div>
-            <h3 className="text-2xl font-bold text-starlight mb-2">
+            <h3 className="text-2xl font-bold text-foreground mb-2">
               No cosmic logs found
             </h3>
-            <p className="text-starlight/50">
+            <p className="text-muted-foreground">
               Try adjusting your filters to find your registrations.
             </p>
           </div>

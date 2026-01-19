@@ -8,7 +8,7 @@ router.get('/', eventController.getAllEvents);
 router.get('/:id', eventController.getEventById);
 
 // Protected routes (require authentication)
-router.post('/', auth, authorize('admin', 'staff'), eventController.createEvent);
+router.post('/', auth, authorize('admin', 'organizer'), eventController.createEvent);
 router.put('/:id', auth, eventController.updateEvent);
 router.delete('/:id', auth, authorize('admin'), eventController.deleteEvent);
 
