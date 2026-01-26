@@ -60,6 +60,10 @@ module.exports = {
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "spin-slow": "spin 12s linear infinite",
       },
+      transitionTimingFunction: {
+        "spring": "cubic-bezier(.5,.85,.25,1.1)",
+        "spring-extra": "cubic-bezier(.5,.85,.25,1.8)",
+      },
       keyframes: {
         float: {
           "0%, 100%": {

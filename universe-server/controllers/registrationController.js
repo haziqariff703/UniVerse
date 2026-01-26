@@ -81,6 +81,34 @@ exports.registerForEvent = async (req, res) => {
 };
 
 /**
+ * @desc    Get all registrations for a specific event (Organizer View)
+ * @route   GET /api/registrations/event/:id
+ * @access  Private (Organizer/Admin)
+ */
+exports.getEventRegistrations = async (req, res) => {
+  try {
+    const event_id = req.params.id;
+    
+    // Verify ownership
+    const event = await Event.findById(event_id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    
+    if (event.organizer_id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Not authorized to view these registrations." });
+    }
+
+    const registrations = await Registration.find({ event_id })
+      .sort({ booking_time: -1 });
+
+    res.status(200).json(registrations);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
  * @desc    Get user's registrations (my bookings)
  * @route   GET /api/registrations/my-bookings
  * @access  Private

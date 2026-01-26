@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-01-21]
+
+### Fixed
+
+- **DynamicSteppedForm**: Added missing `motion` import from `framer-motion`.
+- **DynamicSteppedForm**: Replaced `useGSAP` hook with standard `useEffect` to fix React 19 compatibility issue causing "Invalid hook call" error that prevented organizer pages from loading.
+- **Tailwind Config**: Resolved ambiguous `cubic-bezier` class warnings by adding `spring` and `spring-extra` custom easing utilities and updating usages in `Navbar03`.
+
 ## [2026-01-20]
 
 ### Changed

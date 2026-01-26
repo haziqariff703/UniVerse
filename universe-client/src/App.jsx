@@ -41,6 +41,10 @@ const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage"));
 
 // Organizer Pages
 import CreateEvent from "./pages/organizer/CreateEvent";
+import MyEvents from "./pages/organizer/MyEvents";
+import EventDashboard from "./pages/organizer/EventDashboard";
+import EditEvent from "./pages/organizer/EditEvent";
+import ScanQR from "./pages/organizer/ScanQR";
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -239,6 +243,38 @@ function App() {
               </Route>
 
               {/* Protected Routes - Organizer Only */}
+              <Route
+                path="/organizer/my-events"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <MyEvents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/event/:id/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <EventDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/event/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <EditEvent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/event/:id/scan"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <ScanQR />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/organizer/create-event"
                 element={

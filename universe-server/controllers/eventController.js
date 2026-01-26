@@ -34,6 +34,24 @@ exports.getAllEvents = async (req, res) => {
 };
 
 /**
+ * @desc    Get all events created by the logged-in user
+ * @route   GET /api/events/my-events
+ * @access  Private (Organizer/Admin)
+ */
+exports.getMyEvents = async (req, res) => {
+  try {
+    const events = await Event.find({ organizer_id: req.user.id })
+      .populate('venue_id', 'name location_code')
+      .sort({ date_time: -1 }); // Newest first
+
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+
+/**
  * @desc    Get single event by ID
  * @route   GET /api/events/:id
  * @access  Public
