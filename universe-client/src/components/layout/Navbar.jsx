@@ -19,10 +19,13 @@ import {
   Moon,
   Sun,
   Menu, // Using Menu as Hamburger icon
+  Rocket,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
-const Navbar = ({ user, onToggleSidebar, collapsed }) => {
+import { motion, AnimatePresence } from "framer-motion";
+import GradientText from "@/components/ui/GradientText";
+
+const Navbar = ({ user, onToggleSidebar }) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -62,7 +65,24 @@ const Navbar = ({ user, onToggleSidebar, collapsed }) => {
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
 
-          {/* Optional: Show Breadcrumbs or Page Title here */}
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <motion.div
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Rocket className="text-primary w-6 h-6 flex-shrink-0" />
+            </motion.div>
+            <div className="overflow-hidden whitespace-nowrap">
+              <GradientText
+                colors={["#7c3aed", "#a78bfa", "#7c3aed"]}
+                className="text-lg font-bold font-neuemontreal"
+                showBorder={false}
+              >
+                UniVerse
+              </GradientText>
+            </div>
+          </Link>
         </div>
 
         {/* Right Side: Actions */}

@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import {
-  Rocket,
   LayoutGrid, // Dashboard/News
   Users, // Communities
   Calendar, // Events
@@ -12,13 +11,16 @@ import {
   Ticket, // My Bookings
   PlusCircle, // Organizer
 } from "lucide-react";
-import GradientText from "@/components/ui/GradientText";
 
 const MainSidebar = ({ user, collapsed }) => {
   const location = useLocation();
 
   // Define navigation items based on role
   const getNavItems = () => {
+    // Check if we are in an event context
+    const eventMatch = location.pathname.match(/\/organizer\/event\/([^/]+)/);
+    const eventId = eventMatch ? eventMatch[1] : null;
+
     if (!user) {
       return [
         { label: "Home", path: "/", icon: LayoutGrid },
@@ -30,8 +32,8 @@ const MainSidebar = ({ user, collapsed }) => {
     }
 
     if (user.role === "organizer") {
-      return [
-        { label: "My Events", path: "/events", icon: Calendar },
+      const baseItems = [
+        { label: "My Events", path: "/organizer/my-events", icon: Calendar },
         {
           label: "Create Event",
           path: "/organizer/create-event",
@@ -39,6 +41,34 @@ const MainSidebar = ({ user, collapsed }) => {
         },
         { label: "Venues", path: "/venues", icon: MapPin },
       ];
+
+      // If we are managing a specific event, add context links
+      if (eventId) {
+        return [
+          ...baseItems,
+          { type: "divider" },
+          {
+            label: "Dashboard",
+            path: `/organizer/event/${eventId}/dashboard`,
+            icon: LayoutGrid,
+            isSub: true,
+          },
+          {
+            label: "Edit Event",
+            path: `/organizer/event/${eventId}/edit`,
+            icon: Calendar,
+            isSub: true,
+          }, // Using Calendar icon as placeholder for Edit if generic Edit icon not imported
+          {
+            label: "Scan QR",
+            path: `/organizer/event/${eventId}/scan`,
+            icon: Calendar,
+            isSub: true,
+          }, // Using Calendar as placeholder, will fix icon imports next
+        ];
+      }
+
+      return baseItems;
     }
 
     // Student (default)
@@ -57,48 +87,30 @@ const MainSidebar = ({ user, collapsed }) => {
   return (
     <motion.div
       initial={false}
-      animate={{ width: collapsed ? 80 : 280 }}
+      animate={{ width: collapsed ? 0 : 280 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="h-screen sticky top-0 left-0 bg-background border-r border-border flex flex-col z-50 overflow-hidden text-foreground"
     >
       {/* 1. Header & Logo */}
-      <div className="p-6 flex items-center gap-3 h-20">
-        <Link to="/" className="flex items-center gap-3">
-          <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Rocket className="text-primary w-8 h-8 flex-shrink-0" />
-          </motion.div>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="overflow-hidden whitespace-nowrap"
-            >
-              <GradientText
-                colors={["#7c3aed", "#a78bfa", "#7c3aed"]}
-                className="text-xl font-bold font-neuemontreal"
-                showBorder={false}
-              >
-                UniVerse
-              </GradientText>
-            </motion.div>
-          )}
-        </Link>
+      <div className="p-6 flex items-center justify-between h-20">
+        <span className="text-muted-foreground text-sm font-medium">
+          Navigation
+        </span>
       </div>
 
       {/* 2. Navigation Items */}
       <div className="flex-1 px-4 py-4 space-y-2 overflow-y-auto no-scrollbar">
-        {!collapsed && (
-          <div className="px-2 mb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Menu
-            </h3>
-          </div>
-        )}
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
+          // Handle divider items
+          if (item.type === "divider") {
+            return (
+              <div
+                key={`divider-${index}`}
+                className="border-t border-border my-2"
+              />
+            );
+          }
+
           const isActive = location.pathname === item.path;
           return (
             <Link
@@ -117,15 +129,13 @@ const MainSidebar = ({ user, collapsed }) => {
                     : "text-muted-foreground group-hover:text-foreground"
                 }`}
               />
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="font-medium text-sm whitespace-nowrap"
-                >
-                  {item.label}
-                </motion.span>
-              )}
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="font-medium text-sm whitespace-nowrap"
+              >
+                {item.label}
+              </motion.span>
             </Link>
           );
         })}

@@ -6,7 +6,6 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import Squares from "@/components/backgrounds/Squares";
 // Context
 import { ThemeProvider } from "@/context/ThemeContext";
 
@@ -18,6 +17,7 @@ import Signup from "./pages/auth/Signup";
 import Home from "./pages/student/Home";
 import News from "./pages/student/News";
 import Communities from "./pages/student/Communities";
+import ClubProposal from "./pages/student/ClubProposal";
 import ClubDetails from "./pages/student/ClubDetails";
 import Events from "./pages/student/Events";
 import EventDetails from "./pages/student/EventDetails";
@@ -52,6 +52,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useState, useEffect } from "react";
 import MainSidebar from "./components/layout/MainSidebar";
 import Navbar from "./components/layout/Navbar";
+import { StarsBackground } from "@/components/animate-ui/components/backgrounds/stars";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -81,15 +82,18 @@ const Layout = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300 relative">
+      <div className="fixed inset-0 z-0">
+        <StarsBackground />
+      </div>
       <MainSidebar user={user} collapsed={sidebarCollapsed} />
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <Navbar
           user={user}
           collapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        <main className="flex-1 px-4 md:px-8 pb-8 pt-4 z-10 w-full max-w-7xl mx-auto">
+        <main className="flex-1 px-4 md:px-8 pb-8 pt-4 w-full max-w-7xl mx-auto">
           {children}
         </main>
       </div>
@@ -99,23 +103,9 @@ const Layout = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
         <div className="min-h-screen relative bg-background text-foreground transition-colors duration-300">
-          <div className="fixed inset-0 -z-10">
-            {/* Squares background can be made theme-aware if needed, but for now we keep it or adjust props dynamically if possible. 
-                Currently hardcoded to dark colors in original props. Let's make it more neutral or remove if it clashes with white mode. 
-                For now keeping it but it might be invisible in light mode if not adjusted. */}
-            <Squares
-              squareSize={40}
-              borderColor="rgba(128, 128, 128, 0.1)"
-              hoverFillColor="rgba(128, 128, 128, 0.1)"
-              speed={0.3}
-              direction="diagonal"
-              flickerProbability={0.1}
-            />
-          </div>
-
           <Layout>
             <Routes>
               {/* Public Routes */}
@@ -124,6 +114,7 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/news" element={<News />} />
               <Route path="/communities" element={<Communities />} />
+              <Route path="/start-club" element={<ClubProposal />} />
               <Route path="/communities/:id" element={<ClubDetails />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:id" element={<EventDetails />} />

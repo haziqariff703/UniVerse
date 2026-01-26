@@ -157,9 +157,12 @@ const Communities = () => {
             </p>
           </div>
 
-          <button className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-full font-medium transition-all shadow-lg shadow-violet-500/25 flex items-center gap-2">
+          <Link
+            to="/start-club"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-full font-medium transition-all shadow-lg shadow-violet-500/25 flex items-center gap-2"
+          >
             <Star className="w-4 h-4" /> Start a Club
-          </button>
+          </Link>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

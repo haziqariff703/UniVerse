@@ -40,6 +40,7 @@ exports.getAllEvents = async (req, res) => {
  */
 exports.getMyEvents = async (req, res) => {
   try {
+    console.log("Fetching events for organizer:", req.user.id);
     const events = await Event.find({ organizer_id: req.user.id })
       .populate('venue_id', 'name location_code')
       .sort({ date_time: -1 }); // Newest first
@@ -85,6 +86,9 @@ exports.createEvent = async (req, res) => {
       ...req.body,
       organizer_id: req.user.id
     };
+
+    console.log("Creating event for user:", req.user.id);
+    console.log("Event Data:", eventData);
 
     const newEvent = new Event(eventData);
     const savedEvent = await newEvent.save();

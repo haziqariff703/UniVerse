@@ -12,8 +12,10 @@ import {
   Download,
   MoreHorizontal,
   ArrowLeft,
+  Scan,
 } from "lucide-react";
 import SpotlightCard from "@/components/ui/SpotlightCard";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Simple charts support if recharts is installed, otherwise placeholder
 import {
@@ -22,7 +24,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
-  Legend,
 } from "recharts";
 
 const EventDashboard = () => {
@@ -34,12 +35,26 @@ const EventDashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      console.log("=== Fetching Dashboard Data ===");
+      console.log("Event ID from URL:", id);
+
       try {
         const token = localStorage.getItem("token");
+        console.log("Token present:", !!token);
 
         // Fetch Event Details
+        console.log(
+          "Fetching event from:",
+          `http://localhost:5000/api/events/${id}`,
+        );
         const eventRes = await fetch(`http://localhost:5000/api/events/${id}`);
+        console.log(
+          "Event Response Status:",
+          eventRes.status,
+          eventRes.ok ? "OK" : "FAILED",
+        );
         const eventData = await eventRes.json();
+        console.log("Event Data:", eventData);
 
         // Fetch Registrations
         const regRes = await fetch(
@@ -48,11 +63,25 @@ const EventDashboard = () => {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
+        console.log(
+          "Registration Response Status:",
+          regRes.status,
+          regRes.ok ? "OK" : "FAILED",
+        );
         const regData = await regRes.json();
+        console.log("Registration Data:", regData);
 
-        if (eventRes.ok && regRes.ok) {
+        if (eventRes.ok) {
+          console.log("Setting event state...");
           setEvent(eventData);
-          setRegistrations(regData);
+        } else {
+          console.log("Event fetch failed - NOT setting event state");
+        }
+
+        if (regRes.ok) {
+          setRegistrations(Array.isArray(regData) ? regData : []);
+        } else {
+          setRegistrations([]);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -64,29 +93,31 @@ const EventDashboard = () => {
     fetchDashboardData();
   }, [id]);
 
-  const filteredRegistrations = registrations.filter(
-    (reg) =>
-      reg.user_snapshot?.name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      reg.user_snapshot?.student_id?.includes(searchTerm) ||
-      reg.status.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredRegistrations = Array.isArray(registrations)
+    ? registrations.filter(
+        (reg) =>
+          reg.user_snapshot?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          reg.user_snapshot?.student_id?.includes(searchTerm) ||
+          reg.status?.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    : [];
 
   // Stats
   const totalRegistered = registrations.length;
   const checkedIn = registrations.filter(
-    (r) => r.status === "CheckedIn",
+    (r) => r && r.status === "CheckedIn",
   ).length;
   const cancelled = registrations.filter(
-    (r) => r.status === "Cancelled",
+    (r) => r && r.status === "Cancelled",
   ).length;
-  const pending = totalRegistered - checkedIn - cancelled;
+  const pending = Math.max(0, totalRegistered - checkedIn - cancelled);
 
   const chartData = [
-    { name: "Checked In", value: checkedIn, color: "#10b981" }, // emerald-500
-    { name: "Pending", value: pending, color: "#8b5cf6" }, // violet-500
-    { name: "Cancelled", value: cancelled, color: "#f43f5e" }, // rose-500
+    { name: "Checked In", value: checkedIn, color: "#10b981" },
+    { name: "Pending", value: pending, color: "#8b5cf6" },
+    { name: "Cancelled", value: cancelled, color: "#f43f5e" },
   ];
 
   if (loading) {
@@ -98,7 +129,15 @@ const EventDashboard = () => {
   }
 
   if (!event)
-    return <div className="pt-24 text-center text-white">Event not found</div>;
+    return (
+      <div className="pt-24 text-center text-foreground">
+        <h2 className="text-2xl font-bold">Event not found</h2>
+        <p className="text-muted-foreground">
+          The event you are looking for does not exist or you do not have
+          permission to view it.
+        </p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
@@ -133,9 +172,12 @@ const EventDashboard = () => {
           <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors">
             <Download size={18} /> Export List
           </button>
-          {/* <Link to={`/organizer/event/${id}/scan`} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-violet-600/20">
-                  <Scan size={18} /> Scan QR
-               </Link> */}
+          <Link
+            to={`/organizer/event/${id}/scan`}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-violet-600/20"
+          >
+            <Scan size={18} /> Scan QR
+          </Link>
         </div>
       </div>
 
@@ -173,31 +215,37 @@ const EventDashboard = () => {
           </div>
           <div className="w-48 h-48 relative flex-shrink-0">
             {/* Recharts Pie Chart */}
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  contentStyle={{
-                    backgroundColor: "#1f2937",
-                    borderRadius: "0.5rem",
-                    border: "none",
-                    color: "#fff",
-                  }}
-                  itemStyle={{ color: "#fff" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {totalRegistered > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      borderRadius: "0.5rem",
+                      border: "none",
+                      color: "#fff",
+                    }}
+                    itemStyle={{ color: "#fff" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full rounded-full border-4 border-white/5 flex items-center justify-center">
+                <span className="text-xs text-gray-500">No Data</span>
+              </div>
+            )}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-xs text-gray-400">Capacity</p>
@@ -309,4 +357,11 @@ const EventDashboard = () => {
   );
 };
 
-export default EventDashboard;
+// Wrap the export
+export default function EventDashboardWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <EventDashboard />
+    </ErrorBoundary>
+  );
+}
