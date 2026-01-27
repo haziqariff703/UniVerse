@@ -6,6 +6,7 @@ import Stats from "@/components/home/Stats";
 import Categories from "@/components/home/Categories";
 import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
+import Footer from "@/components/common/Footer";
 
 const Home = () => {
   const [events, setEvents] = useState([]);
@@ -106,6 +107,7 @@ const Home = () => {
 
       <Testimonials />
       <Newsletter />
+      <Footer />
     </>
   );
 };

@@ -1,3 +1,14 @@
+/* Clash Display Font */
+@font-face {
+  font-family: "Clash Display";
+  src:
+    url("/fonts/ClashDisplay-Variable.woff2") format("woff2"),
+    url("/fonts/ClashDisplay-Variable.woff") format("woff");
+  font-weight: 200 700;
+  font-display: swap;
+  font-style: normal;
+}
+
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 
 @tailwind base;
@@ -86,4 +97,16 @@ body {
   body {
     @apply text-foreground;
   }
+}
+
+/* Infinite Moving Cards Animation */
+@keyframes scroll {
+  to {
+    transform: translate(calc(-50% - 0.5rem));
+  }
+}
+
+.animate-scroll {
+  animation: scroll var(--animation-duration, 40s)
+    var(--animation-direction, forwards) linear infinite;
 }

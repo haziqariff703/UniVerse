@@ -53,6 +53,8 @@ module.exports = {
       fontFamily: {
         sans: ['"Inter var"', '"Plus Jakarta Sans"', "sans-serif"],
         inter: ['"Inter var"', "sans-serif"],
+        clash: ['"Clash Display"', "sans-serif"],
+        space: ['"Space Grotesk"', "monospace"],
         neuemontreal: ["Manrope", "sans-serif"],
         raleway: ["Raleway", "sans-serif"],
       },
