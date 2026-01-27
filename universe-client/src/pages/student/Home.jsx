@@ -66,10 +66,10 @@ const Home = () => {
       <main className="max-w-7xl mx-auto px-6 py-20" id="events">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-neuemontreal font-bold text-foreground mb-2">
+            <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">
               Upcoming Events
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-slate-400 leading-relaxed">
               Curated experiences from across the universe.
             </p>
           </div>

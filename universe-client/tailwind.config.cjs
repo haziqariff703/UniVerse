@@ -51,17 +51,22 @@ module.exports = {
         },
       },
       fontFamily: {
-        inter: ["Inter", "sans-serif"],
+        sans: ['"Inter var"', '"Plus Jakarta Sans"', "sans-serif"],
+        inter: ['"Inter var"', "sans-serif"],
         neuemontreal: ["Manrope", "sans-serif"],
         raleway: ["Raleway", "sans-serif"],
+      },
+      letterSpacing: {
+        "tighter-plus": "-0.05em", // Vercel-style ultra-tight tracking
       },
       animation: {
         float: "float 6s ease-in-out infinite",
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "pulse-ultra-slow": "pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "spin-slow": "spin 12s linear infinite",
       },
       transitionTimingFunction: {
-        "spring": "cubic-bezier(.5,.85,.25,1.1)",
+        spring: "cubic-bezier(.5,.85,.25,1.1)",
         "spring-extra": "cubic-bezier(.5,.85,.25,1.8)",
       },
       keyframes: {
@@ -81,5 +86,29 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), addVariablesForColors],
 };
+
+// Aceternity UI Plugin - Add CSS Variables for Colors
+function addVariablesForColors({ addBase, theme }) {
+  let allColors = flattenColorPalette(theme("colors"));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val]),
+  );
+
+  addBase({
+    ":root": newVars,
+  });
+}
+
+const flattenColorPalette = (colors) =>
+  Object.assign(
+    {},
+    ...Object.entries(colors).flatMap(([color, values]) =>
+      typeof values == "object"
+        ? Object.entries(values).map(([number, hex]) => ({
+            [color + (number === "DEFAULT" ? "" : `-${number}`)]: hex,
+          }))
+        : [{ [`${color}`]: values }],
+    ),
+  );

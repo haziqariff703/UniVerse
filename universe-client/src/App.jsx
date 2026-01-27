@@ -52,7 +52,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useState, useEffect } from "react";
 import MainSidebar from "./components/layout/MainSidebar";
 import Navbar from "./components/layout/Navbar";
-import { StarsBackground } from "@/components/animate-ui/components/backgrounds/stars";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -82,18 +82,39 @@ const Layout = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300 relative">
-      <div className="fixed inset-0 z-0">
-        <StarsBackground />
+    <div className="flex min-h-screen bg-gradient-to-b from-[#020617] via-[#030712] to-black text-foreground transition-colors duration-300 relative">
+      {/* Simplified Animated Beams - CSS Gradients (Above background, below content) */}
+      <div className="fixed inset-0 z-[1] pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 opacity-60">
+          {/* Animated gradient beams */}
+          <div
+            className="absolute inset-0 animate-pulse-ultra-slow"
+            style={{
+              background: `
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168, 85, 247, 0.5), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 50%, rgba(6, 182, 212, 0.4), transparent),
+                radial-gradient(ellipse 70% 50% at 20% 80%, rgba(168, 85, 247, 0.45), transparent)
+              `,
+            }}
+          />
+        </div>
       </div>
-      <MainSidebar user={user} collapsed={sidebarCollapsed} />
+
+      {/* Grain overlay - Cinematic texture above beams */}
+      <div
+        className="fixed inset-0 z-[0] opacity-[0.02] pointer-events-none mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+      {user && <MainSidebar user={user} collapsed={sidebarCollapsed} />}
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <Navbar
           user={user}
           collapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        <main className="flex-1 px-4 md:px-8 pb-8 pt-4 w-full max-w-7xl mx-auto">
+        <main className="flex-1 px-4 md:px-8 pb-8 pt-20 w-full max-w-7xl mx-auto">
           {children}
         </main>
       </div>
@@ -105,7 +126,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
-        <div className="min-h-screen relative bg-background text-foreground transition-colors duration-300">
+        <div className="min-h-screen relative bg-gradient-to-b from-[#020617] via-[#030712] to-black text-foreground transition-colors duration-300">
           <Layout>
             <Routes>
               {/* Public Routes */}

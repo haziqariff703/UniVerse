@@ -2,6 +2,37 @@
 
 ## [2026-01-27]
 
+### Added
+
+- **Inter Variable Font**: Premium SaaS typography with variable weights (supports custom weights like 550, 575).
+- **Custom Tracking**: `tracking-tighter-plus` (-0.05em) for Vercel-style ultra-tight text.
+- **3D Breathing Animation**: Spline object pulses with scale animation (1.0 → 1.04, 8s loop) for organic feel.
+- **Text Drop Shadow**: `drop-shadow-[0_0_40px_rgba(0,0,0,0.8)]` on headline for contrast against animated 3D art.
+- **3D Overlap Effect**: Spline positioned with `md:-mr-24` and `z-0` to tuck behind text (text at `z-30`).
+- **Background Beams**: Subtle CSS gradient nebula effect with ultra-slow pulse (8s) animation.
+- **Navbar (Vercel-style)**:
+  - Sliding pill hover animation using Framer Motion `layoutId`
+  - Scroll blur effect triggers at 20px (`bg-black/40`, `backdrop-blur-md`)
+  - Guest view: Login (ghost) + Sign Up (white capsule button)
+  - Logged-in view: User dropdown with integrated theme toggle, notifications, and settings
+  - max-w-1440px container for ultrawide monitor support
+- **Aceternity UI Integration**: BackgroundBeams component with flattenColorPalette plugin.
+- **Grain Overlay**: 2% opacity film texture for cinematic depth.
+
+### Changed
+
+- **Sidebar**: Now only visible for authenticated users (hidden for guests).
+- **Hamburger Toggle**: Conditionally rendered - only shows when user is logged in.
+- **Hero Typography**: Reduced headline size by 10% (`text-5xl md:text-7xl`), changed to `font-semibold` (600 weight).
+- **Hero Sub-headline**: Updated to "The definitive hub for student engagement and campus life." in `text-slate-400`.
+- **Spline Positioning**: Moved from `15%` to `5%` horizontal translation to create "tucked behind text" depth effect.
+- **Background**: Removed stars/particles, replaced with smooth gradient + 2% grain overlay for cinematic texture.
+- **Cards**: All components (EventCard, Categories, StatCard) now use ghost borders (`border-white/[3%]`) and floating shadows (`shadow-[0_0_80px_rgba(0,0,0,0.95)]`).
+- **Categories**: Glassmorphic cards (`bg-white/5`, `backdrop-blur-lg`, `border-white/10`).
+- **EventCard**: Ghost-glass styling with hover glow effect.
+- **Background**: Global navy-to-black gradient (`#020617` → `#000000`).
+- **Backend**: Implemented async MongoDB connection - server now waits for DB before starting (prevents buffering timeouts).
+
 ### Fixed
 
 - **Event Dashboard**: Fixed visibility issues by switching default theme to Dark Mode (aligning with `text-white` styling).

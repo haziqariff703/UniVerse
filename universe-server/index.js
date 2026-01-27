@@ -25,16 +25,29 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin/audit-logs", auditRoutes);
 app.use("/api/registrations", registrationRoutes);
 
-// Database Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("UniVerse Database Connected! ✅"))
-  .catch((err) => console.log("Database Connection Error: ❌", err));
-
 // Basic Route for Testing
 app.get("/", (req, res) => {
   res.send("UniVerse Backend is Online and Optimized! 🚀");
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Async Server Startup - Wait for DB Connection First
+const startServer = async () => {
+  try {
+    // 1. Connect to Database First (Use 127.0.0.1 for local stability)
+    await mongoose.connect(
+      process.env.MONGO_URI || "mongodb://127.0.0.1:27017/UniVerse",
+    );
+    console.log("UniVerse Database Connected! ✅");
+
+    // 2. ONLY THEN Start the Server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT} 🚀`);
+    });
+  } catch (error) {
+    console.error("Database Connection Failed! ❌", error.message);
+    process.exit(1); // Stop the process if we can't connect
+  }
+};
+
+startServer();
