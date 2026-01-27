@@ -13,19 +13,21 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 
-// Student/Public Pages
-import Home from "./pages/student/Home";
-import News from "./pages/student/News";
-import Communities from "./pages/student/Communities";
+// Public Pages
+import Home from "./pages/public/Home";
+import News from "./pages/public/News";
+import Communities from "./pages/public/Communities";
+import ClubDetails from "./pages/public/ClubDetails";
+import Events from "./pages/public/Events";
+import EventDetails from "./pages/public/EventDetails";
+import Venues from "./pages/public/Venues";
+import VenueDetails from "./pages/public/VenueDetails";
+import Speakers from "./pages/public/Speakers";
+import SpeakerDetails from "./pages/public/SpeakerDetails";
+import MyBookings from "./pages/public/MyBookings";
+
+// Student Pages
 import ClubProposal from "./pages/student/ClubProposal";
-import ClubDetails from "./pages/student/ClubDetails";
-import Events from "./pages/student/Events";
-import EventDetails from "./pages/student/EventDetails";
-import Venues from "./pages/student/Venues";
-import VenueDetails from "./pages/student/VenueDetails";
-import Speakers from "./pages/student/Speakers";
-import SpeakerDetails from "./pages/student/SpeakerDetails";
-import MyBookings from "./pages/student/MyBookings";
 import Notifications from "./pages/student/Notifications";
 import Profile from "./pages/student/Profile";
 
@@ -42,7 +44,9 @@ const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage"));
 // Organizer Pages
 import CreateEvent from "./pages/organizer/CreateEvent";
 import MyEvents from "./pages/organizer/MyEvents";
+import EventGuestList from "./pages/organizer/EventGuestList";
 import EventDashboard from "./pages/organizer/EventDashboard";
+
 import EditEvent from "./pages/organizer/EditEvent";
 import ScanQR from "./pages/organizer/ScanQR";
 
@@ -284,6 +288,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["organizer", "admin"]}>
                     <ScanQR />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/event/:id/guests"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <EventGuestList />
                   </ProtectedRoute>
                 }
               />

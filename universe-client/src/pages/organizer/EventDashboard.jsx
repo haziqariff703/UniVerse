@@ -5,84 +5,56 @@ import {
   Clock,
   MapPin,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
-  RotateCcw,
-  Search,
-  Download,
   MoreHorizontal,
   ArrowLeft,
   Scan,
+  Download,
+  Share2,
+  ArrowRight,
 } from "lucide-react";
-import SpotlightCard from "@/components/ui/SpotlightCard";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
-
-// Simple charts support if recharts is installed, otherwise placeholder
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-} from "recharts";
+import EventTimeline from "@/components/organizer/event-dashboard/EventTimeline";
+import EventTodoList from "@/components/organizer/event-dashboard/EventTodoList";
+import { InsightsPanel } from "@/components/organizer/event-dashboard";
+import GradientText from "@/components/ui/GradientText";
 
 const EventDashboard = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // Stats for the "Pills"
+  const totalRegistered = registrations.length;
+  // Calculate mock revenue for demo: $50 per person if price undefined
+  const ticketPrice = event?.ticketPrice || 50;
+  const revenue = totalRegistered * ticketPrice;
+
+  const daysLeft = event
+    ? Math.ceil(
+        (new Date(event.date_time) - new Date()) / (1000 * 60 * 60 * 24),
+      )
+    : 0;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      console.log("=== Fetching Dashboard Data ===");
-      console.log("Event ID from URL:", id);
-
       try {
         const token = localStorage.getItem("token");
-        console.log("Token present:", !!token);
 
         // Fetch Event Details
-        console.log(
-          "Fetching event from:",
-          `http://localhost:5000/api/events/${id}`,
-        );
         const eventRes = await fetch(`http://localhost:5000/api/events/${id}`);
-        console.log(
-          "Event Response Status:",
-          eventRes.status,
-          eventRes.ok ? "OK" : "FAILED",
-        );
         const eventData = await eventRes.json();
-        console.log("Event Data:", eventData);
+        if (eventRes.ok) setEvent(eventData);
 
         // Fetch Registrations
         const regRes = await fetch(
           `http://localhost:5000/api/registrations/event/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        console.log(
-          "Registration Response Status:",
-          regRes.status,
-          regRes.ok ? "OK" : "FAILED",
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const regData = await regRes.json();
-        console.log("Registration Data:", regData);
-
-        if (eventRes.ok) {
-          console.log("Setting event state...");
-          setEvent(eventData);
-        } else {
-          console.log("Event fetch failed - NOT setting event state");
-        }
-
-        if (regRes.ok) {
-          setRegistrations(Array.isArray(regData) ? regData : []);
-        } else {
-          setRegistrations([]);
-        }
+        if (regRes.ok) setRegistrations(Array.isArray(regData) ? regData : []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -93,271 +65,219 @@ const EventDashboard = () => {
     fetchDashboardData();
   }, [id]);
 
-  const filteredRegistrations = Array.isArray(registrations)
-    ? registrations.filter(
-        (reg) =>
-          reg.user_snapshot?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          reg.user_snapshot?.student_id?.includes(searchTerm) ||
-          reg.status?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    : [];
-
-  // Stats
-  const totalRegistered = registrations.length;
-  const checkedIn = registrations.filter(
-    (r) => r && r.status === "CheckedIn",
-  ).length;
-  const cancelled = registrations.filter(
-    (r) => r && r.status === "Cancelled",
-  ).length;
-  const pending = Math.max(0, totalRegistered - checkedIn - cancelled);
-
-  const chartData = [
-    { name: "Checked In", value: checkedIn, color: "#10b981" },
-    { name: "Pending", value: pending, color: "#8b5cf6" },
-    { name: "Cancelled", value: cancelled, color: "#f43f5e" },
-  ];
+  const recentRegistrations = registrations.slice(0, 10); // Only show top 10
 
   if (loading) {
     return (
       <div className="min-h-screen pt-24 pb-20 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  if (!event)
-    return (
-      <div className="pt-24 text-center text-foreground">
-        <h2 className="text-2xl font-bold">Event not found</h2>
-        <p className="text-muted-foreground">
-          The event you are looking for does not exist or you do not have
-          permission to view it.
-        </p>
-      </div>
-    );
+  if (!event) return null; // Or error view
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
-      <Link
-        to="/organizer/my-events"
-        className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft size={20} /> Back to My Events
-      </Link>
+    <div className="min-h-screen pt-14 pb-20 px-4 md:px-8 max-w-[1600px] mx-auto">
+      {/* Top Bar / Breadcrumb */}
+      <div className="flex justify-between items-center mb-8">
+        <Link
+          to="/organizer/my-events"
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-white transition-colors"
+        >
+          <ArrowLeft size={16} /> Back to Dashboard
+        </Link>
 
-      {/* Heaader */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-neuemontreal font-bold text-white mb-2">
-            {event.title}
-          </h1>
-          <div className="flex flex-wrap gap-4 text-gray-400 text-sm">
-            <span className="flex items-center gap-1">
-              <Calendar size={16} />{" "}
-              {new Date(event.date_time).toLocaleDateString()}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock size={16} />{" "}
-              {new Date(event.date_time).toLocaleTimeString()}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin size={16} /> {event.venue_id?.name || event.location}
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors">
-            <Download size={18} /> Export List
-          </button>
+        <div className="flex items-center gap-3">
           <Link
             to={`/organizer/event/${id}/scan`}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-violet-600/20"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-violet-50 transition-colors"
           >
-            <Scan size={18} /> Scan QR
+            <Scan size={16} /> Scan QR
           </Link>
+          <button className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+            <Share2 size={18} />
+          </button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <SpotlightCard className="p-6 rounded-2xl md:col-span-2 flex flex-col md:flex-row gap-8 items-center">
-          <div className="flex-1 space-y-6 w-full">
-            <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl">
-              <div>
-                <p className="text-gray-400 text-sm uppercase">
-                  Total Registrations
-                </p>
-                <p className="text-2xl font-bold text-white">
-                  {totalRegistered}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-violet-500/20 rounded-full flex items-center justify-center text-violet-400">
-                <Users size={20} />
-              </div>
+      {/* Header Section (Professional Control Bar Style) */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row justify-between items-end gap-6 border-b border-white/10 pb-6">
+          <div>
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Calendar size={12} /> Thursday, 20th February
+            </p>
+            <div className="mb-1 -ml-1">
+              <GradientText
+                colors={["#39FF14", "#40E0D0", "#39FF14"]}
+                animationSpeed={6}
+                showBorder={false}
+                className="text-3xl md:text-5xl font-neuemontreal font-bold"
+              >
+                Good Evening, Organizer
+              </GradientText>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/5">
-                <p className="text-emerald-400 text-sm uppercase mb-1">
-                  Checked In
-                </p>
-                <p className="text-2xl font-bold text-white">{checkedIn}</p>
-              </div>
-              <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/5">
-                <p className="text-rose-400 text-sm uppercase mb-1">
-                  Cancelled
-                </p>
-                <p className="text-2xl font-bold text-white">{cancelled}</p>
-              </div>
-            </div>
+            <p className="text-gray-400 text-sm mt-2 flex items-center gap-2">
+              Managing{" "}
+              <span className="text-white font-bold">{event.title}</span>
+              <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+              <MapPin size={12} /> {event.venue_id?.name || event.location}
+            </p>
           </div>
-          <div className="w-48 h-48 relative flex-shrink-0">
-            {/* Recharts Pie Chart */}
-            {totalRegistered > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: "#1f2937",
-                      borderRadius: "0.5rem",
-                      border: "none",
-                      color: "#fff",
-                    }}
-                    itemStyle={{ color: "#fff" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full rounded-full border-4 border-white/5 flex items-center justify-center">
-                <span className="text-xs text-gray-500">No Data</span>
-              </div>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
-                <p className="text-xs text-gray-400">Capacity</p>
-                <p className="text-lg font-bold text-white">
-                  {Math.round((totalRegistered / event.capacity) * 100)}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </SpotlightCard>
 
-        <SpotlightCard className="p-6 rounded-2xl bg-gradient-to-br from-violet-900/20 to-fuchsia-900/20">
-          <h3 className="text-lg font-bold text-white mb-6">Quick Actions</h3>
-          <div className="space-y-3">
-            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 text-left rounded-xl transition-colors flex items-center gap-3 text-sm text-gray-200">
-              <CheckCircle size={18} className="text-emerald-400" /> Manual
-              Check-in
-            </button>
-            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 text-left rounded-xl transition-colors flex items-center gap-3 text-sm text-gray-200">
-              <XCircle size={18} className="text-rose-400" /> Cancel
-              Registration
-            </button>
-            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 text-left rounded-xl transition-colors flex items-center gap-3 text-sm text-gray-200">
-              <RotateCcw size={18} className="text-amber-400" /> Refund Ticket
-            </button>
-          </div>
-        </SpotlightCard>
-      </div>
-
-      {/* Attendee List */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Attendee List</h2>
-          <div className="relative w-64">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="Search attendee..."
-              className="w-full bg-white/5 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Stats Grid - High Density */}
+          <div className="grid grid-cols-3 gap-3 w-full lg:w-auto">
+            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
+              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+                <Clock size={12} className="text-violet-400" /> Countdown
+              </div>
+              <span className="text-2xl font-bold text-white">
+                {daysLeft > 0 ? daysLeft : "0"}
+              </span>
+              <span className="text-xs text-gray-400 ml-1">Days left</span>
+            </div>
+            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
+              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+                <CheckCircle2 size={12} className="text-emerald-400" />{" "}
+                Registered
+              </div>
+              <span className="text-2xl font-bold text-white">
+                {totalRegistered}
+              </span>
+              <span className="text-xs text-gray-400 ml-1">Guests</span>
+            </div>
+            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
+              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+                <span className="text-indigo-400">$</span> Revenue
+              </div>
+              <span className="text-2xl font-bold text-white">
+                ${revenue.toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-400 ml-1">Est.</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 bg-white/5 text-gray-400 text-sm">
-                <th className="p-4 font-medium">Student ID</th>
-                <th className="p-4 font-medium">Name</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium">Booking Time</th>
-                <th className="p-4 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRegistrations.length > 0 ? (
-                filteredRegistrations.map((reg) => (
-                  <tr
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Col - Attendee Overview (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* List Header */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-bold text-white">
+                Latest Registrations
+              </h3>
+            </div>
+            <Link
+              to={`/organizer/event/${id}/guests`}
+              className="flex items-center gap-1 text-sm font-medium text-violet-400 hover:text-white transition-colors group"
+            >
+              View Full Guest List{" "}
+              <ArrowRight
+                size={14}
+                className="group-hover:translate-x-1 transition-transform"
+              />
+            </Link>
+          </div>
+
+          {/* Clean Table List Summary */}
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 p-3 text-[10px] font-bold text-gray-500 uppercase border-b border-white/5 tracking-wider">
+              <div className="col-span-5">Name</div>
+              <div className="col-span-3">Status</div>
+              <div className="col-span-3">Registered</div>
+              <div className="col-span-1"></div>
+            </div>
+
+            <div className="divide-y divide-white/5">
+              {recentRegistrations.length > 0 ? (
+                recentRegistrations.map((reg) => (
+                  <div
                     key={reg._id}
-                    className="border-b border-white/5 hover:bg-white/[0.02] transition-colors text-sm text-gray-300"
+                    className="grid grid-cols-12 gap-2 p-3 items-center hover:bg-white/5 transition-colors group"
                   >
-                    <td className="p-4 font-mono text-white/50">
-                      {reg.user_snapshot?.student_id || "N/A"}
-                    </td>
-                    <td className="p-4 font-medium text-white">
-                      {reg.user_snapshot?.name || "Unknown"}
-                    </td>
-                    <td className="p-4">
+                    <div className="col-span-5 flex items-center gap-3">
+                      {/* Simple Avatar based on name */}
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 flex items-center justify-center text-xs font-bold text-white shadow-inner">
+                        {reg.user_snapshot?.name?.charAt(0) || "U"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white truncate">
+                          {reg.user_snapshot?.name || "Unknown Guest"}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-mono truncate">
+                          {reg.user_snapshot?.student_id}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="col-span-3">
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border
-                                          ${
-                                            reg.status === "CheckedIn"
-                                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                              : reg.status === "Cancelled"
-                                                ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                                : "bg-violet-500/10 text-violet-400 border-violet-500/20"
-                                          }`}
+                        className={`px-2 py-1 rounded-[4px] text-[10px] font-bold border uppercase tracking-wide ${
+                          reg.status === "CheckedIn"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : reg.status === "Cancelled"
+                              ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                              : "bg-violet-500/10 text-violet-400 border-violet-500/20"
+                        }`}
                       >
                         {reg.status}
                       </span>
-                    </td>
-                    <td className="p-4">
-                      {new Date(reg.booking_time).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors">
-                        <MoreHorizontal size={16} />
+                    </div>
+
+                    <div className="col-span-3 text-xs text-gray-400 font-medium">
+                      {new Date(reg.booking_time).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </div>
+
+                    <div className="col-span-1 flex justify-end">
+                      <button className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-white transition-all">
+                        <MoreHorizontal size={14} />
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500">
-                    No attendees found matching your search.
-                  </td>
-                </tr>
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No recent registrations.
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+            {/* Footer of card */}
+            <div className="p-2 bg-white/[0.02] border-t border-white/5 text-center">
+              <Link
+                to={`/organizer/event/${id}/guests`}
+                className="text-[10px] font-bold text-gray-500 hover:text-white uppercase transition-colors flex items-center justify-center gap-1"
+              >
+                View Full Guest List <ArrowRight size={10} />
+              </Link>
+            </div>
+          </div>
         </div>
+
+        {/* Right Col - Widgets (1/3 width) */}
+        <div className="space-y-6">
+          <InsightsPanel />
+        </div>
+      </div>
+
+      {/* Bottom Tools Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+        <EventTimeline />
+        <EventTodoList />
       </div>
     </div>
   );
 };
 
-// Wrap the export
 export default function EventDashboardWithErrorBoundary() {
   return (
     <ErrorBoundary>
