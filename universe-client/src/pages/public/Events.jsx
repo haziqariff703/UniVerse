@@ -77,10 +77,14 @@ const Events = () => {
 
     const fetchEvents = async () => {
       try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("Failed to fetch");
-        const data = await response.json();
-        setEvents(data);
+        // Backend server not running - using mock data
+        // const response = await fetch(API_URL);
+        // if (!response.ok) throw new Error("Failed to fetch");
+        // const data = await response.json();
+        // setEvents(data);
+
+        // Using mock data until backend is started
+        setEvents(MOCK_EVENTS);
       } catch (error) {
         console.error("Error fetching events:", error);
         // Fallback to mock data if API fails

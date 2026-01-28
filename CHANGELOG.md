@@ -4,14 +4,34 @@
 
 ### Fixed
 
+- **Console Stabilization** (2026-01-28 23:45):
+  - Commented out failing API calls to `localhost:5000/api/events` in Home.jsx and Events.jsx
+  - Now using mock data arrays until backend server is running
+  - Eliminated ERR_CONNECTION_REFUSED errors flooding console
+  - Cleaned console output for easier debugging
+
 - **CosArt & ArtsyXpose Images**: Replaced broken Unsplash image URLs with working alternatives for proper display
 - **Typography Cleanup**: Eliminated ALL Space Grotesk/Geist Mono (font-space) references throughout Communities Hub
-  - Subheading now uses Clash Display (font-clash font-normal text-slate-400)
+  - Subheading now uses Plus Jakarta Sans (default) for better readability hierarchy
   - All tab labels (Academic, Leadership, Uniformed) now use Clash Display
   - Removed font-space from SearchBar, enhanced-card-hover, ClubDetailModal, and empty state components
   - Taglines remain italic with default sans-serif for elegant presentation
 
 ### Added
+
+- **Campus Life in Motion Video Section** (2026-01-28 23:45):
+  - New section on Home page between "Campus at a Glance" stats and Categories
+  - YouTube video player integration using react-player (57 packages)
+  - UiTM Puncak Perdana campus tour video: https://www.youtube.com/watch?v=wIqrceknPEk
+  - 60/40 responsive grid layout (video left, info right, stacks on mobile)
+  - Refined copy: "Discover the architecture of your journey. From the high-tech halls of FPM..."
+  - Typography: Clash Display for header, default sans for description, generic monospace for timestamps
+  - Button hierarchy:
+    - Primary: "Browse Communities" (gradient purple→cyan, routes to /communities)
+    - Secondary: "Initialize Satellite View" (ghost style, cyan border, pulsing live signal dot, links to Google Maps 3D)
+  - Navigation timestamps: FPM (00:27), Student Spaces (01:15), Facilities (02:03), Recreation (02:45)
+  - Glassmorphism styling with cyan/purple glow and rounded-3xl container
+  - `light={true}` prop for fast page load (thumbnail preview, plays on click)
 
 - **Communities Hub - Master Executive Implementation** (Complete Overhaul):
   - **Typography System**:

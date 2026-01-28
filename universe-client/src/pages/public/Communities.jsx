@@ -71,7 +71,7 @@ const Communities = () => {
               Communities
             </GradientText>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl font-clash font-normal text-slate-400">
+          <p className="text-lg text-muted-foreground max-w-2xl text-slate-400">
             A centralized directory for UiTM Puncak Perdana registered units.
           </p>
         </motion.div>

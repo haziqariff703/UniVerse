@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Hero from "@/components/home/Hero";
 import EventCard from "@/components/common/EventCard";
 import Stats from "@/components/home/Stats";
+import CampusLifeInMotion from "@/components/sections/CampusLifeInMotion";
 import Categories from "@/components/home/Categories";
 import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
@@ -17,12 +18,38 @@ const Home = () => {
     // Using a timeout to simulate loading state if the server is empty
     const fetchEvents = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/events");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setEvents(data);
+        // Backend server not running - using mock data
+        // const response = await fetch("http://localhost:5000/api/events");
+        // if (!response.ok) {
+        //   throw new Error(`HTTP error! status: ${response.status}`);
+        // }
+        // const data = await response.json();
+        // setEvents(data);
+
+        // Using mock data until backend is started
+        setEvents([
+          {
+            id: 1,
+            title: "Nebula Music Festival",
+            date: "2023-11-15",
+            category: "Music",
+            description: "Experience intergalactic beats under the stars.",
+          },
+          {
+            id: 2,
+            title: "Tech Horizons 2024",
+            date: "2024-01-20",
+            category: "Tech",
+            description: "The future of AI and space exploration technology.",
+          },
+          {
+            id: 3,
+            title: "Cosmic Art Exhibition",
+            date: "2023-12-05",
+            category: "Art",
+            description: " immersive digital art installations.",
+          },
+        ]);
       } catch (error) {
         console.error("Error fetching events:", error);
         // Fallback dummy data if server connection fails or is empty for demo purposes
@@ -61,6 +88,7 @@ const Home = () => {
     <>
       <Hero />
       <Stats />
+      <CampusLifeInMotion />
 
       <Categories />
 
