@@ -1,5 +1,34 @@
 # Changelog
 
+## [2026-01-28]
+
+### Fixed
+
+- **Styles**: Moved `@import` for Google Fonts to the top of `index.css` to fix PostCSS warning about statement order.
+
+### Changed
+
+- **Event Dashboard**: Overhauled the header into a "Compact Minimalist Control Bar" with **Black Glass** aesthetics.
+- **Edit Event Page**: Fixed a critical runtime error and refined the design for a cleaner, more professional appearance.
+- **Improved UI/UX**:
+  - Replaced `SpotlightCard` with minimal **Glass Black Containers**.
+  - **Standardized Typography**: Aligned the page with the global `Plus Jakarta Sans` theme, removing `font-clash` for a more consistent brand identity.
+  - Streamlined layout by grouping relevant fields (Price/Capacity).
+  - Updated all labels to natural, user-friendly language.
+  - `DatePicker`: Integrated `react-day-picker` and `popover` for professional date selection.
+  - `TimePicker`: Custom-built selection module for precise temporal control (HH:MM).
+  - `Label`, `Textarea`, `Input`: Themed shadcn/ui components for consistent "Dark Glass" styling.
+- **Changed**: Replaced standard HTML inputs with a compact, high-legibility "Operational Registry" layout.
+- **Changed**: Implemented dynamic venue selection using a `Select` component populated from the backend.
+- **UI Styling**: Established a consistent "Modern Dark Glass" theme and refined the `.scrollbar-hide` utility.
+- **Changed**: Improved `EditEvent.jsx` UI/UX with `DecryptedText`, `ShinyText`, and `Magnet` components.
+- **Added**: Organizer-specific venue management system.
+  - New `OrganizerVenues.jsx` and `VenueEvents.jsx` pages with a **Professional Compact Layout**.
+  - Features enhanced data density (Node Status, Asset Type, Utility bars) and technical "Registry" list views.
+  - Backend support for organizer venue listings and venue-specific event filtering.
+  - Integrated role-based dynamic navigation for venues.
+- **UI Styling**: Refined the `.scrollbar-hide` utility and established a consistent "Modern Dark Glass" theme across the organizer interface.
+
 ## [2026-01-27]
 
 ### Added

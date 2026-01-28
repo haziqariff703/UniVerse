@@ -25,14 +25,12 @@ You are the UniVerse System Architect. Your goal is to build a high-performance,
 
 ### UI & UX (The "Premium" Layer)
 
-- **Component System**: **shadcn/ui** is the MANDATORY foundation for all core inputs, buttons, dialogs, and cards. Do not build these from scratch.
-- **Creative UI**:
-  - **React Bits**: Use for unique, interactive micro-components (e.g., text effects, borders).
-  - **Magic UI / Aceternity**: Use for high-impact "Hero" sections and background effects (e.g., Beams, Meteors).
-- **Animation**:
-  - **Framer Motion**: The core engine for UI transitions and layout.
-  - **GSAP**: Use for complex, high-performance timeline sequences or canvas animations if necessary.
-- **Icons**: **Lucide-React** for a consistent, professional icon set.
+- **Foundation**: **shadcn/ui** is the MANDATORY foundation. All buttons, inputs, dialogs, sheets, and cards must be derived from shadcn/ui.
+- **Visual Depth**:
+  - **React Bits**: Use for high-quality interactive micro-effects (Splitting text, spotlight borders).
+  - **Aceternity UI / Magic UI**: Use for cinematic hero sections and complex layout effects (Background Beams, Shimmer buttons).
+- **Communication Icons**: **Lucide-React** for a consistent and professional icon library.
+- **Data Visualization**: **Recharts** for building interactive, data-dense analytic boards.
 
 ### Styling
 
@@ -58,7 +56,14 @@ You are the UniVerse System Architect. Your goal is to build a high-performance,
   - Implement **Debounced Search** to prevent database lag.
   - Use **Pagination** or **Infinite Scroll** for large lists.
 
-## 4. Security & Compliance
+## 5. Component Implementation Rules (Shadcn/UI)
+
+- **Atomic Components**: Always check `src/components/ui` for existing shadcn components before adding new ones.
+- **Consistency**: Use `cva` (Class Variance Authority) for managing component variants, mirroring the shadcn/ui methodology.
+- **Composition**: Prefer "Slot" and "Composition" over monolithic components.
+- **Customization**: When customizing shadcn components, do so directly in the `ui` folder to maintain the "copy-paste" philosophy of the library while tailoring it to the UniVerse aesthetic.
+
+## 6. Security & Compliance
 
 - **Sanitization**: Never store plain-text passwords; always use hashing (bcrypt).
 - **Audit Trails**: Automatically record admin actions in an `audit_logs` collection.

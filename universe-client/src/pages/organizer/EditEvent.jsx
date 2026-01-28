@@ -1,92 +1,100 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import SpotlightCard from "@/components/ui/SpotlightCard"; // Import Custom Component
 import {
   ArrowLeft,
   Loader,
   Upload,
-  CheckCircle2,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   MoreHorizontal,
-  FileText,
   ImageIcon,
+  Search,
+  Bookmark,
+  Type,
+  LayoutGrid,
+  MapPin,
+  AlignLeft,
+  Users,
+  Tag,
+  Info,
 } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import ShinyText from "@/components/ui/ShinyText";
+import Magnet from "@/components/ui/Magnet";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 
 const EditEvent = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("edit"); // 'overview', 'edit'
+  const [activeTab, setActiveTab] = useState("edit");
   const [formData, setFormData] = useState({});
+  const [venues, setVenues] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState("12:00");
 
-  // Fetch Event Data
   useEffect(() => {
-    const fetchEventDetails = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/events/${id}`);
-        const data = await response.json();
+        const token = localStorage.getItem("token");
+        const [eventRes, venuesRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/events/${id}`),
+          fetch(`http://localhost:5000/api/admin/venues`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-        if (response.ok) {
-          const formattedData = {
-            ...data,
-            date: data.date_time
-              ? new Date(data.date_time).toISOString().split("T")[0]
-              : "",
-            time: data.date_time
-              ? new Date(data.date_time).toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "",
-            // Use _id if available, else usage raw
-            venue: data.venue_id?._id || data.venue_id,
-            ticketPrice: data.ticket_price, // Ensure camelCase mapping
-          };
-          setFormData(formattedData);
-        } else {
-          console.error("Failed to fetch event details");
+        const eventData = await eventRes.json();
+        const venuesData = await venuesRes.json();
+
+        if (eventRes.ok) {
+          setFormData({
+            ...eventData,
+            venue: eventData.venue_id?._id || eventData.venue_id,
+            ticketPrice: eventData.ticket_price,
+          });
+          if (eventData.date_time) {
+            const dt = new Date(eventData.date_time);
+            setSelectedDate(dt);
+            setSelectedTime(
+              dt.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            );
+          }
         }
+        if (venuesRes.ok) setVenues(venuesData.venues || []);
       } catch (error) {
-        console.error("Error fetching event:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchEventDetails();
+    fetchData();
   }, [id]);
-
-  // Handlers
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, image: file }));
-    }
-  };
 
   const handleUpdateEvent = async () => {
     setSaving(true);
-    console.log("Current Form Data:", formData);
     try {
-      const token = localStorage.getItem("token");
-
-      // Handle date/time carefully
-      if (!formData.date || !formData.time) {
+      if (!selectedDate || !selectedTime)
         throw new Error("Date and Time are required");
-      }
-      const dateTime = new Date(`${formData.date}T${formData.time}`);
-      if (isNaN(dateTime.getTime())) {
-        throw new Error("Invalid date or time format");
-      }
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateTime = new Date(`${dateStr}T${selectedTime}`);
 
       const payload = {
         title: formData.title,
@@ -98,30 +106,26 @@ const EditEvent = () => {
         ticket_price: Number(formData.ticketPrice) || 0,
       };
 
-      console.log("Sending Payload:", payload);
-
       const response = await fetch(`http://localhost:5000/api/events/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Server Error Response:", errorData);
-        throw new Error(errorData.message || "Failed to update event");
-      }
+      if (!response.ok) throw new Error("Failed to update event");
       navigate(`/organizer/event/${id}/dashboard`);
     } catch (error) {
-      console.error("Update error:", error);
-      alert(error.message || "Failed to update event. Please try again.");
+      alert(error.message);
     } finally {
       setSaving(false);
     }
   };
+
+  const glassStyle =
+    "bg-black/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 shadow-2xl";
 
   if (loading) {
     return (
@@ -131,264 +135,328 @@ const EditEvent = () => {
     );
   }
 
-  // Styles matching the reference image layout
-  const labelStyle =
-    "block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2";
-  const inputStyle =
-    "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all";
-
   return (
-    <div className="min-h-screen bg-transparent text-white pt-20 px-6 max-w-[1600px] mx-auto pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            to={`/organizer/event/${id}/dashboard`}
-            className="p-2 -ml-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors"
+    <div className="min-h-screen bg-transparent text-white pt-24 px-8 max-w-[1500px] mx-auto pb-20 font-sans">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4 border-b border-white/5 pb-8">
+        <div className="flex items-center gap-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="rounded-full text-slate-400 hover:bg-white/5"
           >
-            <ArrowLeft size={20} />
-          </Link>
+            <Link to={`/organizer/event/${id}/dashboard`}>
+              <ArrowLeft size={22} />
+            </Link>
+          </Button>
           <div>
-            <h1 className="text-2xl font-bold font-neuemontreal tracking-wide">
+            <h1 className="text-3xl font-bold tracking-tight text-white uppercase">
               Edit Event
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Update details, schedule, and assets.
+            <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-500 uppercase mt-1">
+              Configuration & Asset Management
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-colors">
-            <FileText size={16} className="text-gray-400" />
-            Documentation
-          </button>
-          <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-400 transition-colors">
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            className="bg-white/5 border-white/10 text-[10px] font-bold uppercase tracking-widest h-12 px-8 rounded-2xl hover:bg-violet-600 hover:text-white transition-all shadow-lg"
+          >
+            <Bookmark size={14} className="mr-2" /> Documentation
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="bg-white/5 border-white/10 h-12 w-12 rounded-2xl text-slate-400"
+          >
             <MoreHorizontal size={20} />
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-8 border-b border-white/10 mb-8 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`pb-3 text-sm font-medium transition-all relative ${activeTab === "overview" ? "text-white" : "text-gray-500 hover:text-gray-300"}`}
-        >
-          Overview
-          {activeTab === "overview" && (
-            <motion.div
-              layoutId="tab-line"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("edit")}
-          className={`pb-3 text-sm font-medium transition-all relative ${activeTab === "edit" ? "text-white" : "text-gray-500 hover:text-gray-300"}`}
-        >
-          + Edit Event Details
-          {activeTab === "edit" && (
-            <motion.div
-              layoutId="tab-line"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500"
-            />
-          )}
-        </button>
+      {/* Navigation & Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
+        <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/5 w-fit backdrop-blur-md">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-8 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
+              activeTab === "overview"
+                ? "bg-white/10 text-white shadow-xl"
+                : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("edit")}
+            className={`px-8 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
+              activeTab === "edit"
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30"
+                : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            Config Details
+          </button>
+        </div>
+
+        <div className="relative flex-1 max-w-lg">
+          <Search
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600"
+            size={18}
+          />
+          <Input
+            placeholder="SEARCH ASSETS..."
+            className="pl-14 h-14 bg-black/40 border-white/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest placeholder:text-slate-700 focus:border-violet-500/50"
+          />
+        </div>
       </div>
 
-      <div className="mb-8">
-        <input
-          type="text"
-          placeholder="Search for event settings, tickets, or integrations..."
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-400 focus:outline-none focus:border-violet-500/50 transition-colors"
-        />
-      </div>
-
-      {/* Main Form Grid */}
-      <div className="grid grid-cols-12 gap-8">
-        {/* Left Column: Basic Info & Description */}
-        <div className="col-span-12 lg:col-span-8 space-y-8">
-          {/* Product Name section */}
-          <SpotlightCard>
-            <div className="mb-6">
-              <label className={labelStyle}>
-                Event Title <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title || ""}
-                onChange={handleInputChange}
-                className={inputStyle}
-                placeholder="e.g. Annual Tech Conference 2026"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Do not exceed 100 characters when entering the event name.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className={labelStyle}>Category</label>
-                <select
-                  name="category"
-                  value={formData.category || ""}
-                  onChange={handleInputChange}
-                  className={inputStyle}
-                >
-                  <option value="">Select Category</option>
-                  <option value="Music">Music</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Workshop">Workshop</option>
-                </select>
+      <div className="grid grid-cols-12 gap-10">
+        {/* Main Content Area */}
+        <div className="col-span-12 lg:col-span-8 space-y-10">
+          <div className={glassStyle}>
+            <div className="space-y-12">
+              {/* Event Title */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-violet-500/10 rounded-xl">
+                    <Type size={18} className="text-violet-500" />
+                  </div>
+                  <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Event Title <span className="text-rose-500">*</span>
+                  </Label>
+                </div>
+                <Input
+                  value={formData.title || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  className="h-20 text-2xl font-bold bg-black/40 border-white/10 rounded-2xl px-8 focus:border-violet-500/40 tracking-tight"
+                  placeholder="ENTER EVENT TITLE..."
+                />
+                <div className="flex items-center gap-2 px-1">
+                  <Info size={14} className="text-slate-600" />
+                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">
+                    Title will be displayed in public registries.
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className={labelStyle}>Venue</label>
-                <input
-                  type="text"
-                  name="venue"
-                  value={formData.venue || ""}
-                  onChange={handleInputChange}
-                  className={inputStyle}
-                  placeholder="Event Location"
+
+              {/* Category & Venue Container */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <LayoutGrid size={14} className="text-violet-500" />{" "}
+                    Category
+                  </Label>
+                  <Select
+                    value={formData.category || ""}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({ ...prev, category: v }))
+                    }
+                  >
+                    <SelectTrigger className="h-16 bg-black/40 border-white/10 rounded-2xl font-bold uppercase tracking-widest text-[10px]">
+                      <SelectValue placeholder="SELECT CATEGORY" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-950 border-white/10 text-white font-bold uppercase tracking-widest text-[10px]">
+                      <SelectItem value="Music">MUSIC</SelectItem>
+                      <SelectItem value="Technology">TECHNOLOGY</SelectItem>
+                      <SelectItem value="Sports">SPORTS</SelectItem>
+                      <SelectItem value="Workshop">WORKSHOP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <MapPin size={14} className="text-violet-500" /> Venue
+                  </Label>
+                  <Select
+                    value={formData.venue || ""}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({ ...prev, venue: v }))
+                    }
+                  >
+                    <SelectTrigger className="h-16 bg-black/40 border-white/10 rounded-2xl font-bold uppercase tracking-widest text-[10px]">
+                      <SelectValue placeholder="ASSIGN VENUE" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-950 border-white/10 text-white font-bold uppercase tracking-widest text-[10px]">
+                      {venues.map((v) => (
+                        <SelectItem key={v._id} value={v._id}>
+                          {v.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Capacity & Price Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <Users size={14} className="text-violet-500" /> Max Capacity
+                  </Label>
+                  <Input
+                    type="number"
+                    value={formData.capacity || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        capacity: e.target.value,
+                      }))
+                    }
+                    className="h-16 bg-black/40 border-white/10 rounded-2xl font-black text-xl px-6"
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <Tag size={14} className="text-violet-500" /> Ticket Price
+                    (RM)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={formData.ticketPrice || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ticketPrice: e.target.value,
+                      }))
+                    }
+                    className="h-16 bg-black/40 border-white/10 rounded-2xl font-black text-xl px-6"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                  <AlignLeft size={16} className="text-violet-500" />{" "}
+                  Description
+                </Label>
+                <Textarea
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  className="min-h-[200px] bg-black/40 border-white/10 rounded-2xl p-6 text-sm leading-relaxed placeholder:text-slate-700"
+                  placeholder="DESCRIBE YOUR EVENT..."
                 />
               </div>
             </div>
-
-            <div>
-              <label className={labelStyle}>Description</label>
-              <textarea
-                name="description"
-                rows={8}
-                value={formData.description || ""}
-                onChange={handleInputChange}
-                className={`${inputStyle} resize-none`}
-                placeholder="Describe your event..."
-              />
-            </div>
-          </SpotlightCard>
+          </div>
         </div>
 
-        {/* Right Column: Media, Dates, Extras */}
+        {/* Sidebar Controls */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-          {/* Media Upload */}
-          <SpotlightCard>
-            <div className="flex items-center justify-between mb-4">
-              <label className={labelStyle}>Event Image</label>
-              <span className="text-xs text-gray-500">Info</span>
-            </div>
-
-            <div className="border border-dashed border-white/20 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer group relative">
-              {formData.image ? (
-                <div className="absolute inset-0 z-0">
-                  <div className="w-full h-full bg-violet-900/20 rounded-xl flex items-center justify-center">
-                    <CheckCircle2 className="text-emerald-500" />
-                    <span className="ml-2 text-xs text-emerald-400">
-                      Image Selected
-                    </span>
+          <div className={`${glassStyle} p-6`}>
+            <div className="space-y-8">
+              {/* Media Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <ImageIcon size={14} className="text-violet-500" /> Cover
+                    Image
+                  </Label>
+                  <Badge className="bg-violet-600 text-white text-[8px] font-bold uppercase tracking-widest border-none px-2 shadow-lg shadow-violet-600/20">
+                    REQUIRED
+                  </Badge>
+                </div>
+                <div className="relative h-44 rounded-2xl border-2 border-dashed border-white/5 hover:border-violet-500/30 transition-all group bg-black/20">
+                  <input
+                    type="file"
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                    <Upload
+                      size={20}
+                      className="text-slate-500 mb-2 group-hover:text-violet-500 transition-colors"
+                    />
+                    <p className="text-[10px] font-black text-slate-500 group-hover:text-slate-300">
+                      UPLOAD IMAGE
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <ImageIcon className="text-gray-400" size={20} />
-                  </div>
-                  <p className="text-xs text-gray-400 font-medium">
-                    Drop your image here, or{" "}
-                    <span className="text-violet-400 underline">browse</span>
-                  </p>
-                  <p className="text-[10px] text-gray-600 mt-2">
-                    1200x600px recommended.
-                  </p>
-                </>
-              )}
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-              />
-            </div>
-          </SpotlightCard>
+              </div>
 
-          {/* Date & Time */}
-          <SpotlightCard>
-            <div className="mb-4">
-              <label className={labelStyle}>Date & Time</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-2.5 text-gray-500"
-                    size={14}
+              {/* Time Configuration */}
+              <div className="space-y-6 pt-6 border-t border-white/5">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                  <CalendarIcon size={14} className="text-violet-500" /> Date &
+                  Time
+                </Label>
+                <div className="space-y-3">
+                  <DatePicker
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                    className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px] bg-black/40"
                   />
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date || ""}
-                    onChange={handleInputChange}
-                    className={`${inputStyle} pl-9`}
-                  />
-                </div>
-                <div className="relative">
-                  <Clock
-                    className="absolute left-3 top-2.5 text-gray-500"
-                    size={14}
-                  />
-                  <input
-                    type="time"
-                    name="time"
-                    value={formData.time || ""}
-                    onChange={handleInputChange}
-                    className={`${inputStyle} pl-9`}
+                  <TimePicker
+                    time={selectedTime}
+                    setTime={setSelectedTime}
+                    className="h-14 bg-black/40 border-white/10"
                   />
                 </div>
               </div>
+
+              {/* Actions Section */}
+              <div className="space-y-4 pt-6">
+                <Magnet padding={20}>
+                  <Button
+                    onClick={handleUpdateEvent}
+                    disabled={saving}
+                    className="w-full h-16 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:bg-slate-200 shadow-2xl transition-all"
+                  >
+                    {saving ? (
+                      <Loader className="animate-spin" size={16} />
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </Magnet>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => navigate(-1)}
+                    variant="outline"
+                    className="h-12 bg-white/5 border-white/5 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 bg-rose-500/5 border-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500/10"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="mb-0">
-              <label className={labelStyle}>Capacity</label>
-              <input
-                type="number"
-                name="capacity"
-                value={formData.capacity || ""}
-                onChange={handleInputChange}
-                className={inputStyle}
-                placeholder="Max Attendees"
-              />
+          {/* Quick Info */}
+          <div className="bg-violet-500/5 rounded-[2rem] p-6 border border-violet-500/10">
+            <div className="flex gap-4">
+              <div className="p-3 bg-violet-500/20 rounded-2xl h-fit">
+                <Info size={16} className="text-violet-400" />
+              </div>
+              <div>
+                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-1">
+                  Update Protocol
+                </h4>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                  Changes will be propagated to the event discovery engines
+                  immediately upon commitment.
+                </p>
+              </div>
             </div>
-          </SpotlightCard>
-
-          {/* Ticket Price */}
-          <SpotlightCard>
-            <label className={labelStyle}>Ticket Price (RM)</label>
-            <input
-              type="number"
-              name="ticketPrice"
-              value={formData.ticketPrice || ""}
-              onChange={handleInputChange}
-              className={inputStyle}
-              placeholder="0.00"
-            />
-          </SpotlightCard>
-
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={handleUpdateEvent}
-              disabled={saving}
-              className="col-span-2 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-            >
-              {saving ? "Saving..." : "Save Product"}
-            </button>
-            <button className="py-3 bg-[#0A0A0A] border border-white/10 text-white font-medium rounded-lg hover:bg-white/5 transition-colors">
-              Schedule
-            </button>
-            <button
-              onClick={() => navigate(-1)}
-              className="py-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 font-medium rounded-lg hover:bg-rose-500/20 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       </div>
