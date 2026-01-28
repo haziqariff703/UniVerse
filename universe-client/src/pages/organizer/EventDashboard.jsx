@@ -19,6 +19,8 @@ import EventTimeline from "@/components/organizer/event-dashboard/EventTimeline"
 import EventTodoList from "@/components/organizer/event-dashboard/EventTodoList";
 import { InsightsPanel } from "@/components/organizer/event-dashboard";
 import GradientText from "@/components/ui/GradientText";
+import SpotlightCard from "@/components/ui/SpotlightCard";
+import NumberTicker from "@/components/ui/NumberTicker";
 
 const EventDashboard = () => {
   const { id } = useParams();
@@ -101,64 +103,119 @@ const EventDashboard = () => {
         </div>
       </div>
 
-      {/* Header Section (Professional Control Bar Style) */}
-      <div className="mb-8">
-        <div className="flex flex-col lg:flex-row justify-between items-end gap-6 border-b border-white/10 pb-6">
-          <div>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Calendar size={12} /> Thursday, 20th February
-            </p>
-            <div className="mb-1 -ml-1">
-              <GradientText
-                colors={["#39FF14", "#40E0D0", "#39FF14"]}
-                animationSpeed={6}
-                showBorder={false}
-                className="text-3xl md:text-5xl font-neuemontreal font-bold"
-              >
-                Good Evening, Organizer
-              </GradientText>
+      {/* Compact Minimalist Header Section */}
+      <SpotlightCard className="mb-8 !p-0 overflow-hidden bg-[#0A0A0A]/60 border border-white/10 shadow-2xl backdrop-blur-3xl">
+        <div className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left: Identity & Key Info */}
+          <div className="flex items-center gap-5">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-violet-600/10 to-transparent border border-white/10 flex items-center justify-center text-xl font-neuemontreal font-bold text-white/90">
+                O
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#050505] rounded-full"></div>
+              </div>
             </div>
-            <p className="text-gray-400 text-sm mt-2 flex items-center gap-2">
-              Managing{" "}
-              <span className="text-white font-bold">{event.title}</span>
-              <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-              <MapPin size={12} /> {event.venue_id?.name || event.location}
-            </p>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-0.5">
+                <span className="text-emerald-500 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Active
+                </span>
+                <span className="text-gray-800">•</span>
+                <span className="flex items-center gap-1 font-neuemontreal">
+                  <Calendar size={10} className="text-violet-500/70" />{" "}
+                  Thursday, 20th Feb
+                </span>
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">
+                {event.title}
+              </h1>
+              <div className="flex items-center gap-2.5 text-gray-400 text-xs py-0.5">
+                <div className="flex items-center gap-1.5 opacity-80">
+                  <MapPin size={12} className="text-fuchsia-500" />
+                  <span className="font-medium whitespace-nowrap">
+                    {event.venue_id?.name || event.location}
+                  </span>
+                </div>
+                <div className="w-1 h-1 rounded-full bg-white/10"></div>
+                <span className="opacity-60 font-medium whitespace-nowrap">
+                  Dashboard Control
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Stats Grid - High Density */}
-          <div className="grid grid-cols-3 gap-3 w-full lg:w-auto">
-            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
-                <Clock size={12} className="text-violet-400" /> Countdown
+          {/* Right: Integrated Stats Row */}
+          <div className="flex items-center gap-2 md:gap-4 w-full lg:w-auto overflow-x-auto scrollbar-hide">
+            {[
+              {
+                label: "Countdown",
+                value: daysLeft > 0 ? daysLeft : 0,
+                unit: "Days",
+                icon: Clock,
+                color: "text-violet-400",
+              },
+              {
+                label: "Registered",
+                value: totalRegistered,
+                unit: "Guests",
+                icon: Users,
+                color: "text-emerald-400",
+              },
+              {
+                label: "Est. Revenue",
+                value: revenue,
+                unit: "MYR",
+                icon: null,
+                prefix: "RM",
+                color: "text-indigo-400",
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="flex-1 lg:flex-none bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 min-w-[120px] md:min-w-[140px] hover:bg-white/[0.04] transition-colors"
+              >
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                  {stat.icon && <stat.icon size={10} className={stat.color} />}
+                  {stat.label}
+                </p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl md:text-2xl font-bold text-white font-mono leading-none">
+                    {stat.prefix && (
+                      <span className="text-[10px] mr-1 opacity-40 font-sans">
+                        {stat.prefix}
+                      </span>
+                    )}
+                    <NumberTicker value={stat.value} />
+                  </span>
+                  <span className="text-[9px] font-bold text-gray-600 uppercase mb-0.5">
+                    {stat.unit}
+                  </span>
+                </div>
               </div>
-              <span className="text-2xl font-bold text-white">
-                {daysLeft > 0 ? daysLeft : "0"}
-              </span>
-              <span className="text-xs text-gray-400 ml-1">Days left</span>
-            </div>
-            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
-                <CheckCircle2 size={12} className="text-emerald-400" />{" "}
-                Registered
-              </div>
-              <span className="text-2xl font-bold text-white">
-                {totalRegistered}
-              </span>
-              <span className="text-xs text-gray-400 ml-1">Guests</span>
-            </div>
-            <div className="bg-[#0A0A0A] p-4 rounded-xl border border-white/10 min-w-[140px]">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
-                <span className="text-indigo-400">$</span> Revenue
-              </div>
-              <span className="text-2xl font-bold text-white">
-                ${revenue.toLocaleString()}
-              </span>
-              <span className="text-xs text-gray-400 ml-1">Est.</span>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
+
+        {/* Minimal Footer */}
+        <div className="px-6 py-2.5 bg-white/[0.01] border-t border-white/5 flex items-center justify-between text-[10px] font-bold text-gray-600 tracking-widest uppercase">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-emerald-500/80">
+              <span className="w-1 h-1 rounded-full bg-emerald-500/50"></span>
+              Secure Connection
+            </span>
+            <span className="hidden md:inline text-gray-800">|</span>
+            <p className="text-[10px] text-gray-600 font-medium">
+              Last sync: Just now
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="hover:text-white transition-colors flex items-center gap-1.5">
+              <Share2 size={10} /> Export Report
+            </button>
+          </div>
+        </div>
+      </SpotlightCard>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

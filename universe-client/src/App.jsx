@@ -49,6 +49,8 @@ import EventDashboard from "./pages/organizer/EventDashboard";
 
 import EditEvent from "./pages/organizer/EditEvent";
 import ScanQR from "./pages/organizer/ScanQR";
+import OrganizerVenues from "./pages/organizer/Venues";
+import VenueEvents from "./pages/organizer/VenueEvents";
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -304,6 +306,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["organizer", "admin"]}>
                     <CreateEvent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/venues"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <OrganizerVenues />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/venues/:id/events"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <VenueEvents />
                   </ProtectedRoute>
                 }
               />

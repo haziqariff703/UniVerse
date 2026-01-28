@@ -51,6 +51,25 @@ exports.getMyEvents = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get all events for a specific venue
+ * @route   GET /api/venues/:id/events
+ * @access  Public/Organizer
+ */
+exports.getEventsByVenue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const events = await Event.find({ venue_id: id, status: 'approved' })
+      .populate('organizer_id', 'name email')
+      .populate('venue_id', 'name location_code')
+      .sort({ date_time: 1 });
+
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
 
 /**
  * @desc    Get single event by ID

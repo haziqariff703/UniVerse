@@ -9,7 +9,7 @@ const UsersList = ({ onBack }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [roleFilter, setRoleFilter] = useState("");
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     fetchUsers();
   }, [currentPage, roleFilter]);

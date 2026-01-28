@@ -66,6 +66,7 @@ module.exports = {
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "pulse-ultra-slow": "pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "spin-slow": "spin 12s linear infinite",
+        shine: "shine 5s linear infinite",
       },
       transitionTimingFunction: {
         spring: "cubic-bezier(.5,.85,.25,1.1)",
@@ -79,6 +80,10 @@ module.exports = {
           "50%": {
             transform: "translateY(-20px)",
           },
+        },
+        shine: {
+          "0%": { "background-position": "100%" },
+          "100%": { "background-position": "-100%" },
         },
       },
       borderRadius: {

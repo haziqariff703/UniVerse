@@ -56,7 +56,12 @@ const InsightsPanel = () => {
         </div>
 
         <div className="h-32 w-full absolute bottom-0 left-0 right-0 opacity-50 z-0">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+          >
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -64,7 +69,7 @@ const InsightsPanel = () => {
                   <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Tooltip cursor={false} content={<></>} />
+              <Tooltip cursor={false} content={<div className="hidden" />} />
               <Area
                 type="monotone"
                 dataKey="value"

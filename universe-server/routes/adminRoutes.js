@@ -28,7 +28,7 @@ router.patch('/organizers/:id/approve', auth, authorize('admin'), adminControlle
 router.patch('/organizers/:id/reject', auth, authorize('admin'), adminController.rejectOrganizer);
 
 // Venue Management
-router.get('/venues', auth, authorize('admin'), adminController.getAllVenues);
+router.get('/venues', auth, authorize('admin', 'organizer'), adminController.getAllVenues);
 router.post('/venues', auth, authorize('admin'), adminController.createVenue);
 router.put('/venues/:id', auth, authorize('admin'), adminController.updateVenue);
 router.delete('/venues/:id', auth, authorize('admin'), adminController.deleteVenue);

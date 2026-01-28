@@ -39,7 +39,7 @@ const MainSidebar = ({ user, collapsed }) => {
           path: "/organizer/create-event",
           icon: PlusCircle,
         },
-        { label: "Venues", path: "/venues", icon: MapPin },
+        { label: "Venues", path: "/organizer/venues", icon: MapPin },
       ];
 
       // If we are managing a specific event, add context links
