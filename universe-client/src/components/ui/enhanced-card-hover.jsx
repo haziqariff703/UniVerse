@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion"; // eslint-disable-line no-unused-vars
 import { useState } from "react";
 import { Users, Calendar } from "lucide-react";
 import { getTagColor } from "@/data/clubsData";

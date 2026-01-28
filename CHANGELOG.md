@@ -13,6 +13,11 @@
 - **Improved UI/UX**:
   - Replaced `SpotlightCard` with minimal **Glass Black Containers**.
   - **Standardized Typography**: Aligned the page with the global `Plus Jakarta Sans` theme, removing `font-clash` for a more consistent brand identity.
+  - **Resolved UI Errors**:
+    - Fixed `recharts` sizing and invalid `Fragment` prop errors in `InsightsPanel`.
+    - Sanitized props in `DecryptedText` to remove unknown attribute DOM warnings.
+    - Corrected `@import` order in `index.css` to resolve Vite HMR 500 failures.
+    - **Fixed Build Errors**: Reinstalled missing `@radix-ui/react-tabs` and `@radix-ui/react-dialog` dependencies that were causing Vite resolution failures.
   - Streamlined layout by grouping relevant fields (Price/Capacity).
   - Updated all labels to natural, user-friendly language.
   - `DatePicker`: Integrated `react-day-picker` and `popover` for professional date selection.

@@ -5,13 +5,14 @@ const DecryptedText = ({
   speed = 50,
   maxIterations = 10,
   sequential = false,
-  revealDirection = "start", // 'start', 'end', 'center' (currently unused but kept for future depth)
+  revealDirection, // eslint-disable-line no-unused-vars
   useOriginalCharsOnly = false,
   characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+",
   className = "",
   parentClassName = "",
   encryptedClassName = "",
   animateOnHover = false,
+  animateOn: _animateOn, // eslint-disable-line no-unused-vars
   ...props
 }) => {
   const [displayText, setDisplayText] = useState(text);
