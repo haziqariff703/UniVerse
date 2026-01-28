@@ -7,10 +7,13 @@ const Stats = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Section Title */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tighter-plus text-white mb-3">
-            Campus at a Glance
+          <h2 className="text-4xl md:text-5xl font-clash font-bold text-foreground mb-4">
+            Campus at a{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Glance
+            </span>
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-base text-muted-foreground">
             Real-time metrics from Puncak Perdana
           </p>
         </div>

@@ -40,10 +40,13 @@ const Testimonials = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tighter-plus text-white mb-3">
-            Voices from the Void
+          <h2 className="text-4xl md:text-5xl font-clash font-bold text-foreground mb-4">
+            Voices from the{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Void
+            </span>
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-base text-muted-foreground">
             Real stories from Puncak Perdana's IM and FiTA community
           </p>
         </div>

@@ -1,9 +1,11 @@
 import React, { useRef, Suspense } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Spline from "@splinetool/react-spline";
 import { Link } from "react-router-dom";
 
 import { FlipWords } from "@/components/ui/flip-words";
+import { NoiseBackground } from "@/components/ui/noise-background";
+import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 
 const Hero = () => {
   const containerRef = useRef(null);
@@ -59,29 +61,38 @@ const Hero = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="flex gap-4 relative z-20 flex-col sm:flex-row"
         >
-          {/* Primary: Enter the Galaxy - Gradient */}
+          {/* Primary: Enter the Galaxy - Aceternity Noise Style */}
           <Link to="/signup">
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-purple-600 to-cyan-500 text-white px-7 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+            <NoiseBackground
+              gradientColors={[
+                "rgb(168, 85, 247)", // Bright Purple
+                "rgb(6, 182, 212)", // Bright Cyan
+                "rgb(236, 72, 153)", // Pink accent
+              ]}
+              noiseIntensity={0.2}
+              speed={0.2}
             >
-              <span className="relative z-10">Enter the Galaxy</span>
-            </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto px-8 py-3.5 font-clash font-bold tracking-tight text-base text-white"
+              >
+                Enter the Galaxy
+              </motion.button>
+            </NoiseBackground>
           </Link>
 
-          {/* Secondary: Explore Events - Glassmorphism Ghost */}
+          {/* Secondary: Explore Events - Moving Border */}
           <Link to="/events">
-            <motion.button
-              whileHover={{
-                scale: 1.03,
-                backgroundColor: "rgba(255,255,255,0.1)",
-              }}
-              whileTap={{ scale: 0.97 }}
-              className="w-full sm:w-auto px-7 py-2.5 rounded-full font-semibold text-sm border border-white/20 text-white hover:border-white/40 transition-all duration-300 backdrop-blur-sm"
+            <MovingBorderButton
+              borderRadius="1rem"
+              containerClassName="h-auto w-auto"
+              className="bg-slate-900/60 backdrop-blur-xl border-slate-700/50 font-clash font-bold tracking-tight text-base px-8 py-3.5"
+              borderClassName="h-12 w-12 bg-[radial-gradient(circle,#06b6d4_20%,#a855f7_60%,transparent_90%)] opacity-100"
+              duration={3000}
             >
               Explore Events
-            </motion.button>
+            </MovingBorderButton>
           </Link>
         </motion.div>
       </motion.div>

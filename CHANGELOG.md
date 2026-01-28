@@ -206,8 +206,19 @@
 - **Aceternity UI Integration**: BackgroundBeams component with flattenColorPalette plugin.
 - **Grain Overlay**: 2% opacity film texture for cinematic depth.
 
+##### Added
+
+- **Communities Logo Loop**: New section on Home page showcasing 7 association logos with infinite scroll and faculty-based glow effects (2026-01-29)
+- **Noise Background Component**: Custom Aceternity-style noise background for primary buttons and cards (2026-01-29)
+- **Moving Border Component**: Animated gradient border for secondary buttons (2026-01-29)
+- **Spotlight Component**: Mouse-tracking radial gradient effect for event cards (2026-01-29)
+
 ### Changed
 
+- **Home Page Hero**: Upgraded "Enter the Galaxy" button with vibrant Noise Background and "Explore Events" with Moving Border (2026-01-29)
+- **Upcoming Events**: Redesigned with Spotlight cards and dynamic faculty-based color theming (Cyan for Tech, Purple for Arts) (2026-01-29)
+- **Newsletter Section**: Completely redesigned into "Dual Command Cards" layout using NoiseBackgrounds (2026-01-29)
+- **Typography**: Standardized all Home page section headings to Clash Display with consistent gradient accents (2026-01-29)
 - **Sidebar**: Now only visible for authenticated users (hidden for guests).
 - **Hamburger Toggle**: Conditionally rendered - only shows when user is logged in.
 - **Hero Typography**: Reduced headline size by 10% (`text-5xl md:text-7xl`), changed to `font-semibold` (600 weight).

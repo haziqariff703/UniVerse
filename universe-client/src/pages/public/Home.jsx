@@ -4,9 +4,10 @@ import Hero from "@/components/home/Hero";
 import EventCard from "@/components/common/EventCard";
 import Stats from "@/components/home/Stats";
 import CampusLifeInMotion from "@/components/sections/CampusLifeInMotion";
-import Categories from "@/components/home/Categories";
+import FacultyShowcase from "@/components/sections/FacultyShowcase";
 import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
+import Communities from "@/components/home/Communities";
 import Footer from "@/components/common/Footer";
 
 const Home = () => {
@@ -87,18 +88,22 @@ const Home = () => {
   return (
     <>
       <Hero />
+      <Communities />
       <Stats />
       <CampusLifeInMotion />
 
-      <Categories />
+      <FacultyShowcase />
 
       <main className="max-w-7xl mx-auto px-6 py-20" id="events">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">
-              Upcoming Events
+            <h2 className="text-4xl md:text-5xl font-clash font-bold text-foreground mb-4">
+              Upcoming{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                Events
+              </span>
             </h2>
-            <p className="text-slate-400 leading-relaxed">
+            <p className="text-base text-muted-foreground leading-relaxed">
               Curated experiences from across the universe.
             </p>
           </div>
