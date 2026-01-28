@@ -1,5 +1,64 @@
 # Changelog
 
+## [2026-01-28]
+
+### Fixed
+
+- **CosArt & ArtsyXpose Images**: Replaced broken Unsplash image URLs with working alternatives for proper display
+- **Typography Cleanup**: Eliminated ALL Space Grotesk/Geist Mono (font-space) references throughout Communities Hub
+  - Subheading now uses Clash Display (font-clash font-normal text-slate-400)
+  - All tab labels (Academic, Leadership, Uniformed) now use Clash Display
+  - Removed font-space from SearchBar, enhanced-card-hover, ClubDetailModal, and empty state components
+  - Taglines remain italic with default sans-serif for elegant presentation
+
+### Added
+
+- **Communities Hub - Master Executive Implementation** (Complete Overhaul):
+  - **Typography System**:
+    - Clash Display for all organization titles
+    - Space Grotesk for taglines, stats, tags, and technical text
+    - Consistent UniVerse purple/cyan color palette
+  - **Search & Filter Architecture**:
+    - Minimalist search bar with "Charging Border" effect (purple/cyan glow on focus)
+    - Real-time filtering across title, tagline, tags, and description
+    - Clear search button with smooth animations
+    - Empty state with helpful messaging
+  - **Enhanced Hover Cards**:
+    - 16:9 Unsplash image headers with gradient fade to card body
+    - Taglines (1-line objectives) in purple
+    - Color-coded pill tags (20+ tag categories: Academic, Tech, Creative, Arts, etc.)
+    - Metadata row with Members count and Founded date (Lucide icons)
+    - "View Details" gradient button with purple glow effect
+    - Smooth hover animations with purple backdrop
+  - **Official Puncak Perdana Database** (14 organizations):
+    - **Academic & Faculty** (8): IMSA, CASA, Fita Teater Production, Penglipur Layar, FDT, CosArt, Hobi Kreatif, ArtsyXpose
+    - **Leadership & Welfare** (4): SMF, PMH, JPK Jasmine, Kelab PEERS
+    - **Uniformed Bodies** (2): PALAPES Darat, Kor SUKSIS
+    - Each with: full name, tagline, description (Malay), tags, Unsplash images, member count, founded date, social media
+  - **Club Detail Modal System**:
+    - Shadcn Dialog with glassmorphism design
+    - Full organization description and history
+    - Social media links (Instagram, Email) with hover effects
+    - "Contact Admin" button (mailto integration)
+    - "Explore Events" button (filters /events page by club)
+    - Responsive scrollable content
+  - **Tab Navigation**:
+    - 3-tab system: Academic, Leadership, Uniformed
+    - Dynamic count badges showing filtered results
+    - Lucide icons for each category (BookOpen, Users, Shield)
+    - Purple selection highlight
+  - **Data Architecture**:
+    - Centralized club database in `/data/clubsData.js`
+    - Tag color mapping helper function (20+ tag categories)
+    - getAllClubs() helper for cross-category operations
+
+### Changed
+
+- **Communities Page**: Complete replacement of static data with official UiTM Puncak Perdana organizations
+- **Card Design**: From simple text cards to rich media cards with images, tags, and metadata
+- **Navigation**: From "All/Academic/Leadership/Uniformed" tabs to "Academic/Leadership/Uniformed" with search
+- **Typography**: Implemented dual-font system (Clash Display + Space Grotesk)
+
 ## [2026-01-27]
 
 ### Added
