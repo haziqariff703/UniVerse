@@ -18,8 +18,6 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import EventTimeline from "@/components/organizer/event-dashboard/EventTimeline";
 import EventTodoList from "@/components/organizer/event-dashboard/EventTodoList";
 import { InsightsPanel } from "@/components/organizer/event-dashboard";
-import GradientText from "@/components/ui/GradientText";
-import SpotlightCard from "@/components/ui/SpotlightCard";
 import NumberTicker from "@/components/ui/NumberTicker";
 
 const EventDashboard = () => {
@@ -104,7 +102,7 @@ const EventDashboard = () => {
       </div>
 
       {/* Compact Minimalist Header Section */}
-      <SpotlightCard className="mb-8 !p-0 overflow-hidden bg-[#0A0A0A]/60 border border-white/10 shadow-2xl backdrop-blur-3xl">
+      <div className="mb-8 overflow-hidden bg-[#050505] border border-white/10 rounded-2xl shadow-2xl">
         <div className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left: Identity & Key Info */}
           <div className="flex items-center gap-5">
@@ -173,7 +171,7 @@ const EventDashboard = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex-1 lg:flex-none bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 min-w-[120px] md:min-w-[140px] hover:bg-white/[0.04] transition-colors"
+                className="flex-1 lg:flex-none bg-white/[0.05] border border-white/5 rounded-xl px-4 py-3 min-w-[120px] md:min-w-[140px] hover:bg-white/[0.08] transition-colors"
               >
                 <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                   {stat.icon && <stat.icon size={10} className={stat.color} />}
@@ -215,7 +213,7 @@ const EventDashboard = () => {
             </button>
           </div>
         </div>
-      </SpotlightCard>
+      </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -241,7 +239,7 @@ const EventDashboard = () => {
           </div>
 
           {/* Clean Table List Summary */}
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="bg-[#050505] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-12 gap-2 p-3 text-[10px] font-bold text-gray-500 uppercase border-b border-white/5 tracking-wider">
               <div className="col-span-5">Name</div>
               <div className="col-span-3">Status</div>

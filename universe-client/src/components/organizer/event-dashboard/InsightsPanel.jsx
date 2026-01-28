@@ -44,7 +44,7 @@ const InsightsPanel = () => {
   return (
     <div className="space-y-6">
       {/* Sparkline Chart Card */}
-      <div className="bg-[#0A0A0A]/60 border border-white/5 rounded-2xl p-6 relative overflow-hidden">
+      <div className="bg-[#050505] border border-white/5 rounded-2xl p-6 relative overflow-hidden shadow-xl">
         <div className="flex justify-between items-end mb-4 relative z-10">
           <div>
             <h3 className="text-white font-bold text-lg">Insight</h3>
@@ -84,7 +84,7 @@ const InsightsPanel = () => {
       </div>
 
       {/* Recent Activity Timeline */}
-      <div className="bg-[#0A0A0A]/60 border border-white/5 rounded-2xl p-6">
+      <div className="bg-[#050505] border border-white/5 rounded-2xl p-6 shadow-xl">
         <h3 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
           <Activity size={18} className="text-violet-400" /> Recent Activity
         </h3>

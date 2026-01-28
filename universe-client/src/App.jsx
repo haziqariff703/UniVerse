@@ -51,6 +51,8 @@ import EditEvent from "./pages/organizer/EditEvent";
 import ScanQR from "./pages/organizer/ScanQR";
 import OrganizerVenues from "./pages/organizer/Venues";
 import VenueEvents from "./pages/organizer/VenueEvents";
+import Analytics from "./pages/organizer/Analytics";
+import Workforce from "./pages/organizer/Workforce";
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -322,6 +324,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["organizer", "admin"]}>
                     <VenueEvents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <Analytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/workforce"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <Workforce />
                   </ProtectedRoute>
                 }
               />

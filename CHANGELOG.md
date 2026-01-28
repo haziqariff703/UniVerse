@@ -12,6 +12,13 @@
 
 - **Styles**: Moved `@import` for Google Fonts to the top of `index.css` to fix PostCSS warning about statement order.
 
+- **Dashboard Readability Refinement**: Transitioned all event dashboard and management containers from transparent glass to high-contrast **Solid Black Boxes** (`bg-[#050505]`).
+  - **Removed SpotlightCard**: Replaced `SpotlightCard` with standard `div` containers in the dashboard header, stats ribbon (`DashboardStats`), and event cards (`EventCardCompact`).
+  - **Event Roadmap**: Integrated `FullCalendar` into `MyEvents.jsx`, allowing organizers to toggle between a list grid and a calendar roadmap view for better schedule management.
+  - Improved readability of the Main Header, Latest Registrations, Insights Chart, and Recent Activity.
+  - Standardized styling across Schedule and Notes & Tasks for a unified, professional appearance.
+  - Enhanced contrast of stat pills and metadata for better data accessibility.
+
 - **Resolved UI Errors**:
   - Fixed `recharts` sizing and invalid `Fragment` prop errors in `InsightsPanel`.
   - Sanitized props in `DecryptedText` to remove unknown attribute DOM warnings.
