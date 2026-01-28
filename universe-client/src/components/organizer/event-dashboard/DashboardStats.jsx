@@ -1,9 +1,8 @@
 import React from "react";
 import { Calendar, Users, TrendingUp, MapPin } from "lucide-react";
-import SpotlightCard from "@/components/ui/SpotlightCard";
 
 const StatCard = ({ title, value, subtext, icon: Icon, trend }) => (
-  <SpotlightCard className="p-5 rounded-2xl border border-white/5 bg-[#0A0A0A]/60 flex flex-col justify-between h-32 group hover:border-violet-500/30 transition-all">
+  <div className="p-5 rounded-2xl border border-white/5 bg-[#050505] shadow-xl flex flex-col justify-between h-32 group hover:border-violet-500/30 transition-all">
     <div className="flex justify-between items-start">
       <div className="p-2 rounded-lg bg-white/5 text-white/60 group-hover:text-violet-400 group-hover:bg-violet-500/10 transition-colors">
         <Icon size={20} />
@@ -23,7 +22,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend }) => (
         {title}
       </p>
     </div>
-  </SpotlightCard>
+  </div>
 );
 
 const DashboardStats = ({ events }) => {

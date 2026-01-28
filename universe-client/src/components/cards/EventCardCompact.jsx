@@ -10,7 +10,6 @@ import {
   DollarSign,
   Ticket,
 } from "lucide-react";
-import SpotlightCard from "@/components/ui/SpotlightCard";
 
 const EventCardCompact = ({ event }) => {
   const date = new Date(event.date_time);
@@ -23,7 +22,7 @@ const EventCardCompact = ({ event }) => {
       : 0;
 
   return (
-    <SpotlightCard className="rounded-2xl border border-white/5 bg-[#0A0A0A]/80 hover:bg-[#0A0A0A] transition-all group overflow-hidden flex flex-col h-full">
+    <div className="rounded-2xl border border-white/5 bg-[#050505] hover:border-violet-500/30 transition-all group overflow-hidden flex flex-col h-full shadow-xl">
       {/* Top: Media & Status */}
       <div className="relative h-40 w-full bg-white/5 border-b border-white/5 shrink-0 overflow-hidden">
         {event.image ? (
@@ -145,7 +144,7 @@ const EventCardCompact = ({ event }) => {
           </p>
         </div>
       </div>
-    </SpotlightCard>
+    </div>
   );
 };
 

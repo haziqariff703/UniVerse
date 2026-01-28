@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
-import SpotlightCard from "@/components/ui/SpotlightCard";
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import EventCardCompact from "@/components/cards/EventCardCompact";
+import EventRoadmap from "@/components/organizer/EventRoadmap";
 import {
   DashboardStats,
   InsightsPanel,
@@ -13,6 +18,7 @@ const MyEvents = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'live', 'pending', 'past'
+  const [viewMode, setViewMode] = useState("grid"); // 'grid', 'roadmap'
 
   useEffect(() => {
     fetchEvents();
@@ -80,18 +86,44 @@ const MyEvents = () => {
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           {/* Centered Icon-based Search */}
-          <div className="relative group flex-1 md:w-80">
+          <div className="relative group flex-1 md:w-64">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-violet-400 transition-colors"
               size={18}
             />
             <input
               type="text"
-              placeholder="Search events..."
-              className="w-full bg-[#0A0A0A]/60 border border-white/10 rounded-full pl-12 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all placeholder:text-gray-600"
+              placeholder="Search..."
+              className="w-full bg-[#050505] border border-white/10 rounded-full pl-12 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all placeholder:text-gray-600 shadow-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex bg-[#050505] border border-white/10 rounded-full p-1 shadow-lg">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-full transition-all ${
+                viewMode === "grid"
+                  ? "bg-violet-600 text-white shadow-lg"
+                  : "text-gray-500 hover:text-white"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode("roadmap")}
+              className={`p-2 rounded-full transition-all ${
+                viewMode === "roadmap"
+                  ? "bg-violet-600 text-white shadow-lg"
+                  : "text-gray-500 hover:text-white"
+              }`}
+              title="Roadmap View"
+            >
+              <CalendarIcon size={18} />
+            </button>
           </div>
 
           <Link
@@ -108,31 +140,35 @@ const MyEvents = () => {
 
       {/* Main Content Grid (70/30) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column (70%) - Event List */}
+        {/* Left Column (70%) - Event List or Roadmap */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          {/* Tabs */}
-          <div className="flex gap-2 border-b border-white/10 pb-1 overflow-x-auto no-scrollbar">
-            {["all", "live", "pending", "past"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2 rounded-t-lg text-sm font-bold uppercase tracking-wide transition-all ${
-                  activeTab === tab
-                    ? "text-violet-400 border-b-2 border-violet-500 bg-violet-500/5"
-                    : "text-gray-500 hover:text-white"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          {/* Tabs - Only show in Grid Mode */}
+          {viewMode === "grid" && (
+            <div className="flex gap-2 border-b border-white/10 pb-1 overflow-x-auto no-scrollbar">
+              {["all", "live", "pending", "past"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-2 rounded-t-lg text-sm font-bold uppercase tracking-wide transition-all ${
+                    activeTab === tab
+                      ? "text-violet-400 border-b-2 border-violet-500 bg-violet-500/5"
+                      : "text-gray-500 hover:text-white"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Event Grid */}
+          {/* Content Area */}
           {loading ? (
             <div className="text-center py-20">
               <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-white/40">Loading your events...</p>
             </div>
+          ) : viewMode === "roadmap" ? (
+            <EventRoadmap events={events} />
           ) : displayedEvents.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl">
               <p className="text-white/40">No events found in this category.</p>

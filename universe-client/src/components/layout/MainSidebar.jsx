@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 
 import {
   LayoutGrid, // Dashboard/News
@@ -10,6 +9,7 @@ import {
   Mic2, // Speakers
   Ticket, // My Bookings
   PlusCircle, // Organizer
+  TrendingUp, // Analytics
 } from "lucide-react";
 
 const MainSidebar = ({ user, collapsed }) => {
@@ -40,6 +40,8 @@ const MainSidebar = ({ user, collapsed }) => {
           icon: PlusCircle,
         },
         { label: "Venues", path: "/organizer/venues", icon: MapPin },
+        { label: "Workforce", path: "/organizer/workforce", icon: Users },
+        { label: "Analytics", path: "/organizer/analytics", icon: TrendingUp },
       ];
 
       // If we are managing a specific event, add context links
@@ -85,11 +87,8 @@ const MainSidebar = ({ user, collapsed }) => {
   const navItems = getNavItems();
 
   return (
-    <motion.div
-      initial={false}
-      animate={{ width: collapsed ? 0 : 280 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="h-screen sticky top-0 left-0 bg-background border-r border-border flex flex-col z-50 overflow-hidden text-foreground"
+    <div
+      className={`h-screen sticky top-0 left-0 bg-background border-r border-border flex flex-col z-50 overflow-hidden text-foreground transition-all duration-300 ${collapsed ? "w-0" : "w-[280px]"}`}
     >
       {/* 1. Header & Logo */}
       <div className="p-6 flex items-center justify-between h-20">
@@ -129,18 +128,16 @@ const MainSidebar = ({ user, collapsed }) => {
                     : "text-muted-foreground group-hover:text-foreground"
                 }`}
               />
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="font-medium text-sm whitespace-nowrap"
+              <span
+                className={`font-medium text-sm whitespace-nowrap transition-opacity duration-300 ${collapsed ? "opacity-0" : "opacity-100"}`}
               >
                 {item.label}
-              </motion.span>
+              </span>
             </Link>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 };
 export default MainSidebar;

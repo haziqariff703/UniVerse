@@ -23,7 +23,7 @@ const EventTimeline = () => {
   ];
 
   return (
-    <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-4 h-full">
+    <div className="bg-[#050505] border border-white/10 rounded-xl p-4 h-full shadow-xl">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold text-sm uppercase tracking-wide text-gray-400">
           Schedule

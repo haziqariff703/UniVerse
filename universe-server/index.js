@@ -26,6 +26,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin/audit-logs", auditRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/venues", venueRoutes);
+app.use("/api/crew", require("./routes/crewRoutes"));
 
 // Basic Route for Testing
 app.get("/", (req, res) => {
