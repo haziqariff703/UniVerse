@@ -8,7 +8,10 @@ import {
   MapPin,
   Users,
   DollarSign,
-  Type
+  Type,
+  UserCheck,
+  Hash,
+  Activity
 } from "lucide-react";
 
 export const eventSchema = {
@@ -26,13 +29,13 @@ export const eventSchema = {
           type: "text",
           placeholder: "E.g. Cosmic Hackathon 2026",
           required: true,
-          width: "full", // full | half
+          width: "full",
           icon: Type
         },
         {
           name: "category",
           label: "Category",
-          type: "select", // or 'pills' as per current UI
+          type: "select",
           options: [
             "Music",
             "Technology",
@@ -43,14 +46,22 @@ export const eventSchema = {
             "Gaming",
             "Science",
           ],
-          width: "full"
+          width: "half"
+        },
+        {
+          name: "tags",
+          label: "Tags",
+          type: "text", 
+          placeholder: "e.g. innovation, web3, future (comma separated)",
+          width: "half",
+          icon: Hash
         },
         {
           name: "description",
           label: "Description",
           type: "textarea",
-          placeholder: "What is this event about?",
-          rows: 5,
+          placeholder: "Provide a detailed overview of your event...",
+          rows: 4,
           width: "full"
         },
       ],
@@ -64,7 +75,7 @@ export const eventSchema = {
       fields: [
         {
           name: "date",
-          label: "Date",
+          label: "Event Date",
           type: "date",
           required: true,
           width: "half",
@@ -72,17 +83,35 @@ export const eventSchema = {
         },
         {
           name: "time",
-          label: "Time",
+          label: "Start Time",
           type: "time",
           required: true,
           width: "half",
           icon: Clock
         },
         {
-          name: "venue",
-          label: "Venue Location",
+          name: "duration_minutes",
+          label: "Duration (Minutes)",
+          type: "number",
+          placeholder: "60",
+          width: "half",
+          icon: Activity
+        },
+        {
+          name: "venue_id",
+          label: "Venue Selection",
+          type: "select", // Will be populated dynamically in component
+          options: [], 
+          required: true,
+          width: "half",
+          icon: MapPin,
+          note: "Select 'Other' if your venue is not listed."
+        },
+        {
+          name: "location_manual",
+          label: "Manual Location (If 'Other')",
           type: "text",
-          placeholder: "e.g. Grand Hall, Main Campus",
+          placeholder: "e.g. Virtual Link or Specific Room",
           width: "full",
           icon: MapPin
         },
@@ -90,11 +119,20 @@ export const eventSchema = {
     },
     {
       id: 3,
-      name: "tickets",
-      title: "Tickets",
-      icon: Tag,
-      description: "Capacity and Pricing",
+      name: "talent",
+      title: "Talent & Access",
+      icon: UserCheck,
+      description: "Speakers and Capacity",
       fields: [
+        {
+          name: "speaker_ids",
+          label: "Assign Speakers",
+          type: "multi-select", // Will be populated dynamically
+          options: [],
+          width: "full",
+          icon: Users,
+          note: "Add speakers from your directory."
+        },
         {
           name: "capacity",
           label: "Max Capacity",
@@ -111,7 +149,7 @@ export const eventSchema = {
           placeholder: "0.00",
           width: "half",
           icon: DollarSign,
-          note: "Setting a price of 0 will mark the event as 'Free Entry'.",
+          note: "Set to 0 for Free Entry.",
         },
       ],
     },
@@ -120,7 +158,7 @@ export const eventSchema = {
       name: "media",
       title: "Media",
       icon: ImageIcon,
-      description: "Visuals",
+      description: "Visual Identity",
       fields: [
         {
           name: "image",
@@ -129,15 +167,23 @@ export const eventSchema = {
           accept: "image/*",
           width: "full"
         },
+        {
+          name: "proposal",
+          label: "Event Proposal / Documentation (PDF)",
+          type: "file",
+          accept: ".pdf",
+          width: "full",
+          note: "Upload detailed proposal for admin approval."
+        },
       ],
     },
     {
       id: 5,
       name: "review",
-      title: "Review",
+      title: "Launch",
       icon: Rocket,
-      type: "review", // Special type for review step
-      description: "Verify and Launch",
+      type: "review",
+      description: "Final broadcast settings",
       fields: []
     }
   ],

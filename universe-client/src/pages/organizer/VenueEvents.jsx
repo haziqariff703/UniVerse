@@ -101,17 +101,6 @@ const VenueEvents = () => {
     <div className="min-h-screen bg-transparent text-white pt-6 px-8 max-w-[1600px] mx-auto pb-20">
       {/* Dynamic Breadcrumbs - High Contrast */}
       <div className="flex items-center gap-3 mb-10">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/organizer/venues")}
-          className="text-slate-300 hover:text-white p-0 h-auto"
-        >
-          <ChevronLeft size={18} className="text-violet-500" />
-          <span className="text-xs font-bold uppercase tracking-widest ml-2">
-            Back to Registry
-          </span>
-        </Button>
         <span className="text-slate-600">/</span>
         <Badge
           variant="secondary"

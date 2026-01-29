@@ -33,4 +33,8 @@ router.post('/venues', auth, authorize('admin'), adminController.createVenue);
 router.put('/venues/:id', auth, authorize('admin'), adminController.updateVenue);
 router.delete('/venues/:id', auth, authorize('admin'), adminController.deleteVenue);
 
+// Speaker Management
+router.get('/speakers', auth, authorize('admin', 'organizer'), adminController.getAllSpeakers);
+router.post('/speakers', auth, authorize('admin'), adminController.createSpeaker);
+
 module.exports = router;

@@ -101,10 +101,20 @@ exports.getEventById = async (req, res) => {
 exports.createEvent = async (req, res) => {
   try {
     // Set organizer_id from authenticated user
+    // Set organizer_id from authenticated user
     const eventData = {
       ...req.body,
       organizer_id: req.user.id
     };
+
+    if (req.files) {
+      if (req.files['image']) {
+        eventData.image = req.files['image'][0].path.replace(/\\/g, "/");
+      }
+      if (req.files['proposal']) {
+        eventData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
+      }
+    }
 
     console.log("Creating event for user:", req.user.id);
     console.log("Event Data:", eventData);
@@ -139,9 +149,21 @@ exports.updateEvent = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this event." });
     }
 
+    const updateData = { ...req.body };
+
+    // Handle File Uploads
+    if (req.files) {
+      if (req.files['image']) {
+        updateData.image = req.files['image'][0].path.replace(/\\/g, "/");
+      }
+      if (req.files['proposal']) {
+        updateData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
+      }
+    }
+
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 

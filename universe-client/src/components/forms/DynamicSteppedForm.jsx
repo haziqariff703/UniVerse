@@ -1,43 +1,23 @@
-import React, { useState, useRef, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { gsap } from "gsap";
+import React, { useState } from "react";
 import {
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
   AlertCircle,
   Loader,
   Upload,
   Sparkles,
+  Save,
+  ChevronDown,
 } from "lucide-react";
-import SpotlightCard from "@/components/ui/SpotlightCard";
 
-const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
-  const [step, setStep] = useState(1);
+const DynamicSteppedForm = ({
+  schema,
+  onSubmit,
+  initialData = {},
+  submitLabel = "Publish Event",
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const containerRef = useRef(null);
-  const titleRef = useRef(null);
-
-  // Initialize formData based on initialData (for edit) or empty
   const [formData, setFormData] = useState(initialData);
-
-  useEffect(() => {
-    // Title Enter Animation
-    if (titleRef.current) {
-      gsap.fromTo(
-        titleRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          stagger: 0.1,
-          duration: 0.8,
-          ease: "back.out(1.7)",
-        },
-      );
-    }
-  }, []);
+  const [activeSection, setActiveSection] = useState(schema.steps[0]?.id || 1);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -55,13 +35,6 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const nextStep = () => {
-    if (step < schema.steps.length) setStep((prev) => prev + 1);
-  };
-  const prevStep = () => {
-    if (step > 1) setStep((prev) => prev - 1);
-  };
-
   const submitForm = async () => {
     setLoading(true);
     setError(null);
@@ -75,35 +48,33 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
     }
   };
 
-  const currentStepConfig = schema.steps.find((s) => s.id === step);
-
   const renderField = (field) => {
     const commonClasses =
-      "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all";
+      "w-full bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all";
 
     return (
       <div
         key={field.name}
-        className={`${field.width === "half" ? "" : "col-span-1 md:col-span-2"} space-y-3`}
+        className={`${field.width === "half" ? "" : "col-span-1 md:col-span-2"} space-y-2`}
       >
-        <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
           {field.label}{" "}
-          {field.required && <span className="text-rose-400">*</span>}
+          {field.required && <span className="text-rose-500">*</span>}
         </label>
 
         {field.type === "text" && (
           <div className="relative group">
             {field.icon && (
               <field.icon
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-violet-400 transition-colors"
-                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-violet-400 transition-colors"
+                size={18}
               />
             )}
             <input
               type="text"
               name={field.name}
               placeholder={field.placeholder}
-              className={`${commonClasses} ${field.icon ? "pl-12" : ""}`}
+              className={`${commonClasses} ${field.icon ? "pl-11" : ""}`}
               onChange={handleInputChange}
               value={formData[field.name] || ""}
             />
@@ -114,15 +85,15 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
           <div className="relative group">
             {field.icon && (
               <field.icon
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-violet-400 transition-colors"
-                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-violet-400 transition-colors"
+                size={18}
               />
             )}
             <input
               type="number"
               name={field.name}
               placeholder={field.placeholder}
-              className={`${commonClasses} ${field.icon ? "pl-12" : ""}`}
+              className={`${commonClasses} ${field.icon ? "pl-11" : ""}`}
               onChange={handleInputChange}
               value={formData[field.name] || ""}
             />
@@ -144,14 +115,14 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
           <div className="relative group">
             {field.icon && (
               <field.icon
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-violet-400 transition-colors"
-                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-violet-400 transition-colors"
+                size={18}
               />
             )}
             <input
               type="date"
               name={field.name}
-              className={`${commonClasses} ${field.icon ? "pl-12" : ""} color-scheme-dark`}
+              className={`${commonClasses} ${field.icon ? "pl-11" : ""} color-scheme-dark`}
               onChange={handleInputChange}
               value={formData[field.name] || ""}
             />
@@ -162,14 +133,14 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
           <div className="relative group">
             {field.icon && (
               <field.icon
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-violet-400 transition-colors"
-                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-violet-400 transition-colors"
+                size={18}
               />
             )}
             <input
               type="time"
               name={field.name}
-              className={`${commonClasses} ${field.icon ? "pl-12" : ""} color-scheme-dark`}
+              className={`${commonClasses} ${field.icon ? "pl-11" : ""} color-scheme-dark`}
               onChange={handleInputChange}
               value={formData[field.name] || ""}
             />
@@ -177,25 +148,83 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
         )}
 
         {field.type === "select" && (
-          <div className="flex flex-wrap gap-3">
-            {field.options.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => handleSelectChange(field.name, opt)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                  formData[field.name] === opt
-                    ? "bg-violet-500/20 border-violet-500 text-violet-200 shadow-[0_0_10px_rgba(139,92,246,0.2)]"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:border-white/30 hover:text-white"
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
+          <div className="relative group">
+            <select
+              name={field.name}
+              value={formData[field.name] || ""}
+              onChange={(e) => handleSelectChange(field.name, e.target.value)}
+              className={`${commonClasses} appearance-none cursor-pointer ${
+                !formData[field.name] ? "text-zinc-600" : ""
+              }`}
+            >
+              <option value="" disabled>
+                Select an option
+              </option>
+              {field.options &&
+                field.options.map((opt) => {
+                  const value = typeof opt === "object" ? opt.value : opt;
+                  const label = typeof opt === "object" ? opt.label : opt;
+                  return (
+                    <option
+                      key={value}
+                      value={value}
+                      className="bg-zinc-900 text-white"
+                    >
+                      {label}
+                    </option>
+                  );
+                })}
+            </select>
+            <ChevronDown
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+              size={16}
+            />
+          </div>
+        )}
+
+        {field.type === "multi-select" && (
+          <div className="flex flex-wrap gap-2">
+            {field.options &&
+              field.options.map((opt) => {
+                const value = typeof opt === "object" ? opt.value : opt;
+                const label = typeof opt === "object" ? opt.label : opt;
+                const isSelected =
+                  Array.isArray(formData[field.name]) &&
+                  formData[field.name].includes(value);
+
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      const current = Array.isArray(formData[field.name])
+                        ? formData[field.name]
+                        : [];
+                      const updated = isSelected
+                        ? current.filter((v) => v !== value)
+                        : [...current, value];
+                      handleSelectChange(field.name, updated);
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                      isSelected
+                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-400 font-bold"
+                        : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            {(!field.options || field.options.length === 0) && (
+              <p className="text-xs text-zinc-600 italic">
+                No options available
+              </p>
+            )}
           </div>
         )}
 
         {field.type === "file" && (
-          <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-violet-500/50 hover:bg-white/5 transition-all cursor-pointer relative group">
+          <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-8 text-center hover:border-zinc-700 transition-all cursor-pointer relative group">
             <input
               type="file"
               accept={field.accept}
@@ -204,29 +233,68 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
             />
             {formData[field.name] ? (
               <div className="relative z-10">
-                <div className="w-full h-64 rounded-xl overflow-hidden mb-4 border border-white/20">
-                  <img
-                    src={URL.createObjectURL(formData[field.name])}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <p className="text-white font-medium">
-                  {formData[field.name].name}
+                {/* Handle File Object (New Upload) or String (Existing URL) */}
+                {(formData[field.name] instanceof File &&
+                  (formData[field.name].name.endsWith(".pdf") ||
+                    formData[field.name].type === "application/pdf")) ||
+                (typeof formData[field.name] === "string" &&
+                  formData[field.name].endsWith(".pdf")) ? (
+                  <div className="w-full h-48 rounded-lg mb-3 border border-zinc-800 bg-zinc-900 flex flex-col items-center justify-center p-4">
+                    <Save className="w-10 h-10 text-violet-500 mb-2" />
+                    <a
+                      href={
+                        typeof formData[field.name] === "string"
+                          ? `http://localhost:5000/${formData[field.name]}`
+                          : "#"
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 font-mono break-all hover:text-white transition-colors"
+                      onClick={(e) =>
+                        formData[field.name] instanceof File &&
+                        e.preventDefault()
+                      }
+                    >
+                      {formData[field.name] instanceof File
+                        ? formData[field.name].name
+                        : "View Current PDF"}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 rounded-lg overflow-hidden mb-3 border border-zinc-800">
+                    <img
+                      src={
+                        formData[field.name] instanceof File
+                          ? URL.createObjectURL(formData[field.name])
+                          : `http://localhost:5000/${formData[field.name]}`
+                      }
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <p className="text-zinc-300 font-medium text-sm">
+                  {formData[field.name] instanceof File
+                    ? formData[field.name].name
+                    : "Current File"}
                 </p>
-                <p className="text-sm text-gray-500 mt-2">Click to replace</p>
+                <p className="text-xs text-zinc-500 mt-1">Click to replace</p>
               </div>
             ) : (
-              <div className="space-y-4 pointer-events-none">
-                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                  <Upload className="w-8 h-8 text-gray-400 group-hover:text-violet-400 transition-colors" />
+              <div className="space-y-3 pointer-events-none">
+                <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center mx-auto">
+                  <Upload className="w-5 h-5 text-zinc-500" />
                 </div>
                 <div>
-                  <p className="text-lg text-white font-medium mb-1">
-                    Drop your image here, or browse
+                  <p className="text-sm text-zinc-300 font-medium">
+                    {field.accept?.includes(".pdf")
+                      ? "Upload Event Proposal"
+                      : "Upload Event Artwork"}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Supports JPG, PNG, WEBP (Max 5MB)
+                  <p className="text-xs text-zinc-600">
+                    {field.accept?.includes(".pdf")
+                      ? "PDF (Max 5MB)"
+                      : "JPG, PNG, WEBP (Max 5MB)"}
                   </p>
                 </div>
               </div>
@@ -235,193 +303,110 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
         )}
 
         {field.note && (
-          <div className="p-6 rounded-xl bg-violet-500/10 border border-violet-500/20 flex gap-4 mt-2">
-            <Sparkles className="w-6 h-6 text-violet-400 flex-shrink-0 mt-1" />
-            <div>
-              <h4 className="text-white font-medium mb-1">Note</h4>
-              <p className="text-sm text-gray-400">{field.note}</p>
-            </div>
+          <div className="p-4 rounded-lg bg-violet-500/5 border border-violet-500/10 flex gap-3 mt-1">
+            <Sparkles className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              {field.note}
+            </p>
           </div>
         )}
-      </div>
-    );
-  };
-
-  const renderReviewStep = () => {
-    // Collect all fields from previous steps to display them
-    const allFields = schema.steps.flatMap((s) => s.fields).filter(Boolean);
-    const FinalIcon = schema.steps[schema.steps.length - 1].icon;
-
-    return (
-      <div className="space-y-8 text-center">
-        <div className="w-24 h-24 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(139,92,246,0.3)] animate-pulse">
-          <FinalIcon size={40} className="text-white" />
-        </div>
-
-        <h3 className="text-3xl font-bold text-white mb-2">
-          Ready for Lift Off?
-        </h3>
-        <p className="text-gray-400 max-w-md mx-auto mb-8">
-          You're about to launch <strong>{formData.title}</strong> to the entire
-          UniVerse. Verify your details below.
-        </p>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left max-w-2xl mx-auto">
-          {allFields.map((field) => {
-            if (
-              !formData[field.name] ||
-              field.type === "file" ||
-              field.type === "textarea"
-            )
-              return null;
-            return (
-              <div
-                key={field.name}
-                className="bg-white/5 p-4 rounded-xl border border-white/5"
-              >
-                <p className="text-xs text-gray-500 uppercase mb-1">
-                  {field.label}
-                </p>
-                <p className="text-white font-medium truncate">
-                  {formData[field.name]}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={submitForm}
-          disabled={loading}
-          className="w-full md:w-auto px-12 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-violet-50 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mx-auto mt-8 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transform hover:-translate-y-1"
-        >
-          {loading ? (
-            <>
-              <Loader size={20} className="animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              Launch Event <ChevronRight size={20} />
-            </>
-          )}
-        </button>
       </div>
     );
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-5xl mx-auto"
-    >
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-12 text-center">
-        <h1
-          ref={titleRef}
-          className="text-4xl md:text-6xl font-neuemontreal font-bold text-white mb-4 flex flex-wrap justify-center gap-x-4"
-        >
-          <span>Launch</span>
-          <span>Your</span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
-            Event
-          </span>
-        </h1>
-        <p className="text-white/40 text-lg animate-fade-in">
-          Broadcasting your vision to the UniVerse
-        </p>
-      </div>
 
-      {/* Stepper */}
-      <div className="mb-12 max-w-3xl mx-auto">
-        <div className="flex items-center justify-between relative">
-          {/* Connecting Line */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full -z-10" />
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-violet-600 rounded-full -z-10 transition-all duration-500 ease-in-out"
-            style={{
-              width: `${((step - 1) / (schema.steps.length - 1)) * 100}%`,
-            }}
-          />
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden">
+        {error && (
+          <div className="m-6 p-3 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center gap-3 text-rose-400">
+            <AlertCircle size={18} />
+            <p className="text-xs font-medium">{error}</p>
+          </div>
+        )}
 
-          {schema.steps.map((s) => (
-            <div
-              key={s.id}
-              className={`flex flex-col items-center gap-2 cursor-pointer transition-colors duration-300 ${
-                step >= s.id ? "text-white" : "text-white/30"
-              }`}
-              onClick={() => step > s.id && setStep(s.id)}
-            >
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 z-10 bg-[#0A0A0A] ${
-                  step >= s.id
-                    ? "border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.5)] scale-110"
-                    : "border-white/20 scale-100"
-                } ${step > s.id ? "bg-violet-500 border-violet-500" : ""}`}
-              >
-                {step > s.id ? (
-                  <CheckCircle size={18} className="text-white" />
-                ) : (
-                  <s.icon
-                    size={18}
-                    className={
-                      step >= s.id ? "text-violet-400" : "text-white/30"
-                    }
-                  />
-                )}
+        <div className="divide-y divide-zinc-900">
+          {schema.steps.map((section, index) => {
+            // Skip review step or steps with no fields
+            if (
+              section.type === "review" ||
+              !section.fields ||
+              section.fields.length === 0
+            )
+              return null;
+
+            const isActive = activeSection === section.id;
+
+            return (
+              <div key={section.id} className="transition-all duration-300">
+                <button
+                  onClick={() => setActiveSection(isActive ? null : section.id)}
+                  className={`w-full flex items-center justify-between p-6 md:p-8 text-left transition-colors ${isActive ? "bg-zinc-900/30" : "hover:bg-zinc-900/10"}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${isActive ? "bg-violet-500 border-violet-500 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-500"}`}
+                    >
+                      {section.icon ? (
+                        <section.icon size={18} />
+                      ) : (
+                        <span className="font-bold">{index + 1}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3
+                        className={`text-lg font-bold transition-colors ${isActive ? "text-white" : "text-zinc-400"}`}
+                      >
+                        {section.title}
+                      </h3>
+                      <p className="text-xs text-zinc-500 hidden sm:block">
+                        {section.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={`transition-transform duration-300 ${isActive ? "rotate-180" : ""}`}
+                  >
+                    <ChevronDown className="text-zinc-500" size={20} />
+                  </div>
+                </button>
+
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${isActive ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}
+                >
+                  <div className="p-6 md:p-8 pt-0 border-t border-dashed border-zinc-800/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      {section.fields.map(renderField)}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">
-                {s.title}
-              </span>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-8 md:p-10 bg-zinc-950 border-t border-zinc-900 sticky bottom-0 z-10">
+          <button
+            onClick={submitForm}
+            disabled={loading}
+            className="w-full px-8 py-4 bg-white hover:bg-zinc-200 text-black rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+          >
+            {loading ? (
+              <>
+                <Loader size={18} className="animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                {submitLabel}
+              </>
+            )}
+          </button>
         </div>
       </div>
-
-      <SpotlightCard className="p-8 md:p-12 rounded-[2rem]">
-        {error && (
-          <div className="mb-8 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-300">
-            <AlertCircle size={20} />
-            <p className="text-sm font-medium">{error}</p>
-          </div>
-        )}
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            {currentStepConfig.type === "review" ? (
-              renderReviewStep()
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {currentStepConfig.fields.map(renderField)}
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation Buttons */}
-        {step < schema.steps.length && (
-          <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/10">
-            <button
-              onClick={prevStep}
-              className={`flex items-center gap-2 text-gray-400 hover:text-white transition-colors ${step === 1 ? "opacity-0 pointer-events-none" : ""}`}
-            >
-              <ChevronLeft size={20} /> Back
-            </button>
-            <button
-              onClick={nextStep}
-              className="flex items-center gap-2 px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-medium transition-all shadow-lg shadow-violet-600/20"
-            >
-              Next Step <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
-      </SpotlightCard>
     </div>
   );
 };

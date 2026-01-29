@@ -10,6 +10,11 @@ import {
   Ticket, // My Bookings
   PlusCircle, // Organizer
   TrendingUp, // Analytics
+  Bell, // Notifications
+  DollarSign, // Finance
+  History, // Activity Log
+  UserSearch, // Speakers
+  Send, // Broadcast
 } from "lucide-react";
 
 const MainSidebar = ({ user, collapsed }) => {
@@ -42,6 +47,9 @@ const MainSidebar = ({ user, collapsed }) => {
         { label: "Venues", path: "/organizer/venues", icon: MapPin },
         { label: "Workforce", path: "/organizer/workforce", icon: Users },
         { label: "Analytics", path: "/organizer/analytics", icon: TrendingUp },
+        { label: "Finance", path: "/organizer/finance", icon: DollarSign },
+        { label: "Speakers", path: "/organizer/speakers", icon: UserSearch },
+        { label: "Broadcast", path: "/organizer/broadcast", icon: Send },
       ];
 
       // If we are managing a specific event, add context links
