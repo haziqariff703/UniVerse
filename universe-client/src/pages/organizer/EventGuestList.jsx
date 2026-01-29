@@ -105,12 +105,6 @@ const EventGuestList = () => {
     <div className="min-h-screen pt-6 pb-20 px-4 md:px-8 max-w-[1600px] mx-auto">
       {/* Top Nav / Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
-        <Link
-          to={`/organizer/event/${id}/dashboard`}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
         <span className="text-gray-700">/</span>
         <span className="text-gray-200 text-sm font-medium">
           Guest Overview

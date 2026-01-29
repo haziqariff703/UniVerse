@@ -89,12 +89,6 @@ const Analytics = () => {
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link
-          to="/organizer/dashboard"
-          className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-white"
-        >
-          <ArrowLeft size={20} />
-        </Link>
         <div>
           <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
             Analytics & Feedback

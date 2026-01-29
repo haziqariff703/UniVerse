@@ -155,6 +155,14 @@ const CreateEvent = () => {
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8">
+      {/* Header */}
+      <div className="max-w-[1600px] mx-auto mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
+        <p className="text-zinc-500 text-sm">
+          Set up your event details and broadcast your vision.
+        </p>
+      </div>
+
       <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Form (7/12) */}
         <div className="lg:col-span-7">

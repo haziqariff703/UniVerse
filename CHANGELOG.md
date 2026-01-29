@@ -1,6 +1,16 @@
 # Changelog
 
-## [2026-01-29]
+## [2026-01-30]
+
+### Added
+
+- **PDF File Uploads**: Enable PDF upload for "Event Proposal/Documentation" in the Create Event form, backed by `multer` middleware.
+
+### Changed
+
+- **Create Event UI**: Refactored the form into a collapsible **Accordion Layout** and converted Venue selection to a native **Dropdown** for better usability.
+- **Broadcast UI**: Updated the "Best Practices" container to a solid black minimalist design.
+- **Speaker Cards**: Removed the "glass flip" hover effect to maintain a solid black background.
 
 ### Added
 

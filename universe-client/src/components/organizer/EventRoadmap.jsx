@@ -147,15 +147,15 @@ const EventRoadmap = ({ events }) => {
           color: #9ca3af;
           font-weight: 600;
           text-transform: uppercase;
-          font-size: 0.75rem;
+          font-size: 0.65rem;
           letter-spacing: 0.05em;
-          padding: 12px 0;
+          padding: 8px 0;
         }
         .fc .fc-daygrid-day-number {
           color: #e5e7eb;
           font-weight: 600;
-          font-size: 0.875rem;
-          padding: 8px;
+          font-size: 0.75rem;
+          padding: 4px;
         }
         .fc .fc-timegrid-slot-label-cushion {
             color: #6b7280;
@@ -174,7 +174,7 @@ const EventRoadmap = ({ events }) => {
         headerToolbar={{
           left: "prev,next today",
           center: "title",
-          right: "dayGridMonth,timeGridWeek,listWeek",
+          right: "dayGridMonth,listWeek",
         }}
         events={calendarEvents}
         eventContent={renderEventContent}

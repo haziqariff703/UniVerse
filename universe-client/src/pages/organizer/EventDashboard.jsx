@@ -81,14 +81,13 @@ const EventDashboard = () => {
     <div className="min-h-screen pt-14 pb-20 px-4 md:px-8 max-w-[1600px] mx-auto">
       {/* Top Bar / Breadcrumb */}
       <div className="flex justify-between items-center mb-8">
-        <Link
-          to="/organizer/my-events"
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
-
         <div className="flex items-center gap-3">
+          <Link
+            to={`/organizer/activity-log?eventId=${id}`}
+            className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <Clock size={16} /> Audit Log
+          </Link>
           <Link
             to={`/organizer/event/${id}/scan`}
             className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-violet-50 transition-colors"

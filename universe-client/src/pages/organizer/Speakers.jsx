@@ -81,12 +81,6 @@ const OrganizerSpeakers = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <Link
-            to="/organizer/dashboard"
-            className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-white"
-          >
-            <ArrowLeft size={20} />
-          </Link>
           <div>
             <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
               Speaker Directory
@@ -123,7 +117,7 @@ const OrganizerSpeakers = () => {
           filteredSpeakers.map((speaker) => (
             <div
               key={speaker.id}
-              className="group bg-[#050505] border border-white/10 rounded-3xl p-6 hover:bg-white/[0.02] transition-all relative overflow-hidden"
+              className="group bg-[#050505] border border-white/10 rounded-3xl p-6 transition-all relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>

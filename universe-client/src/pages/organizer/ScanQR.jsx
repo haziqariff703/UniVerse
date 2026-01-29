@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { QrCode, ArrowLeft, CheckCircle, XCircle, Search } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { QrCode, CheckCircle, XCircle, Search } from "lucide-react";
 import SpotlightCard from "@/components/ui/SpotlightCard";
 
 const ScanQR = () => {
@@ -57,13 +57,6 @@ const ScanQR = () => {
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto flex flex-col items-center">
-      <Link
-        to={`/organizer/event/${id}/dashboard`}
-        className="self-start inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-      >
-        <ArrowLeft size={20} /> Back to Dashboard
-      </Link>
-
       <div className="w-full text-center space-y-4 mb-10">
         <h1 className="text-3xl font-bold font-neuemontreal text-white">
           Event Check-in

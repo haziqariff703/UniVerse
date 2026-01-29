@@ -8,7 +8,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
+const DynamicSteppedForm = ({
+  schema,
+  onSubmit,
+  initialData = {},
+  submitLabel = "Publish Event",
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(initialData);
@@ -228,25 +233,50 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
             />
             {formData[field.name] ? (
               <div className="relative z-10">
-                {formData[field.name].name.endsWith(".pdf") ||
-                formData[field.name].type === "application/pdf" ? (
+                {/* Handle File Object (New Upload) or String (Existing URL) */}
+                {(formData[field.name] instanceof File &&
+                  (formData[field.name].name.endsWith(".pdf") ||
+                    formData[field.name].type === "application/pdf")) ||
+                (typeof formData[field.name] === "string" &&
+                  formData[field.name].endsWith(".pdf")) ? (
                   <div className="w-full h-48 rounded-lg mb-3 border border-zinc-800 bg-zinc-900 flex flex-col items-center justify-center p-4">
                     <Save className="w-10 h-10 text-violet-500 mb-2" />
-                    <span className="text-xs text-zinc-500 font-mono break-all">
-                      {formData[field.name].name}
-                    </span>
+                    <a
+                      href={
+                        typeof formData[field.name] === "string"
+                          ? `http://localhost:5000/${formData[field.name]}`
+                          : "#"
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 font-mono break-all hover:text-white transition-colors"
+                      onClick={(e) =>
+                        formData[field.name] instanceof File &&
+                        e.preventDefault()
+                      }
+                    >
+                      {formData[field.name] instanceof File
+                        ? formData[field.name].name
+                        : "View Current PDF"}
+                    </a>
                   </div>
                 ) : (
                   <div className="w-full h-48 rounded-lg overflow-hidden mb-3 border border-zinc-800">
                     <img
-                      src={URL.createObjectURL(formData[field.name])}
+                      src={
+                        formData[field.name] instanceof File
+                          ? URL.createObjectURL(formData[field.name])
+                          : `http://localhost:5000/${formData[field.name]}`
+                      }
                       alt="Preview"
                       className="w-full h-full object-cover"
                     />
                   </div>
                 )}
                 <p className="text-zinc-300 font-medium text-sm">
-                  {formData[field.name].name}
+                  {formData[field.name] instanceof File
+                    ? formData[field.name].name
+                    : "Current File"}
                 </p>
                 <p className="text-xs text-zinc-500 mt-1">Click to replace</p>
               </div>
@@ -287,12 +317,6 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
-        <p className="text-zinc-500 text-sm">
-          Set up your event details and broadcast your vision.
-        </p>
-      </div>
 
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden">
         {error && (
@@ -377,7 +401,7 @@ const DynamicSteppedForm = ({ schema, onSubmit, initialData = {} }) => {
             ) : (
               <>
                 <Save size={18} />
-                Publish Event
+                {submitLabel}
               </>
             )}
           </button>

@@ -50,11 +50,6 @@ const MainSidebar = ({ user, collapsed }) => {
         { label: "Finance", path: "/organizer/finance", icon: DollarSign },
         { label: "Speakers", path: "/organizer/speakers", icon: UserSearch },
         { label: "Broadcast", path: "/organizer/broadcast", icon: Send },
-        {
-          label: "Activity Log",
-          path: "/organizer/activity-log",
-          icon: History,
-        },
       ];
 
       // If we are managing a specific event, add context links

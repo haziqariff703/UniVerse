@@ -52,12 +52,6 @@ const Workforce = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
         <div className="flex items-center gap-4">
-          <Link
-            to="/organizer/dashboard"
-            className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-white"
-          >
-            <ArrowLeft size={20} />
-          </Link>
           <div>
             <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
               Workforce Center

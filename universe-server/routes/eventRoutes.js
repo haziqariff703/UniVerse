@@ -9,7 +9,7 @@ const upload = require('../middleware/upload');
 // Protected routes (require authentication)
 router.get('/my-events', auth, eventController.getMyEvents);
 router.post('/', auth, authorize('admin', 'organizer'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), eventController.createEvent);
-router.put('/:id', auth, eventController.updateEvent);
+router.put('/:id', auth, authorize('admin', 'organizer'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), eventController.updateEvent);
 router.delete('/:id', auth, authorize('admin'), eventController.deleteEvent);
 
 // Public routes

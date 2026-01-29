@@ -149,9 +149,21 @@ exports.updateEvent = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this event." });
     }
 
+    const updateData = { ...req.body };
+
+    // Handle File Uploads
+    if (req.files) {
+      if (req.files['image']) {
+        updateData.image = req.files['image'][0].path.replace(/\\/g, "/");
+      }
+      if (req.files['proposal']) {
+        updateData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
+      }
+    }
+
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 
