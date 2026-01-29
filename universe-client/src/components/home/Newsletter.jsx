@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NoiseBackground } from "@/components/ui/noise-background";
+import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect";
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
@@ -39,19 +40,32 @@ const Newsletter = () => {
       />
 
       {/* Main Header */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto mb-12 text-center">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-4xl md:text-5xl font-clash font-bold text-foreground mb-4"
-        >
-          Unlock the{" "}
-          <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            UniVerse
-          </span>
-        </motion.h2>
-        <p className="text-base text-muted-foreground">
+      <div className="relative z-10 w-full max-w-6xl mx-auto mb-8 flex flex-col items-center text-center">
+        <TypewriterEffectSmooth
+          words={[
+            {
+              text: "Unlock",
+              className: "text-white text-4xl md:text-5xl font-clash font-bold",
+            },
+            {
+              text: "Your",
+              className: "text-white text-4xl md:text-5xl font-clash font-bold",
+            },
+            {
+              text: "UniVerse",
+              className:
+                "text-4xl md:text-5xl font-clash font-bold bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent",
+            },
+            {
+              text: "Now",
+              className:
+                "text-4xl md:text-5xl font-clash font-bold bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent",
+            },
+          ]}
+          className="my-0"
+          cursorClassName="bg-cyan-400"
+        />
+        <p className="text-base text-muted-foreground mt-2">
           The definitive hub for student life, events, and community.
         </p>
       </div>

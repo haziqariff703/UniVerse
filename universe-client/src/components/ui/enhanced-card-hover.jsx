@@ -10,7 +10,7 @@ export const EnhancedHoverEffect = ({ items, className, onCardClick }) => {
   return (
     <div
       className={cn(
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-10",
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-10",
         className,
       )}
     >
@@ -25,7 +25,7 @@ export const EnhancedHoverEffect = ({ items, className, onCardClick }) => {
           <AnimatePresence>
             {hoveredIndex === idx && (
               <motion.span
-                className="absolute inset-0 h-full w-full bg-purple-500/[0.1] block rounded-3xl"
+                className="absolute inset-0 h-full w-full bg-slate-800/[0.8] block rounded-3xl"
                 layoutId="hoverBackground"
                 initial={{ opacity: 0 }}
                 animate={{
@@ -58,7 +58,7 @@ const ClubCard = ({
   return (
     <div
       className={cn(
-        "rounded-2xl h-full w-full overflow-hidden bg-slate-950/40 backdrop-blur-xl border border-white/5 group-hover:border-purple-500/30 relative z-20 transition-all duration-300",
+        "rounded-2xl h-full w-full overflow-hidden bg-slate-950/40 backdrop-blur-xl border border-white/5 group-hover:border-slate-700 relative z-20 transition-colors duration-500",
       )}
     >
       {/* Image Header with Gradient Fade */}
@@ -78,12 +78,12 @@ const ClubCard = ({
       {/* Card Content */}
       <div className="relative z-50 p-6 -mt-6">
         {/* Title */}
-        <h4 className="text-zinc-100 font-clash font-bold text-2xl tracking-tight mb-2 group-hover:text-purple-300 transition-colors">
+        <h4 className="text-zinc-100 font-clash font-bold text-2xl tracking-tight mb-2 transition-colors">
           {title}
         </h4>
 
         {/* Tagline */}
-        <p className="text-purple-300/80 text-xs italic tracking-wide mb-4">
+        <p className="text-slate-400 text-xs italic tracking-wide mb-4">
           "{tagline}"
         </p>
 
@@ -111,7 +111,7 @@ const ClubCard = ({
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-4 pt-4 border-t border-white/5">
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-cyan-500" />
-            <span>{members} Members</span>
+            <span className="text-slate-400">{members} Members</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-purple-500" />

@@ -23,11 +23,9 @@
 
 .logoloop__item {
   flex: 0 0 auto;
-  min-width: 250px; /* Enforce substantial minimum width */
-  display: flex; /* Center centered */
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1rem; /* Add breathing room */
 }
 
 .logoloop__item img {

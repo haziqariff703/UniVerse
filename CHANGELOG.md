@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-01-30]
+
+### Added
+
+- `FeaturedEventSlider.jsx`: New cinematic auto-sliding component with interactive dot navigation, 4s interval, and frosted glass text containers.
+- `mockEvents.js`: Added `FEATURED_EVENTS` array with content for IMSA, JPK Jasmine, and FiTA.
+
+### Changed
+
+- `Events.jsx`: Replaced static hero with `FeaturedEventSlider` and restored the 3-column grid for "Upcoming Experiences".
+
+### Fixed
+
+- **Fixed**: Resolved missing `@headlessui/react` dependency causing build errors (2026-01-30)
+
 ## [2026-01-28]
 
 ### Fixed
