@@ -207,12 +207,28 @@ exports.getAllEvents = async (req, res) => {
 
     const total = await Event.countDocuments(query);
 
+    // KPI Stats (Global)
+    const [totalEvents, approvedCount, rejectedCount, pendingCount, totalRegistrations] = await Promise.all([
+      Event.countDocuments(),
+      Event.countDocuments({ status: 'approved' }),
+      Event.countDocuments({ status: 'rejected' }),
+      Event.countDocuments({ status: 'pending' }),
+      Registration.countDocuments()
+    ]);
+
     res.json({
       events: eventsWithStats,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         totalEvents: total
+      },
+      stats: {
+        total: totalEvents,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        pending: pendingCount,
+        registrations: totalRegistrations
       }
     });
   } catch (error) {
@@ -231,7 +247,7 @@ exports.getPendingEvents = async (req, res) => {
   try {
     const events = await Event.find({ status: 'pending' })
       .populate('organizer_id', 'name email')
-      .populate('venue_id', 'name location_code')
+      .populate('venue_id', 'name location_code max_capacity')
       .sort({ created_at: -1 });
 
     res.json({ events });

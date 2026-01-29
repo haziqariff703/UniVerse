@@ -53,6 +53,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  id_card_url: {
+    type: String,
+    required: false
+  },
+  confirmation_letter_url: {
+    type: String,
+    required: false
+  },
+
   created_at: { 
     type: Date, 
     default: Date.now 

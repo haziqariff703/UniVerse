@@ -36,8 +36,16 @@ import AdminLayout from "./components/layout/AdminLayout";
 // Lazy Load Admin Pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
-const EventsPage = lazy(() => import("./pages/admin/EventsPage"));
-const OrganizersPage = lazy(() => import("./pages/admin/OrganizersPage"));
+const EventsListPage = lazy(() => import("./pages/admin/EventsListPage"));
+const EventApprovalsPage = lazy(
+  () => import("./pages/admin/EventApprovalsPage"),
+);
+const OrganizersListPage = lazy(
+  () => import("./pages/admin/OrganizersListPage"),
+);
+const OrganizerApprovalsPage = lazy(
+  () => import("./pages/admin/OrganizerApprovalsPage"),
+);
 const VenuesPage = lazy(() => import("./pages/admin/VenuesPage"));
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage"));
 
@@ -206,25 +214,57 @@ function App() {
                 />
                 <Route
                   path="events"
+                  element={<Navigate to="events/list" replace />}
+                />
+                <Route
+                  path="events/list"
                   element={
                     <Suspense
                       fallback={
                         <div className="p-8 text-foreground">Loading...</div>
                       }
                     >
-                      <EventsPage />
+                      <EventsListPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="events/approvals"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <EventApprovalsPage />
                     </Suspense>
                   }
                 />
                 <Route
                   path="organizers"
+                  element={<Navigate to="organizers/list" replace />}
+                />
+                <Route
+                  path="organizers/list"
                   element={
                     <Suspense
                       fallback={
                         <div className="p-8 text-foreground">Loading...</div>
                       }
                     >
-                      <OrganizersPage />
+                      <OrganizersListPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="organizers/approvals"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <OrganizerApprovalsPage />
                     </Suspense>
                   }
                 />

@@ -16,6 +16,12 @@ import {
 import { motion } from "framer-motion";
 import GradientText from "@/components/ui/GradientText";
 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
 const SidebarItem = ({ icon: Icon, label, active, onClick, collapsed }) => (
   <button
     onClick={onClick}
@@ -39,6 +45,100 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, collapsed }) => (
     )}
   </button>
 );
+
+const SidebarGroup = ({
+  icon: Icon,
+  label,
+  collapsed,
+  active,
+  subItems,
+  currentPath,
+  navigate,
+}) => {
+  const [isOpen, setIsOpen] = React.useState(active);
+
+  // Auto-open if a child is active
+  React.useEffect(() => {
+    if (active) setIsOpen(true);
+  }, [active]);
+
+  if (collapsed) {
+    // When collapsed, just act like a single item that might navigate to the first child or do nothing?
+    // User expectation for collapsed sidebar dropdowns is tricky.
+    // Usually they are hidden or show a popover.
+    // For now, we will just render the icon button, maybe clicking it expands the sidebar?
+    // Or simpler: strictly follow the existing pattern where we don't show the dropdown.
+    return (
+      <button
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+          active
+            ? "bg-violet-600 text-white"
+            : "text-gray-400 hover:bg-white/5 hover:text-white"
+        }`}
+        title={label}
+      >
+        <div className="flex items-center justify-center w-5 h-5">
+          <Icon
+            size={20}
+            className={active ? "text-white" : "group-hover:text-white"}
+          />
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-1">
+      <CollapsibleTrigger asChild>
+        <button
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+            active
+              ? "text-white"
+              : "text-gray-400 hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          <div className="flex items-center justify-center w-5 h-5">
+            <Icon
+              size={20}
+              className={active ? "text-violet-500" : "group-hover:text-white"}
+            />
+          </div>
+          <span className="font-medium text-sm whitespace-nowrap flex-grow text-left">
+            {label}
+          </span>
+          <ChevronRight
+            size={14}
+            className={`transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+          />
+        </button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="space-y-1 data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
+        <div className="pl-12 space-y-1">
+          {subItems.map((item) => {
+            const isSubActive = currentPath === item.path;
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
+                  isSubActive
+                    ? "text-violet-400 bg-violet-400/10 font-medium"
+                    : "text-gray-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${isSubActive ? "bg-violet-400" : "bg-gray-600"}`}
+                />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
   const navigate = useNavigate();
@@ -95,19 +195,33 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           onClick={() => navigate("/admin/users")}
           collapsed={collapsed}
         />
-        <SidebarItem
+
+        {/* Events Dropdown */}
+        <SidebarGroup
           icon={Calendar}
           label="Events"
-          active={currentPath.includes("/admin/events")}
-          onClick={() => navigate("/admin/events")}
           collapsed={collapsed}
+          active={currentPath.includes("/admin/events")}
+          subItems={[
+            { label: "All Events", path: "/admin/events/list" },
+            { label: "Approvals", path: "/admin/events/approvals" },
+          ]}
+          currentPath={currentPath}
+          navigate={navigate}
         />
-        <SidebarItem
+
+        {/* Organizers Dropdown */}
+        <SidebarGroup
           icon={Users}
           label="Organizers"
-          active={currentPath.includes("/admin/organizers")}
-          onClick={() => navigate("/admin/organizers")}
           collapsed={collapsed}
+          active={currentPath.includes("/admin/organizers")}
+          subItems={[
+            { label: "All Organizers", path: "/admin/organizers/list" },
+            { label: "Approvals", path: "/admin/organizers/approvals" },
+          ]}
+          currentPath={currentPath}
+          navigate={navigate}
         />
 
         <div

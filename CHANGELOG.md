@@ -5,6 +5,14 @@
 ### Added
 
 - **PDF File Uploads**: Enable PDF upload for "Event Proposal/Documentation" in the Create Event form, backed by `multer` middleware.
+- **Admin Event Management**: Complete overhaul of `EventApprovals` to a "Command Center" dashboard with KPI cards and compact data grid.
+- **KPI Metrics**: Added real-time calculation for Total Pending, Capacity Alerts, and Urgent Events.
+- **Search & Filter**: Implemented client-side filtering for efficient event management.
+- **Capacity Validation**: Implemented visual warning in Admin dashboard when event capacity exceeds venue limits.
+- **Proposal Viewer**: Added "FileText" icon button to quickly view uploaded proposals.
+- **Backend Refinement**: Updated `adminController` to populate venue `max_capacity` for validation logic.
+- **User Management Redesign**: Overhauled `UsersPage` with the new "Command Center" layout.
+- **Role Management**: Enhanced role switcher with color-coded badges and inline updating.
 
 ### Changed
 
