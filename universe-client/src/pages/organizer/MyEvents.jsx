@@ -12,6 +12,8 @@ import {
   DashboardStats,
   InsightsPanel,
 } from "@/components/organizer/event-dashboard";
+import ShinyText from "@/components/ui/ShinyText";
+import { Tab, TabGroup, TabList } from "@headlessui/react";
 
 const MyEvents = () => {
   const [events, setEvents] = useState([]);
@@ -81,7 +83,7 @@ const MyEvents = () => {
           <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
             Event Management
           </h1>
-          <p className="text-white/40 text-sm">Command Center</p>
+          <p className="text-sm font-medium text-white/40">Command Center</p>
         </div>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -144,20 +146,36 @@ const MyEvents = () => {
         <div className="lg:col-span-8 flex flex-col gap-6">
           {/* Tabs - Only show in Grid Mode */}
           {viewMode === "grid" && (
-            <div className="flex gap-2 border-b border-white/10 pb-1 overflow-x-auto no-scrollbar">
-              {["all", "live", "pending", "past"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2 rounded-t-lg text-sm font-bold uppercase tracking-wide transition-all ${
-                    activeTab === tab
-                      ? "text-violet-400 border-b-2 border-violet-500 bg-violet-500/5"
-                      : "text-gray-500 hover:text-white"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="flex justify-start pb-1">
+              <TabGroup
+                selectedIndex={["all", "live", "pending", "past"].indexOf(
+                  activeTab,
+                )}
+                onChange={(index) =>
+                  setActiveTab(["all", "live", "pending", "past"][index])
+                }
+              >
+                <TabList className="flex bg-[#050505] border border-white/10 rounded-full p-1 gap-1 shadow-lg">
+                  {["all", "live", "pending", "past"].map((tab) => (
+                    <Tab
+                      key={tab}
+                      className="rounded-full px-5 py-2 text-sm font-neuemontreal font-bold uppercase tracking-wide text-gray-400 focus:outline-none data-[selected]:bg-white/10 data-[selected]:text-white data-[hover]:bg-white/5 transition-all duration-200 border border-transparent"
+                    >
+                      {({ selected }) => (
+                        <div className="flex items-center gap-2">
+                          {tab === "live" && selected && (
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                          )}
+                          {tab}
+                        </div>
+                      )}
+                    </Tab>
+                  ))}
+                </TabList>
+              </TabGroup>
             </div>
           )}
 

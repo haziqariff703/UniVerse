@@ -60,7 +60,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useState, useEffect } from "react";
 import MainSidebar from "./components/layout/MainSidebar";
 import Navbar from "./components/layout/Navbar";
-import FloatingLines from "@/components/FloatingLines";
+import FloatingLines from "./components/animate-ui/components/backgrounds/FloatingLines";
 
 const Layout = ({ children }) => {
   const location = useLocation();
