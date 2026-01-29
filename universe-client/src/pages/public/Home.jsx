@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Hero from "@/components/home/Hero";
-import EventCard from "@/components/common/EventCard";
 import Stats from "@/components/home/Stats";
 import CampusLifeInMotion from "@/components/sections/CampusLifeInMotion";
 import FacultyShowcase from "@/components/sections/FacultyShowcase";
@@ -9,80 +8,18 @@ import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
 import Footer from "@/components/common/Footer";
+import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
+import { FEATURED_EVENTS } from "@/data/mockEvents";
 
 const Home = () => {
-  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real scenario, this would be your actual API endpoint
-    // Using a timeout to simulate loading state if the server is empty
-    const fetchEvents = async () => {
-      try {
-        // Backend server not running - using mock data
-        // const response = await fetch("http://localhost:5000/api/events");
-        // if (!response.ok) {
-        //   throw new Error(`HTTP error! status: ${response.status}`);
-        // }
-        // const data = await response.json();
-        // setEvents(data);
-
-        // Using mock data until backend is started
-        setEvents([
-          {
-            id: 1,
-            title: "Nebula Music Festival",
-            date: "2023-11-15",
-            category: "Music",
-            description: "Experience intergalactic beats under the stars.",
-          },
-          {
-            id: 2,
-            title: "Tech Horizons 2024",
-            date: "2024-01-20",
-            category: "Tech",
-            description: "The future of AI and space exploration technology.",
-          },
-          {
-            id: 3,
-            title: "Cosmic Art Exhibition",
-            date: "2023-12-05",
-            category: "Art",
-            description: " immersive digital art installations.",
-          },
-        ]);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        // Fallback dummy data if server connection fails or is empty for demo purposes
-        setEvents([
-          {
-            id: 1,
-            title: "Nebula Music Festival",
-            date: "2023-11-15",
-            category: "Music",
-            description: "Experience intergalactic beats under the stars.",
-          },
-          {
-            id: 2,
-            title: "Tech Horizons 2024",
-            date: "2024-01-20",
-            category: "Tech",
-            description: "The future of AI and space exploration technology.",
-          },
-          {
-            id: 3,
-            title: "Cosmic Art Exhibition",
-            date: "2023-12-05",
-            category: "Art",
-            description: " immersive digital art installations.",
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
+    // Simulate initial loading for premium feel
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -120,20 +57,8 @@ const Home = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.length > 0 ? (
-              events.map((event, index) => (
-                <EventCard
-                  key={event._id || event.id}
-                  event={event}
-                  index={index}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-20 text-starlight/50">
-                <p>No events found. Be the first to create one!</p>
-              </div>
-            )}
+          <div className="w-full">
+            <FeaturedEventSlider events={FEATURED_EVENTS} isSmall={true} />
           </div>
         )}
       </main>

@@ -44,8 +44,8 @@ const Communities = () => {
           logos={communityLogos}
           speed={50}
           direction="left"
-          logoHeight={180} // Big Enough
-          gap={80} // Tighter Gap for density
+          logoHeight={180} // Half the previous size (360 -> 180)
+          gap={10} // Half the previous gap (20 -> 10)
           scaleOnHover
           fadeOut
           fadeOutColor="#0b0b27"

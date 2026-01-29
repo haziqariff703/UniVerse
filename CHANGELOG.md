@@ -13,12 +13,18 @@
 - **Backend Refinement**: Updated `adminController` to populate venue `max_capacity` for validation logic.
 - **User Management Redesign**: Overhauled `UsersPage` with the new "Command Center" layout.
 - **Role Management**: Enhanced role switcher with color-coded badges and inline updating.
+- `FeaturedEventSlider.jsx`: New cinematic auto-sliding component with interactive dot navigation, 4s interval, and frosted glass text containers.
+- `mockEvents.js`: Added `FEATURED_EVENTS` array with content for IMSA, JPK Jasmine, and FiTA.
 
 ### Changed
 
-- **Create Event UI**: Refactored the form into a collapsible **Accordion Layout** and converted Venue selection to a native **Dropdown** for better usability.
-- **Broadcast UI**: Updated the "Best Practices" container to a solid black minimalist design.
-- **Speaker Cards**: Removed the "glass flip" hover effect to maintain a solid black background.
+- `Events.jsx`: Replaced static hero with `FeaturedEventSlider` and restored the 3-column grid for "Upcoming Experiences".
+
+### Fixed
+
+- **Fixed**: Resolved missing `@headlessui/react` dependency causing build errors (2026-01-30)
+
+## [2026-01-28]
 
 ### Added
 
@@ -35,8 +41,13 @@
 - **Unified Notifications Center**: Consolidated student and organizer notifications into a single, role-aware component in `/student/Notifications.jsx`.
 - **Routing & Navigation**: Integrated the new pages into `App.jsx` routes, optimized redundant paths, and updated `MainSidebar` with corresponding icons and links.
 - **Dependencies**: Added `@headlessui/react` for improved accessibility and interactive components.
+- **PDF File Uploads**: Enable PDF upload for "Event Proposal/Documentation" in the Create Event form, backed by `multer` middleware.
 
-[2026-01-28]
+### Changed
+
+- **Create Event UI**: Refactored the form into a collapsible **Accordion Layout** and converted Venue selection to a native **Dropdown** for better usability.
+- **Broadcast UI**: Updated the "Best Practices" container to a solid black minimalist design.
+- **Speaker Cards**: Removed the "glass flip" hover effect to maintain a solid black background.
 
 ### Fixed
 

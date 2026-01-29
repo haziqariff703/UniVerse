@@ -1,20 +1,28 @@
-import React, { useEffect } from "react";
+"use client";
+import { useEffect } from "react";
 import { motion, stagger, useAnimate } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export const TextGenerateEffect = ({ words, className }) => {
+export const TextGenerateEffect = ({
+  words,
+  className,
+  filter = true,
+  duration = 0.5,
+  staggerDelay = 0.4, // Slower default reveal
+}) => {
   const [scope, animate] = useAnimate();
-  const wordsArray = words.split(" ");
+  let wordsArray = typeof words === "string" ? words.split(" ") : words;
 
   useEffect(() => {
     animate(
       "span",
       {
         opacity: 1,
+        filter: filter ? "blur(0px)" : "none",
       },
       {
-        duration: 2,
-        delay: stagger(0.1),
+        duration: duration ? duration : 1,
+        delay: stagger(staggerDelay),
       },
     );
   }, [scope.current]);
@@ -23,9 +31,18 @@ export const TextGenerateEffect = ({ words, className }) => {
     return (
       <motion.div ref={scope}>
         {wordsArray.map((word, idx) => {
+          const text = typeof word === "string" ? word : word.text;
+          const wordClassName = typeof word === "string" ? "" : word.className;
+
           return (
-            <motion.span key={word + idx} className="opacity-0">
-              {word}{" "}
+            <motion.span
+              key={text + idx}
+              className={cn("opacity-0", wordClassName)}
+              style={{
+                filter: filter ? "blur(10px)" : "none",
+              }}
+            >
+              {text}{" "}
             </motion.span>
           );
         })}
@@ -34,8 +51,10 @@ export const TextGenerateEffect = ({ words, className }) => {
   };
 
   return (
-    <div className={cn("", className)}>
-      <div>{renderWords()}</div>
+    <div className={cn("font-bold", className)}>
+      <div className="mt-4">
+        <div className="leading-snug tracking-wide">{renderWords()}</div>
+      </div>
     </div>
   );
 };

@@ -1,144 +1,138 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  ArrowRight,
+  Target,
+  Award,
+  Map,
+} from "lucide-react";
 import { Spotlight } from "@/components/ui/spotlight";
 
 const EventCard = ({ event, index }) => {
-  // Handle both API schema (date_time) and mock data (date)
-  const eventDate = event.date_time || event.date;
-  const dateObj = eventDate ? new Date(eventDate) : null;
-  const formattedDate =
-    dateObj && !isNaN(dateObj)
-      ? dateObj.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "TBA";
-  const formattedTime =
-    dateObj && !isNaN(dateObj)
-      ? dateObj.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : event.time || "TBA";
+  // Determine Theme
+  const isFPM =
+    event.theme === "cyan" ||
+    event.organizer?.name?.includes("FPM") ||
+    event.organizer?.name?.includes("IMSA");
+  const themeColor = isFPM ? "cyan" : "purple";
 
-  // Handle both tags array and category string
-  const category = event.tags?.[0] || event.category || "General";
-
-  // Determine faculty-based spotlight color
-  const isTechEvent =
-    category.toLowerCase().includes("tech") ||
-    category.toLowerCase().includes("workshop") ||
-    category.toLowerCase().includes("seminar");
-
-  const isFiTAEvent =
-    category.toLowerCase().includes("music") ||
-    category.toLowerCase().includes("art") ||
-    category.toLowerCase().includes("performance") ||
-    category.toLowerCase().includes("theater") ||
-    category.toLowerCase().includes("film");
-
-  const spotlightColor = isTechEvent
-    ? "rgba(6, 182, 212, 0.4)" // Cyan for Tech/FPM
-    : isFiTAEvent
-      ? "rgba(168, 85, 247, 0.4)" // Purple for FiTA
-      : "rgba(139, 92, 246, 0.4)"; // Default violet
-
-  const accentColor = isTechEvent ? "cyan" : isFiTAEvent ? "purple" : "violet";
+  // Spotlight Color
+  const spotlightColor = isFPM
+    ? "rgba(6, 182, 212, 0.25)" // Cyan
+    : "rgba(168, 85, 247, 0.4)"; // Purple
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="h-full"
+      className="h-full relative group"
     >
-      <Spotlight spotlightColor={spotlightColor} className="group h-full">
+      <Spotlight
+        spotlightColor={spotlightColor}
+        className="h-full rounded-2xl border border-slate-800 bg-slate-950/50 backdrop-blur-sm overflow-hidden"
+      >
         <Link
-          to={`/events/${event._id || event.id}`}
-          className="block h-full relative z-10 flex flex-col p-6"
+          to={`/events/${event.id}`}
+          className="block h-full relative z-10 flex flex-col"
         >
           {/* Image Section */}
-          <div className="relative h-48 rounded-2xl overflow-hidden mb-6 flex-shrink-0">
-            {event.image ? (
-              <img
-                src={event.image}
-                alt={event.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${
-                  isTechEvent
-                    ? "from-cyan-900/30 to-blue-900/30"
-                    : isFiTAEvent
-                      ? "from-purple-900/30 to-pink-900/30"
-                      : "from-violet-900/30 to-indigo-900/30"
-                }`}
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
+          <div className="relative h-56 overflow-hidden">
+            <img
+              src={event.image}
+              alt={event.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-90" />
 
-            {/* Category Badge */}
-            <div
-              className={`absolute top-4 right-4 bg-${accentColor}-500/20 backdrop-blur-md px-3 py-1.5 border border-${accentColor}-400/30 rounded-full`}
-            >
-              <span
-                className={`text-xs font-clash font-semibold text-${accentColor}-200`}
-              >
-                {category}
-              </span>
+            {/* Top Badges */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              {event.target && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold font-clash bg-black/50 border border-white/10 text-white backdrop-blur-md flex items-center gap-1.5 w-fit">
+                  <Target size={12} className={`text-${themeColor}-400`} />
+                  {event.target}
+                </span>
+              )}
+            </div>
+
+            <div className="absolute top-4 right-4">
+              {event.benefit && (
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold font-clash backdrop-blur-md border flex items-center gap-1.5 ${
+                    isFPM
+                      ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+                      : "bg-purple-500/10 border-purple-500/30 text-purple-300"
+                  }`}
+                >
+                  <Award size={12} />
+                  {event.benefit}
+                </span>
+              )}
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex flex-col flex-grow">
-            <h3 className="text-2xl font-clash font-bold text-white mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-400 group-hover:bg-clip-text transition-all duration-300">
+          <div className="p-6 flex flex-col flex-grow relative">
+            {/* Title */}
+            <h3
+              className={`text-2xl font-bold font-clash mb-3 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r transition-all duration-300 ${
+                isFPM
+                  ? "from-cyan-400 to-blue-400"
+                  : "from-purple-400 to-pink-400"
+              }`}
+            >
               {event.title}
             </h3>
 
-            <p className="text-slate-300 text-sm mb-6 line-clamp-2 leading-relaxed flex-grow">
-              {event.description ||
-                "Join us for an amazing experience where we explore the depths of this topic."}
-            </p>
-
-            {/* Event Details */}
-            <div className="space-y-2 mb-6">
-              <div className="flex items-center gap-3 text-sm text-slate-400">
-                <Calendar size={16} className={`text-${accentColor}-400/80`} />
-                <span className="font-clash">{formattedDate}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-400">
-                <Clock size={16} className={`text-${accentColor}-400/80`} />
-                <span className="font-clash">{formattedTime}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-400">
-                <MapPin size={16} className={`text-${accentColor}-400/80`} />
-                <span className="font-clash">
-                  {event.location || event.venue?.name || "Online"}
+            {/* Meta Details */}
+            <div className="space-y-3 mb-6 flex-grow">
+              <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-300 transition-colors">
+                <Calendar size={16} className={`text-${themeColor}-400`} />
+                <span className="font-clash text-sm font-medium">
+                  {event.date}
                 </span>
+              </div>
+
+              {/* Venue with Satellite Icon */}
+              <div
+                className="flex items-center gap-3 text-slate-400 group-hover:text-white transition-colors cursor-pointer"
+                title="View on Campus Map"
+              >
+                <MapPin size={16} className={`text-${themeColor}-400`} />
+                <span className="font-clash text-sm font-medium truncate pr-2">
+                  {event.venue?.name}
+                </span>
+                <Map
+                  size={14}
+                  className="ml-auto opacity-50 group-hover:opacity-100"
+                />
               </div>
             </div>
 
-            {/* Ghost Button with Glow on Spotlight */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className={`w-full py-3 border rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
-                isTechEvent
-                  ? "border-cyan-500/30 text-cyan-300 group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
-                  : isFiTAEvent
-                    ? "border-purple-500/30 text-purple-300 group-hover:border-purple-400 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-                    : "border-violet-500/30 text-violet-300 group-hover:border-violet-400 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-              }`}
-            >
-              <span className="text-sm font-clash font-bold">View Details</span>
-              <ArrowRight
-                size={16}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </motion.div>
+            {/* Action Row */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+              <span className="text-xs font-clash text-slate-500 uppercase tracking-wider">
+                {event.organizer?.name}
+              </span>
+
+              <div
+                className={`flex items-center gap-2 text-sm font-bold font-clash transition-all duration-300 ${
+                  isFPM
+                    ? "text-cyan-400 group-hover:text-cyan-300"
+                    : "text-purple-400 group-hover:text-purple-300"
+                }`}
+              >
+                View Details
+                <ArrowRight
+                  size={16}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </div>
           </div>
         </Link>
       </Spotlight>

@@ -185,7 +185,7 @@ export const clubDatabase = {
       tags: ["Religious", "Character Building", "Spiritual"],
       imageCategory: "prayer",
       image:
-        "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&q=80",
+        "https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=800&q=80",
       members: "200+",
       founded: "2009",
       category: "Leadership",
@@ -204,7 +204,7 @@ export const clubDatabase = {
       tags: ["Social", "Welfare", "Residential"],
       imageCategory: "community",
       image:
-        "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80",
+        "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80",
       members: "180+",
       founded: "2011",
       category: "Leadership",

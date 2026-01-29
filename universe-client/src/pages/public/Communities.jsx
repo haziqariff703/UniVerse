@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Users, Shield } from "lucide-react";
-import GradientText from "@/components/ui/GradientText";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { EnhancedHoverEffect } from "@/components/ui/enhanced-card-hover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SearchBar from "@/components/common/SearchBar";
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import ClubDetailModal from "@/components/common/ClubDetailModal";
 import { clubDatabase } from "@/data/clubsData";
 
@@ -12,6 +12,15 @@ const Communities = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClub, setSelectedClub] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const placeholders = [
+    "Search for 'IMSA' or 'SMF'...",
+    "Looking for 'Records Management'?",
+    "Find creative clubs like 'CASA'...",
+    "Search by tagline or keywords...",
+    "What's happening in Academic units?",
+    "Find 'Leadership' organizations...",
+  ];
 
   // Filter function - searches across title, tagline, and tags
   const filterClubs = (clubs) => {
@@ -60,27 +69,35 @@ const Communities = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl md:text-6xl font-clash font-bold text-foreground mb-4">
-            Student Organizations &{" "}
-            <GradientText
-              colors={["#7c3aed", "#a78bfa", "#7c3aed", "#a78bfa", "#7c3aed"]}
-              animationSpeed={3}
-              showBorder={false}
-              className="px-0"
-            >
-              Communities
-            </GradientText>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl text-slate-400">
+          <TextGenerateEffect
+            words={[
+              { text: "Student" },
+              { text: "Organizations" },
+              { text: "&" },
+              {
+                text: "Communities",
+                className:
+                  "bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent",
+              },
+            ]}
+            staggerDelay={0.5}
+            className="text-4xl md:text-6xl font-clash font-bold text-white mb-4"
+          />
+          <p className="text-lg text-muted-foreground max-w-2xl text-slate-400 font-clash">
             A centralized directory for UiTM Puncak Perdana registered units.
           </p>
         </motion.div>
 
         {/* Search Bar */}
-        <SearchBar
-          onSearch={setSearchTerm}
-          placeholder="Search organizations by name, tagline, or tags..."
-        />
+        <div className="flex justify-center mb-12">
+          <div className="w-full max-w-2xl">
+            <PlaceholdersAndVanishInput
+              placeholders={placeholders}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onSubmit={(e) => e.preventDefault()}
+            />
+          </div>
+        </div>
 
         {/* Tabs Section */}
         <Tabs defaultValue="academic" className="w-full">
@@ -168,7 +185,7 @@ const EmptyState = ({ searchTerm }) => (
       <h3 className="text-xl font-clash font-bold text-foreground mb-2">
         No organizations found
       </h3>
-      <p className="text-muted-foreground text-sm">
+      <p className="text-muted-foreground text-sm font-clash">
         {searchTerm
           ? `No results for "${searchTerm}". Try a different search term.`
           : "No organizations available in this category."}
