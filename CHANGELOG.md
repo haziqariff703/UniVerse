@@ -1,6 +1,24 @@
 # Changelog
 
-## [2026-01-28]
+## [2026-01-29]
+
+### Added
+
+- **New Organizer Pages**: Implemented 5 high-fidelity pages for the organizer workspace:
+  - **Notifications Center**: Central hub for event alerts and guest registrations.
+  - **Finance Dashboard**: Revenue tracking with interactive Area Charts (Recharts).
+  - **Activity Log**: Chronological timeline of management actions for accountability.
+  - **Speaker Directory**: Centralized talent management with expertise tracking.
+  - **Attendee Broadcast**: Mass communication tool for sending event updates.
+- **Enhanced Create Event Center**: Implemented a Two-Column layout in `CreateEvent.jsx` featuring a real-time `EventRoadmap` calendar for scheduling conflict detection.
+- **Advanced Organizer Schema**: Aligned event creation with backend `Venue`, `Speaker`, and `EventCrew` models, adding support for dynamic selection and multi-assignment.
+- **Dynamic Form Extensions**: Added `multi-select` support to `DynamicSteppedForm.jsx` for advanced tagging and speaker management.
+- **Refined Create Event Layout**: Updated `DynamicSteppedForm.jsx` to a professional, compact, minimalist design with a black container, removing `gsap` and `SpotlightCard`.
+- **Unified Notifications Center**: Consolidated student and organizer notifications into a single, role-aware component in `/student/Notifications.jsx`.
+- **Routing & Navigation**: Integrated the new pages into `App.jsx` routes, optimized redundant paths, and updated `MainSidebar` with corresponding icons and links.
+- **Dependencies**: Added `@headlessui/react` for improved accessibility and interactive components.
+
+[2026-01-28]
 
 ### Fixed
 

@@ -48,7 +48,13 @@ const eventSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'Open', 'SoldOut', 'Cancelled'], 
     default: 'pending' 
   },
-  tags: [String]
+  tags: [String],
+  image: {
+    type: String
+  },
+  proposal: {
+    type: String
+  }
 });
 
 module.exports = mongoose.model('Event', eventSchema);

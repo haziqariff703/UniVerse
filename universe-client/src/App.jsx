@@ -53,6 +53,10 @@ import OrganizerVenues from "./pages/organizer/Venues";
 import VenueEvents from "./pages/organizer/VenueEvents";
 import Analytics from "./pages/organizer/Analytics";
 import Workforce from "./pages/organizer/Workforce";
+import Finance from "./pages/organizer/Finance";
+import ActivityLog from "./pages/organizer/ActivityLog";
+import OrganizerSpeakers from "./pages/organizer/Speakers";
+import Broadcast from "./pages/organizer/Broadcast";
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -328,6 +332,38 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["organizer", "admin"]}>
                     <Workforce />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/finance"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <Finance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/activity-log"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <ActivityLog />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/speakers"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <OrganizerSpeakers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/organizer/broadcast"
+                element={
+                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                    <Broadcast />
                   </ProtectedRoute>
                 }
               />

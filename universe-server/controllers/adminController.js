@@ -532,3 +532,57 @@ exports.deleteVenue = async (req, res) => {
   }
 };
 
+// ==================== SPEAKER MANAGEMENT ====================
+
+const Speaker = require('../models/speaker');
+
+/**
+ * Get All Speakers
+ * @route GET /api/admin/speakers
+ */
+exports.getAllSpeakers = async (req, res) => {
+  try {
+    const speakers = await Speaker.find().sort({ name: 1 });
+    res.json({ speakers });
+  } catch (error) {
+    console.error('Get speakers error:', error);
+    res.status(500).json({ message: 'Failed to fetch speakers' });
+  }
+};
+
+/**
+ * Create Speaker
+ * @route POST /api/admin/speakers
+ */
+exports.createSpeaker = async (req, res) => {
+  try {
+    const { name, expertise, bio, social_links } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Speaker name is required' });
+    }
+
+    const speaker = new Speaker({
+      name,
+      expertise,
+      bio,
+      social_links
+    });
+    await speaker.save();
+
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'CREATE_SPEAKER',
+      target_type: 'Speaker',
+      target_id: speaker._id,
+      details: { name: speaker.name },
+      ip_address: req.ip
+    });
+
+    res.status(201).json({ message: 'Speaker added successfully', speaker });
+  } catch (error) {
+    console.error('Create speaker error:', error);
+    res.status(500).json({ message: 'Failed to add speaker' });
+  }
+};
+
