@@ -48,6 +48,9 @@ const OrganizerApprovalsPage = lazy(
 );
 const VenuesPage = lazy(() => import("./pages/admin/VenuesPage"));
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage"));
+const SpeakersPage = lazy(() => import("./pages/admin/SpeakersPage"));
+const ReviewsPage = lazy(() => import("./pages/admin/ReviewsPage"));
+const NotificationsPage = lazy(() => import("./pages/admin/NotificationsPage"));
 
 // Organizer Pages
 import CreateEvent from "./pages/organizer/CreateEvent";
@@ -289,6 +292,42 @@ function App() {
                       }
                     >
                       <AuditLogsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="speakers"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <SpeakersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="reviews"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <ReviewsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="notifications"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <NotificationsPage />
                     </Suspense>
                   }
                 />

@@ -602,3 +602,215 @@ exports.createSpeaker = async (req, res) => {
   }
 };
 
+/**
+ * Update Speaker
+ * @route PUT /api/admin/speakers/:id
+ */
+exports.updateSpeaker = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, expertise, bio, social_links } = req.body;
+
+    const speaker = await Speaker.findByIdAndUpdate(
+      id,
+      { name, expertise, bio, social_links },
+      { new: true }
+    );
+
+    if (speaker) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'UPDATE_SPEAKER',
+        target_type: 'Speaker',
+        target_id: speaker._id,
+        details: { name: speaker.name },
+        ip_address: req.ip
+      });
+    }
+
+    if (!speaker) {
+      return res.status(404).json({ message: 'Speaker not found' });
+    }
+
+    res.json({ message: 'Speaker updated successfully', speaker });
+  } catch (error) {
+    console.error('Update speaker error:', error);
+    res.status(500).json({ message: 'Failed to update speaker' });
+  }
+};
+
+/**
+ * Delete Speaker
+ * @route DELETE /api/admin/speakers/:id
+ */
+exports.deleteSpeaker = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const speaker = await Speaker.findByIdAndDelete(id);
+
+    if (speaker) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'DELETE_SPEAKER',
+        target_type: 'Speaker',
+        target_id: id,
+        details: { name: speaker.name },
+        ip_address: req.ip
+      });
+    }
+
+    if (!speaker) {
+      return res.status(404).json({ message: 'Speaker not found' });
+    }
+
+    res.json({ message: 'Speaker deleted successfully' });
+  } catch (error) {
+    console.error('Delete speaker error:', error);
+    res.status(500).json({ message: 'Failed to delete speaker' });
+  }
+};
+
+// ==================== REVIEW MANAGEMENT ====================
+
+const Review = require('../models/review');
+
+/**
+ * Get All Reviews
+ * @route GET /api/admin/reviews
+ */
+exports.getAllReviews = async (req, res) => {
+  try {
+    const { event_id } = req.query;
+    const query = event_id ? { event_id } : {};
+
+    const reviews = await Review.find(query)
+      .populate('user_id', 'name email student_id')
+      .populate('event_id', 'title')
+      .sort({ created_at: -1 });
+
+    res.json({ reviews });
+  } catch (error) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ message: 'Failed to fetch reviews' });
+  }
+};
+
+/**
+ * Delete Review
+ * @route DELETE /api/admin/reviews/:id
+ */
+exports.deleteReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const review = await Review.findByIdAndDelete(id);
+
+    if (review) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'DELETE_REVIEW',
+        target_type: 'Review',
+        target_id: id,
+        details: { rating: review.rating },
+        ip_address: req.ip
+      });
+    }
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    res.json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Delete review error:', error);
+    res.status(500).json({ message: 'Failed to delete review' });
+  }
+};
+
+// ==================== NOTIFICATION MANAGEMENT ====================
+
+const Notification = require('../models/notification');
+
+/**
+ * Get System Notifications
+ * @route GET /api/admin/notifications
+ */
+exports.getAllNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find()
+      .populate('user_id', 'name')
+      .sort({ created_at: -1 })
+      .limit(50); // Limit to last 50 for performance
+
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ message: 'Failed to fetch notifications' });
+  }
+};
+
+/**
+ * Create Broadcast Notification
+ * @route POST /api/admin/notifications
+ */
+exports.createNotification = async (req, res) => {
+  try {
+    const { message, type, target_role } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ message: 'Message is required' });
+    }
+
+    // Find target users
+    const query = target_role && target_role !== 'all' ? { role: target_role } : {};
+    const users = await User.find(query).select('_id');
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found for this target' });
+    }
+
+    // Create notifications in bulk
+    const notifications = users.map(user => ({
+      user_id: user._id,
+      message,
+      type: type || 'info',
+      created_at: new Date()
+    }));
+
+    await Notification.insertMany(notifications);
+
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'BROADCAST_NOTIFICATION',
+      target_type: 'System',
+      target_id: req.user.id,
+      details: { message, recipient_count: users.length },
+      ip_address: req.ip
+    });
+
+    res.status(201).json({ 
+      message: `Notification sent to ${users.length} users`,
+      count: users.length 
+    });
+  } catch (error) {
+    console.error('Broadcast notification error:', error);
+    res.status(500).json({ message: 'Failed to send notifications' });
+  }
+};
+
+/**
+ * Delete Notification (Cleanup)
+ * @route DELETE /api/admin/notifications/:id
+ */
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Notification.findByIdAndDelete(id);
+    res.json({ message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({ message: 'Failed to delete notification' });
+  }
+};
+

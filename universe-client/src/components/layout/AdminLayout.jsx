@@ -28,6 +28,9 @@ const AdminLayout = ({ ...props }) => {
     if (path.includes("/admin/users")) return "Users";
     if (path.includes("/admin/events")) return "Event Approvals";
     if (path.includes("/admin/organizers")) return "Organizer Approvals";
+    if (path.includes("/admin/speakers")) return "Speakers";
+    if (path.includes("/admin/reviews")) return "Reviews";
+    if (path.includes("/admin/notifications")) return "Notifications";
     // Default fallback
     return "Admin";
   };

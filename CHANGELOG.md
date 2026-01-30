@@ -339,7 +339,11 @@
 - **Added**: Frontend Audit Logs page with filtering and pagination at `/admin/audit-logs`.
 - **Added**: Audit logging for critical admin actions (Event Approve/Reject, User Delete, Venue Create/Update/Delete).
 - **Changed**: Updated `AdminSidebar` to include Audit Logs link and synced logo with main sidebar.
-- **Changed**: Adjusted Admin Page Layout padding for consistency.
+- **Changed**: Standardized Admin Page layout for Speakers, Reviews, and Notifications (removed redundant back buttons).
+- **Fixed**: Duplicate import syntax error in `SpeakersList.jsx`, `ReviewsList.jsx`, and `NotificationsManager.jsx`.
+- **Fixed**: Runtime `TypeError` in `FloatingLines.jsx` background component.
+- **Added**: Empty state UI for `SpeakersList.jsx`.
+- **Added**: Page titles for new admin routes in `AdminLayout.jsx`.
 - **Added**: Implemented shadcn `navbar-03` with responsive hamburger menu.
 - **Added**: Implemented `ThemeContext` for Light/Dark mode support (Minimalist White Default).
 - **Changed**: Refactored `MainSidebar` to be controllable via the new Navbar.

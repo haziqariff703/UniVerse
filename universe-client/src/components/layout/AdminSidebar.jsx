@@ -12,6 +12,9 @@ import {
   ChevronLeft,
   Rocket,
   FileText,
+  Mic2,
+  MessageSquare,
+  Bell,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import GradientText from "@/components/ui/GradientText";
@@ -243,6 +246,27 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           label="Audit Logs"
           active={currentPath.includes("/admin/audit-logs")}
           onClick={() => navigate("/admin/audit-logs")}
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          icon={Mic2}
+          label="Speakers"
+          active={currentPath.includes("/admin/speakers")}
+          onClick={() => navigate("/admin/speakers")}
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          icon={MessageSquare}
+          label="Reviews"
+          active={currentPath.includes("/admin/reviews")}
+          onClick={() => navigate("/admin/reviews")}
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          icon={Bell}
+          label="Notifications"
+          active={currentPath.includes("/admin/notifications")}
+          onClick={() => navigate("/admin/notifications")}
           collapsed={collapsed}
         />
         <SidebarItem

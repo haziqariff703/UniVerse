@@ -36,5 +36,16 @@ router.delete('/venues/:id', auth, authorize('admin'), adminController.deleteVen
 // Speaker Management
 router.get('/speakers', auth, authorize('admin', 'organizer'), adminController.getAllSpeakers);
 router.post('/speakers', auth, authorize('admin'), adminController.createSpeaker);
+router.put('/speakers/:id', auth, authorize('admin'), adminController.updateSpeaker);
+router.delete('/speakers/:id', auth, authorize('admin'), adminController.deleteSpeaker);
+
+// Review Management
+router.get('/reviews', auth, authorize('admin'), adminController.getAllReviews);
+router.delete('/reviews/:id', auth, authorize('admin'), adminController.deleteReview);
+
+// Notification Management
+router.get('/notifications', auth, authorize('admin'), adminController.getAllNotifications);
+router.post('/notifications', auth, authorize('admin'), adminController.createNotification);
+router.delete('/notifications/:id', auth, authorize('admin'), adminController.deleteNotification);
 
 module.exports = router;
