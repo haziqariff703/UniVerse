@@ -9,7 +9,15 @@ const AdminLayout = ({ ...props }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { formattedDate } = useMalaysiaTime();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const getSafeUser = () => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored && stored !== "undefined" ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  };
+  const user = getSafeUser();
 
   const handleLogout = () => {
     if (confirm("Logout?")) {
@@ -31,6 +39,8 @@ const AdminLayout = ({ ...props }) => {
     if (path.includes("/admin/speakers")) return "Speakers";
     if (path.includes("/admin/reviews")) return "Reviews";
     if (path.includes("/admin/notifications")) return "Notifications";
+    if (path.includes("/admin/settings")) return "Settings";
+    if (path.includes("/admin/categories")) return "Categories";
     // Default fallback
     return "Admin";
   };
@@ -47,7 +57,7 @@ const AdminLayout = ({ ...props }) => {
         {/* Global Admin Header */}
         <header className="h-20 border-b border-white/5 bg-[#0e0e12]/50 backdrop-blur-xl sticky top-0 z-40 px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-white uppercase tracking-wider">
+            <h1 className="text-xl font-black text-white uppercase tracking-tight">
               {getPageTitle()}
             </h1>
             <div className="flex items-center text-sm text-gray-500 bg-white/5 rounded-lg px-3 py-1.5 border border-white/5">

@@ -3,6 +3,7 @@ const Event = require('../models/event');
 const Registration = require('../models/registration');
 const Venue = require('../models/venue');
 const AuditLog = require('../models/auditLog');
+const Category = require('../models/category');
 
 /**
  * Admin Controller
@@ -442,18 +443,24 @@ exports.getAllVenues = async (req, res) => {
  */
 exports.createVenue = async (req, res) => {
   try {
-    const { name, location_code, max_capacity, facilities, images } = req.body;
+    const { name, location_code, max_capacity, facilities } = req.body;
 
     if (!name || !location_code || !max_capacity) {
       return res.status(400).json({ message: 'Name, location code, and max capacity are required' });
+    }
+
+    const images = [];
+    if (req.file) {
+      const filePath = req.file.path.replace(/\\/g, "/");
+      images.push(`http://localhost:5000/${filePath}`);
     }
 
     const venue = new Venue({ 
       name, 
       location_code, 
       max_capacity: parseInt(max_capacity),
-      facilities: facilities || [],
-      images: images || []
+      facilities: typeof facilities === 'string' ? JSON.parse(facilities) : (facilities || []),
+      images
     });
     await venue.save();
 
@@ -480,17 +487,23 @@ exports.createVenue = async (req, res) => {
 exports.updateVenue = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location_code, max_capacity, facilities, images } = req.body;
+    const { name, location_code, max_capacity, facilities } = req.body;
+
+    const updateData = {
+      name,
+      location_code,
+      max_capacity: max_capacity ? parseInt(max_capacity) : undefined,
+      facilities: typeof facilities === 'string' ? JSON.parse(facilities) : facilities
+    };
+
+    if (req.file) {
+      const filePath = req.file.path.replace(/\\/g, "/");
+      updateData.images = [`http://localhost:5000/${filePath}`];
+    }
 
     const venue = await Venue.findByIdAndUpdate(
       id,
-      { 
-        name, 
-        location_code, 
-        max_capacity: max_capacity ? parseInt(max_capacity) : undefined,
-        facilities,
-        images
-      },
+      updateData,
       { new: true }
     );
 
@@ -558,7 +571,7 @@ const Speaker = require('../models/speaker');
  */
 exports.getAllSpeakers = async (req, res) => {
   try {
-    const speakers = await Speaker.find().sort({ name: 1 });
+    const speakers = await Speaker.find({ status: 'verified' }).sort({ name: 1 });
     res.json({ speakers });
   } catch (error) {
     console.error('Get speakers error:', error);
@@ -671,6 +684,72 @@ exports.deleteSpeaker = async (req, res) => {
   }
 };
 
+/**
+ * Get Pending Speakers
+ * @route GET /api/admin/speakers/pending
+ */
+exports.getPendingSpeakers = async (req, res) => {
+  try {
+    const speakers = await Speaker.find({ status: 'pending' })
+      .populate('requested_by', 'name email')
+      .sort({ created_at: -1 });
+
+    res.json({ speakers });
+  } catch (error) {
+    console.error('Get pending speakers error:', error);
+    res.status(500).json({ message: 'Failed to fetch pending speakers' });
+  }
+};
+
+/**
+ * Verify Speaker Proposal
+ * @route PATCH /api/admin/speakers/:id/verify
+ */
+exports.verifySpeaker = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body; // 'approve' or 'reject'
+
+    if (action === 'approve') {
+      const speaker = await Speaker.findByIdAndUpdate(
+        id,
+        { status: 'verified' },
+        { new: true }
+      );
+
+      if (speaker) {
+        await AuditLog.create({
+          admin_id: req.user.id,
+          action: 'VERIFY_SPEAKER',
+          target_type: 'Speaker',
+          target_id: speaker._id,
+          details: { name: speaker.name },
+          ip_address: req.ip
+        });
+      }
+
+      if (!speaker) return res.status(404).json({ message: 'Speaker not found' });
+      res.json({ message: 'Speaker proposal approved', speaker });
+    } else {
+      const speaker = await Speaker.findByIdAndDelete(id);
+      if (speaker) {
+        await AuditLog.create({
+          admin_id: req.user.id,
+          action: 'REJECT_SPEAKER_PROPOSAL',
+          target_type: 'Speaker',
+          target_id: id,
+          details: { name: speaker.name },
+          ip_address: req.ip
+        });
+      }
+      res.json({ message: 'Speaker proposal rejected and deleted' });
+    }
+  } catch (error) {
+    console.error('Verify speaker error:', error);
+    res.status(500).json({ message: 'Failed to verify speaker' });
+  }
+};
+
 // ==================== REVIEW MANAGEMENT ====================
 
 const Review = require('../models/review');
@@ -689,7 +768,21 @@ exports.getAllReviews = async (req, res) => {
       .populate('event_id', 'title')
       .sort({ created_at: -1 });
 
-    res.json({ reviews });
+    // Calculate metrics
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0 
+      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+      : 0;
+    const criticalReviews = reviews.filter(r => r.rating <= 2).length;
+
+    res.json({ 
+      reviews,
+      stats: {
+        total: totalReviews,
+        average: avgRating,
+        critical: criticalReviews
+      }
+    });
   } catch (error) {
     console.error('Get reviews error:', error);
     res.status(500).json({ message: 'Failed to fetch reviews' });
@@ -725,6 +818,145 @@ exports.deleteReview = async (req, res) => {
   } catch (error) {
     console.error('Delete review error:', error);
     res.status(500).json({ message: 'Failed to delete review' });
+  }
+};
+
+// ==================== CATEGORY MANAGEMENT ====================
+
+/**
+ * Get All Categories
+ * @route GET /api/admin/categories
+ */
+exports.getAllCategories = async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    
+    // Get usage count for each category from Event model (assuming tags field stores category names)
+    const categoriesWithStats = await Promise.all(categories.map(async (cat) => {
+      const usageCount = await Event.countDocuments({ tags: cat.name });
+      return {
+        ...cat.toObject(),
+        usageCount
+      };
+    }));
+
+    // Stats for KPI
+    const totalCategories = categories.length;
+    const activeCategories = categories.filter(c => c.is_active).length;
+
+    res.json({ 
+      categories: categoriesWithStats,
+      stats: {
+        total: totalCategories,
+        active: activeCategories,
+        inactive: totalCategories - activeCategories
+      }
+    });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({ message: 'Failed to fetch categories' });
+  }
+};
+
+/**
+ * Create Category
+ * @route POST /api/admin/categories
+ */
+exports.createCategory = async (req, res) => {
+  try {
+    const { name, description, color, icon } = req.body;
+
+    const category = new Category({
+      name,
+      description,
+      color,
+      icon
+    });
+
+    await category.save();
+
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'CREATE_CATEGORY',
+      target_type: 'Category',
+      target_id: category._id,
+      details: { name: category.name },
+      ip_address: req.ip
+    });
+
+    res.status(201).json({ message: 'Category created successfully', category });
+  } catch (error) {
+    console.error('Create category error:', error);
+    res.status(500).json({ message: error.code === 11000 ? 'Category name already exists' : 'Failed to create category' });
+  }
+};
+
+/**
+ * Update Category
+ * @route PUT /api/admin/categories/:id
+ */
+exports.updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, color, icon, is_active } = req.body;
+
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { name, description, color, icon, is_active },
+      { new: true, runValidators: true }
+    );
+
+    if (category) {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        action: 'UPDATE_CATEGORY',
+        target_type: 'Category',
+        target_id: category._id,
+        details: { name: category.name, is_active },
+        ip_address: req.ip
+      });
+    }
+
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+    res.json({ message: 'Category updated successfully', category });
+  } catch (error) {
+    console.error('Update category error:', error);
+    res.status(500).json({ message: 'Failed to update category' });
+  }
+};
+
+/**
+ * Delete Category
+ * @route DELETE /api/admin/categories/:id
+ */
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const category = await Category.findById(id);
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+
+    // Check if category is in use
+    const inUse = await Event.exists({ tags: category.name });
+    if (inUse) {
+      return res.status(400).json({ message: 'Cannot delete category that is currently in use by events' });
+    }
+
+    await Category.findByIdAndDelete(id);
+
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'DELETE_CATEGORY',
+      target_type: 'Category',
+      target_id: id,
+      details: { name: category.name },
+      ip_address: req.ip
+    });
+
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error('Delete category error:', error);
+    res.status(500).json({ message: 'Failed to delete category' });
   }
 };
 

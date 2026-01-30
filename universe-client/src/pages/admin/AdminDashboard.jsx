@@ -63,7 +63,7 @@ const StatCard = ({
   value,
   change,
   isPositive,
-  icon: IconComponent,
+  icon: Icon,
   colorClass,
 }) => (
   <div className="bg-[#13131a] border border-white/5 rounded-2xl p-6 flex flex-col justify-between h-full relative overflow-hidden group hover:border-violet-500/30 transition-all duration-300">
@@ -75,7 +75,7 @@ const StatCard = ({
       <div
         className={`p-2 rounded-xl bg-white/5 text-white ${colorClass} group-hover:scale-110 transition-transform`}
       >
-        <IconComponent size={20} />
+        <Icon size={20} />
       </div>
     </div>
     <div className="flex items-center gap-2 text-xs font-medium">
@@ -96,26 +96,52 @@ const StatCard = ({
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalEvents: "0",
+    totalUsers: "0",
+    pendingEvents: "0",
+    totalBookings: "0",
+    revenue: "0",
+    trendingEvents: [],
+  });
   const [user, setUser] = useState(null);
 
   const fetchDashboardStats = async (token) => {
+    setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
-        setStats(data.stats);
+        setStats({
+          totalEvents: (data.stats?.totalEvents || 0).toLocaleString(),
+          totalUsers: (data.stats?.totalUsers || 0).toLocaleString(),
+          pendingEvents: (data.stats?.pendingEvents || 0).toLocaleString(),
+          totalBookings: (data.stats?.totalBookings || 0).toLocaleString(),
+          trendingEvents: data.stats?.trendingEvents || [],
+        });
       }
     } catch (err) {
       console.error("Failed to fetch stats", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     const checkAuth = () => {
-      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const getSafeUser = () => {
+        try {
+          const stored = localStorage.getItem("user");
+          return stored && stored !== "undefined" ? JSON.parse(stored) : {};
+        } catch {
+          return {};
+        }
+      };
+
+      const storedUser = getSafeUser();
       const token = localStorage.getItem("token");
 
       if (!token || storedUser.role !== "admin") {
@@ -130,51 +156,62 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-10">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-10 text-starlight">
       {/* Welcome Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white mb-2">
+        <h1 className="text-3xl font-bold mb-2">
           Welcome back, {user ? user.name : "Admin"}!
         </h1>
-        <p className="text-gray-400">
-          Here is what is happening with your platform today.
+        <p className="text-starlight/40">
+          Real-time metrics for the UniVerse platform.
         </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Events"
-          value={stats?.totalEvents || "1,204"}
-          change="12.5%"
-          isPositive={true}
-          icon={Calendar}
-          colorClass="text-blue-400"
-        />
-        <StatCard
-          title="Active Users"
-          value={stats?.totalUsers || "6,225"}
-          change="8.4%"
-          isPositive={true}
-          icon={Users}
-          colorClass="text-emerald-400"
-        />
-        <StatCard
-          title="Pending Approvals"
-          value={stats?.pendingEvents || "28"}
-          change="10.5%"
-          isPositive={false}
-          icon={Clock}
-          colorClass="text-rose-400"
-        />
-        <StatCard
-          title="Total Bookings"
-          value={stats?.totalBookings || "16,431"}
-          change="15.5%"
-          isPositive={true}
-          icon={CheckCircle}
-          colorClass="text-violet-400"
-        />
+        {loading ? (
+          [...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="h-32 rounded-2xl bg-white/5 animate-pulse border border-white/5"
+            />
+          ))
+        ) : (
+          <>
+            <StatCard
+              title="Total Events"
+              value={stats.totalEvents}
+              change="12.5%"
+              isPositive={true}
+              icon={Calendar}
+              colorClass="text-blue-400"
+            />
+            <StatCard
+              title="Active Users"
+              value={stats.totalUsers}
+              change="8.4%"
+              isPositive={true}
+              icon={Users}
+              colorClass="text-emerald-400"
+            />
+            <StatCard
+              title="Pending Approvals"
+              value={stats.pendingEvents}
+              change="10.5%"
+              isPositive={false}
+              icon={Clock}
+              colorClass="text-rose-400"
+            />
+            <StatCard
+              title="Total Bookings"
+              value={stats.totalBookings}
+              change="15.5%"
+              isPositive={true}
+              icon={CheckCircle}
+              colorClass="text-violet-400"
+            />
+          </>
+        )}
       </div>
 
       {/* Charts Row */}
@@ -298,71 +335,50 @@ const AdminDashboard = () => {
         {/* Top Events Table */}
         <div className="xl:col-span-2 bg-[#13131a] border border-white/5 rounded-2xl p-6 overflow-hidden">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white">Trending Events</h3>
+            <h3 className="text-lg font-bold">Trending Events</h3>
             <button className="text-violet-400 text-sm font-medium hover:underline">
               View All
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-white/5">
-                  <th className="pb-3 pl-2">Event Name</th>
-                  <th className="pb-3">Sold</th>
-                  <th className="pb-3">Revenue</th>
-                  <th className="pb-3">Rating</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {[
-                  {
-                    name: "Nebula Music Festival",
-                    sold: "2,310",
-                    revenue: "$124,839",
-                    rating: "5.0",
-                  },
-                  {
-                    name: "Tech Summit 2026",
-                    sold: "1,230",
-                    revenue: "$92,682",
-                    rating: "4.8",
-                  },
-                  {
-                    name: "Cosmic Art Expo",
-                    sold: "812",
-                    revenue: "$74,049",
-                    rating: "4.9",
-                  },
-                  {
-                    name: "Zero-G Sports",
-                    sold: "645",
-                    revenue: "$62,820",
-                    rating: "4.5",
-                  },
-                ].map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className="group hover:bg-white/5 transition-colors"
-                  >
-                    <td className="py-4 pl-2 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-xs font-bold text-white">
-                        {item.name.charAt(0)}
-                      </div>
-                      <span className="text-white font-medium">
-                        {item.name}
-                      </span>
-                    </td>
-                    <td className="py-4 text-gray-400">{item.sold}</td>
-                    <td className="py-4 text-emerald-400 font-medium">
-                      {item.revenue}
-                    </td>
-                    <td className="py-4 text-yellow-400 flex items-center gap-1">
-                      ⭐ {item.rating}
-                    </td>
+            {!stats?.trendingEvents || stats.trendingEvents.length === 0 ? (
+              <div className="py-12 text-center text-starlight/20">
+                <p>No trending events data available yet.</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-xs text-starlight/40 uppercase tracking-wider border-b border-white/5">
+                    <th className="pb-3 pl-2">Event Name</th>
+                    <th className="pb-3">Sold</th>
+                    <th className="pb-3">Revenue</th>
+                    <th className="pb-3">Rating</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-sm">
+                  {stats.trendingEvents.map((item, idx) => (
+                    <tr
+                      key={idx}
+                      className="group hover:bg-white/5 transition-colors"
+                    >
+                      <td className="py-4 pl-2 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-xs font-bold">
+                          {item.name.charAt(0)}
+                        </div>
+                        <span className="font-medium">{item.name}</span>
+                      </td>
+                      <td className="text-starlight/60">{item.sold}</td>
+                      <td className="text-emerald-400 font-medium">
+                        {item.revenue}
+                      </td>
+                      <td className="text-yellow-400 flex items-center gap-1">
+                        ⭐ {item.rating}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

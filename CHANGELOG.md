@@ -4,6 +4,19 @@
 
 ### Added
 
+- **Categories Command Center**: Overhauled the Categories module into a high-density, data-driven "Command Center".
+- **Category Backend**: Created a dedicated `Category` Mongoose model and full CRUD API endpoints.
+- **Intelligence Dashboard**: Integrated real-time KPI metrics for Taxonomy Depth, Active/Dormant Sectors, and Usage Velocity.
+- **Expanded Forensic Filtering**: Implemented advanced filtering by Status and Usage Density (High/Low Demand/Unused).
+- **Forensic UI Refinement**: Modernized `CategoryManager.jsx` with micro-animations, color-coded glows, and compact grid layouts.
+- **Operational Safety Logic**: Added backend validation to prevent deletion of in-use categories.
+- **Improved Audit Trail**: Integrated Category management actions into the system audit log.
+
+### Changed
+
+- **Review Moderation UI**: Standardized header typography (capitalization removed) and aligned the Refresh button with other Command Centers.
+- **Standardized Typography**: Enforced `Plus Jakarta Sans` for all administrative headers and labels.
+
 - **PDF File Uploads**: Enable PDF upload for "Event Proposal/Documentation" in the Create Event form, backed by `multer` middleware.
 - **Admin Event Management**: Complete overhaul of `EventApprovals` to a "Command Center" dashboard with KPI cards and compact data grid.
 - **KPI Metrics**: Added real-time calculation for Total Pending, Capacity Alerts, and Urgent Events.
@@ -11,6 +24,26 @@
 - **Capacity Validation**: Implemented visual warning in Admin dashboard when event capacity exceeds venue limits.
 - **Proposal Viewer**: Added "FileText" icon button to quickly view uploaded proposals.
 - **Backend Refinement**: Updated `adminController` to populate venue `max_capacity` for validation logic.
+- **Venue Management Refactor**: Transformed `VenueManager.jsx` into a high-density "Command Center" layout with a wider `max-w-4xl` dialog and viewport-constrained internal scrolling (`90vh`).
+- **Changed**: Standardized Audit Log UI layout (header, typography, and button) to match Venue Command Center.
+- **Changed**: Overhauled `SpeakersList.jsx` into a high-density "Speaker Command Center" with KPI analytics and a registry table.
+- **Added**: Speaker Command Center, global font standardization, and Speaker Proposal & Credential Verification System.
+- **Changed**: Standardized global admin font to "Plus Jakarta Sans" and refined layout typography weights.
+- **Fixed**: Replaced "Network Origin" with a "Forensic Risk Profile" and "Audit Identity Stamp" (Log ID) in audit logs.
+- **Fixed**: Improved contrast for IDs and data snapshots in Audit Logs for better legibility.
+- **Fixed**: Repaired syntax and resolved lint warnings in `VenueManager.jsx`.
+- **Fixed**: Improved contrast for IDs and metadata in Audit Logs for better legibility.
+- **Fixed**: Repaired syntax errors and resolved lint warnings in `VenueManager.jsx` and `AuditLogList.jsx`.
+- **Added**: Audit Logs Forensics Command Center with KPI cards and snapshot viewer.
+- **Added**: Venue Image Uploads with real-time preview and Multer backend support.
+- **Changed**: Enhanced Audit Logs API with advanced filtering and summary stats.
+- **Changed**: Venue Management table now uses always-visible direct icons (Edit/Delete).
+- **Dynamic Facilities System**: Implemented a checkbox-based asset selector with a manual "Add Custom Facility" feature.
+- **Venue Image Header**: Added a premium image header with a smooth top-down fade effect to the venue dialog.
+- **Venue KPI Cards**: Added metrics for Total Venues, Total Capacity, Premium Venues, and Unique Facilities.
+- **Premium Data Grid**: Implemented a sophisticated table for venue management with action overlays and status badges.
+- **Advanced Filtering**: Added search by name/location and filtering by facility type.
+- **Simplified Structure**: Refactor `VenuesPage.jsx` to act as a lightweight wrapper for the `VenueManager` component.
 - **User Management Redesign**: Overhauled `UsersPage` with the new "Command Center" layout.
 - **Role Management**: Enhanced role switcher with color-coded badges and inline updating.
 - `FeaturedEventSlider.jsx`: New cinematic auto-sliding component with interactive dot navigation, 4s interval, and frosted glass text containers.
@@ -23,6 +56,7 @@
 ### Fixed
 
 - **Fixed**: Resolved missing `@headlessui/react` dependency causing build errors (2026-01-30)
+- **Fixed**: Resolved persistent `'Icon' is defined but never used` lint errors in `ReviewsList.jsx` and `CategoryManager.jsx` by implementing conditional rendering.
 
 ## [2026-01-28]
 

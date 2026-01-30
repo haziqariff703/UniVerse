@@ -49,8 +49,13 @@ const OrganizerApprovalsPage = lazy(
 const VenuesPage = lazy(() => import("./pages/admin/VenuesPage"));
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage"));
 const SpeakersPage = lazy(() => import("./pages/admin/SpeakersPage"));
+const SpeakerApprovalsPage = lazy(
+  () => import("./pages/admin/SpeakerApprovalsPage"),
+);
 const ReviewsPage = lazy(() => import("./pages/admin/ReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/admin/NotificationsPage"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const CategoriesPage = lazy(() => import("./pages/admin/CategoriesPage"));
 
 // Organizer Pages
 import CreateEvent from "./pages/organizer/CreateEvent";
@@ -85,8 +90,13 @@ const Layout = ({ children }) => {
   useEffect(() => {
     const checkUser = () => {
       const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      if (storedUser && storedUser !== "undefined") {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Failed to parse user", e);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -297,6 +307,10 @@ function App() {
                 />
                 <Route
                   path="speakers"
+                  element={<Navigate to="/admin/speakers/list" replace />}
+                />
+                <Route
+                  path="speakers/list"
                   element={
                     <Suspense
                       fallback={
@@ -304,6 +318,18 @@ function App() {
                       }
                     >
                       <SpeakersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="speakers/approvals"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <SpeakerApprovalsPage />
                     </Suspense>
                   }
                 />
@@ -328,6 +354,30 @@ function App() {
                       }
                     >
                       <NotificationsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <SettingsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="categories"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <CategoriesPage />
                     </Suspense>
                   }
                 />

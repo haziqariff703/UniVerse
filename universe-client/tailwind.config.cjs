@@ -51,7 +51,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['"Inter var"', '"Plus Jakarta Sans"', "sans-serif"],
+        sans: ['"Plus Jakarta Sans"', '"Inter var"', "sans-serif"],
         inter: ['"Inter var"', "sans-serif"],
         clash: ['"Clash Display"', "sans-serif"],
         space: ['"Space Grotesk"', "monospace"],

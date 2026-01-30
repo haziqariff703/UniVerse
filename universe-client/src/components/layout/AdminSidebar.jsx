@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
@@ -15,8 +16,8 @@ import {
   Mic2,
   MessageSquare,
   Bell,
+  Tag,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import GradientText from "@/components/ui/GradientText";
 
 import {
@@ -25,29 +26,32 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const SidebarItem = ({ icon: Icon, label, active, onClick, collapsed }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-      active
-        ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"
-        : "text-gray-400 hover:bg-white/5 hover:text-white"
-    }`}
-  >
-    <div className="flex items-center justify-center w-5 h-5">
-      <Icon
-        size={20}
-        className={active ? "text-white" : "group-hover:text-white"}
-      />
-    </div>
-    {!collapsed && (
-      <span className="font-medium text-sm whitespace-nowrap">{label}</span>
-    )}
-    {active && !collapsed && (
-      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white" />
-    )}
-  </button>
-);
+const SidebarItem = ({ icon: Icon, label, active, onClick, collapsed }) => {
+  if (!Icon) return null;
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+        active
+          ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"
+          : "text-gray-400 hover:bg-white/5 hover:text-white"
+      }`}
+    >
+      <div className="flex items-center justify-center w-5 h-5">
+        <Icon
+          size={20}
+          className={active ? "text-white" : "group-hover:text-white"}
+        />
+      </div>
+      {!collapsed && (
+        <span className="font-medium text-sm whitespace-nowrap">{label}</span>
+      )}
+      {active && !collapsed && (
+        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white" />
+      )}
+    </button>
+  );
+};
 
 const SidebarGroup = ({
   icon: Icon,
@@ -65,12 +69,9 @@ const SidebarGroup = ({
     if (active) setIsOpen(true);
   }, [active]);
 
+  if (!Icon) return null;
+
   if (collapsed) {
-    // When collapsed, just act like a single item that might navigate to the first child or do nothing?
-    // User expectation for collapsed sidebar dropdowns is tricky.
-    // Usually they are hidden or show a popover.
-    // For now, we will just render the icon button, maybe clicking it expands the sidebar?
-    // Or simpler: strictly follow the existing pattern where we don't show the dropdown.
     return (
       <button
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
@@ -248,12 +249,18 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           onClick={() => navigate("/admin/audit-logs")}
           collapsed={collapsed}
         />
-        <SidebarItem
+        {/* Speakers Dropdown */}
+        <SidebarGroup
           icon={Mic2}
           label="Speakers"
-          active={currentPath.includes("/admin/speakers")}
-          onClick={() => navigate("/admin/speakers")}
           collapsed={collapsed}
+          active={currentPath.includes("/admin/speakers")}
+          subItems={[
+            { label: "Global Registry", path: "/admin/speakers" },
+            { label: "Approvals", path: "/admin/speakers/approvals" },
+          ]}
+          currentPath={currentPath}
+          navigate={navigate}
         />
         <SidebarItem
           icon={MessageSquare}
@@ -270,8 +277,22 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           collapsed={collapsed}
         />
         <SidebarItem
+          icon={Tag}
+          label="Categories"
+          active={currentPath.includes("/admin/categories")}
+          onClick={() => navigate("/admin/categories")}
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          icon={Settings}
+          label="Settings"
+          active={currentPath.includes("/admin/settings")}
+          onClick={() => navigate("/admin/settings")}
+          collapsed={collapsed}
+        />
+        <SidebarItem
           icon={HelpCircle}
-          label="Content"
+          label="Help & Support"
           active={false}
           onClick={() => {}}
           collapsed={collapsed}
@@ -279,13 +300,6 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
       </div>
 
       <div className="p-4 border-t border-white/5 space-y-2">
-        <SidebarItem
-          icon={Settings}
-          label="Settings"
-          active={false}
-          onClick={() => {}}
-          collapsed={collapsed}
-        />
         <SidebarItem
           icon={LogOut}
           label="Logout"
