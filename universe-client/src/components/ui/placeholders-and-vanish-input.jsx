@@ -6,6 +6,8 @@ export function PlaceholdersAndVanishInput({
   placeholders,
   onChange,
   onSubmit,
+  value: propValue,
+  setValue: setPropValue,
 }) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
 
@@ -42,11 +44,18 @@ export function PlaceholdersAndVanishInput({
   const [value, setValue] = useState("");
   const [animating, setAnimating] = useState(false);
 
+  // Sync internal value with propValue if provided (Controlled mode)
+  useEffect(() => {
+    if (propValue !== undefined && propValue !== value) {
+      setValue(propValue);
+    }
+  }, [propValue]);
+
   const draw = useCallback(() => {
     if (!inputRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     canvas.width = 800;
@@ -137,6 +146,10 @@ export function PlaceholdersAndVanishInput({
         } else {
           setValue("");
           setAnimating(false);
+          // CRITICAL FIX: Notify parent that value is cleared
+          // if (onChange) {
+          //   onChange({ target: { value: "" } });
+          // }
         }
       });
     };

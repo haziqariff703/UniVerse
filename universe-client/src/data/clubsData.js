@@ -1,3 +1,6 @@
+import suksisImg from "../assets/images/clubs/suksis.png";
+import palapesImg from "../assets/images/clubs/palapes.png";
+
 // Complete Puncak Perdana Club Database with Enhanced Information
 
 export const clubDatabase = {
@@ -243,8 +246,7 @@ export const clubDatabase = {
         "Pasukan Latihan Pegawai Simpanan untuk latihan ketenteraan. PALAPES mendidik pelajar dalam disiplin, kepimpinan, dan kemahiran ketenteraan asas.",
       tags: ["Uniformed", "Tactical", "Discipline"],
       imageCategory: "military",
-      image:
-        "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800&q=80",
+      image: palapesImg,
       members: "60+",
       founded: "2010",
       category: "Uniformed",
@@ -262,8 +264,7 @@ export const clubDatabase = {
         "Kor Sukarelawan Polis Siswa Siswi untuk latihan kepolisan. SUKSIS melatih pelajar dalam kemahiran keselamatan awam dan kepimpinan sivil.",
       tags: ["Uniformed", "Police", "Civic Service"],
       imageCategory: "security",
-      image:
-        "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=800&q=80",
+      image: suksisImg,
       members: "55+",
       founded: "2011",
       category: "Uniformed",

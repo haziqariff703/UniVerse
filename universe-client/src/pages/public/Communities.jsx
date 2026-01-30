@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Users, Shield } from "lucide-react";
+import { BookOpen, Users, Shield, LayoutGrid } from "lucide-react";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { EnhancedHoverEffect } from "@/components/ui/enhanced-card-hover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import ClubDetailModal from "@/components/common/ClubDetailModal";
-import { clubDatabase } from "@/data/clubsData";
+import { clubDatabase, getAllClubs } from "@/data/clubsData";
 
 const Communities = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,6 +44,7 @@ const Communities = () => {
   };
 
   // Get filtered data for each category
+  const filteredAll = filterClubs(getAllClubs());
   const filteredAcademic = filterClubs(clubDatabase.academic);
   const filteredLeadership = filterClubs(clubDatabase.leadership);
   const filteredUniformed = filterClubs(clubDatabase.uniformed);
@@ -100,30 +101,49 @@ const Communities = () => {
         </div>
 
         {/* Tabs Section */}
-        <Tabs defaultValue="academic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1 rounded-xl">
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1 rounded-xl h-auto">
+            <TabsTrigger
+              value="all"
+              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash py-2.5"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              All ({filteredAll.length})
+            </TabsTrigger>
             <TabsTrigger
               value="academic"
-              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash"
+              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash py-2.5"
             >
               <BookOpen className="w-4 h-4" />
               Academic ({filteredAcademic.length})
             </TabsTrigger>
             <TabsTrigger
               value="leadership"
-              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash"
+              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash py-2.5"
             >
               <Users className="w-4 h-4" />
               Leadership ({filteredLeadership.length})
             </TabsTrigger>
             <TabsTrigger
               value="uniformed"
-              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash"
+              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 transition-all flex items-center gap-2 font-clash py-2.5"
             >
               <Shield className="w-4 h-4" />
               Uniformed ({filteredUniformed.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* All Organizations */}
+          <TabsContent value="all" className="mt-0">
+            {filteredAll.length > 0 ? (
+              <EnhancedHoverEffect
+                items={filteredAll}
+                onCardClick={handleCardClick}
+              />
+            ) : (
+              <EmptyState searchTerm={searchTerm} />
+            )}
+          </TabsContent>
 
           {/* Academic Organizations */}
           <TabsContent value="academic" className="mt-0">

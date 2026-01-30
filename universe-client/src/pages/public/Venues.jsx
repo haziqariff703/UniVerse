@@ -1,149 +1,201 @@
 import React, { useState } from "react";
-import VenueCard from "@/components/venues/VenueCard";
-import { Search, Filter } from "lucide-react";
+import VenueLandscapeCard from "@/components/venues/VenueLandscapeCard";
+import { MOCK_VENUES } from "@/data/mockVenues";
+import {
+  Filter,
+  ChevronDown,
+  Check,
+  LayoutGrid,
+  GraduationCap,
+  Home,
+  Tent,
+  Users,
+} from "lucide-react";
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import TrueFocus from "@/components/ui/TrueFocus";
 
-// Mock Data conforming to schema
-const MOCK_VENUES = [
-  {
-    id: 1,
-    name: "Grand Aurora Hall",
-    location_code: "GAH-01",
-    max_capacity: 1000,
-    facilities: ["Stage", "Projector", "Sound System", "AC", "Backstage"],
-    image:
-      "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800",
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const CATEGORIES = ["All", "Academic", "Residential", "Social", "Outdoor"];
+
+// Animation variants for staggered list
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
   },
-  {
-    id: 2,
-    name: "Quantum Lecture Theatre",
-    location_code: "QLT-B2",
-    max_capacity: 300,
-    facilities: ["Projector", "Tiered Seating", "Whiteboard", "Wifi"],
-    image:
-      "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=800",
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
   },
-  {
-    id: 3,
-    name: "Starlight Atrium",
-    location_code: "SA-05",
-    max_capacity: 150,
-    facilities: ["Natural Light", "Open Space", "Wifi", "Lounge Area"],
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 4,
-    name: "Nebula Lab 1",
-    location_code: "NL-101",
-    max_capacity: 50,
-    facilities: ["Computers", "Projector", "Whiteboard", "AC"],
-    image:
-      "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 5,
-    name: "Cosmos Conference Room",
-    location_code: "CCR-03",
-    max_capacity: 20,
-    facilities: ["Video Conf", "TV Screen", "Whiteboard"],
-    image:
-      "https://images.unsplash.com/photo-1431540015161-0bf868a2d407?auto=format&fit=crop&q=80&w=800",
-  },
-];
+};
 
 const Venues = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [capacityFilter, setCapacityFilter] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("All");
 
   const filteredVenues = MOCK_VENUES.filter((venue) => {
     const matchesSearch =
       venue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       venue.location_code.toLowerCase().includes(searchTerm.toLowerCase());
 
-    let matchesCapacity = true;
-    if (capacityFilter === "Large") matchesCapacity = venue.max_capacity >= 500;
-    if (capacityFilter === "Medium")
-      matchesCapacity = venue.max_capacity >= 100 && venue.max_capacity < 500;
-    if (capacityFilter === "Small") matchesCapacity = venue.max_capacity < 100;
+    const matchesCategory =
+      activeCategory === "All" || venue.type === activeCategory;
 
-    return matchesSearch && matchesCapacity;
+    return matchesSearch && matchesCategory;
   });
 
-  return (
-    <div className="min-h-screen pt-6 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-        <div>
-          <h1 className="text-5xl md:text-7xl font-neuemontreal font-bold text-foreground mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            Venues
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-md animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
-            Find the perfect space for your next event, from grand halls to
-            intimate meeting rooms.
-          </p>
-        </div>
+  const placeholders = [
+    "Search for Academic Block...",
+    "Looking for a hall with AC?",
+    "Find spots for Exhibitions",
+    "Search for Surau Ar-Razzaq",
+    "Where is the Library?",
+    "Best venues for Formal Dinners",
+  ];
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Search venues..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 bg-background border border-border px-12 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors rounded-xl hover:bg-accent/50"
+  return (
+    <div className="min-h-screen pt-12 pb-20 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Cinema Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <div className="mb-6">
+            <TrueFocus
+              sentence="Venues Hub"
+              manualMode={false}
+              blurAmount={10}
+              borderColor="#D946EF" // Fuchsia-500
+              animationDuration={0.8}
+              pauseBetweenAnimations={1}
+              fontSize="text-4xl md:text-7xl"
             />
           </div>
+          <p className="text-xl md:text-2xl text-slate-400 font-clash max-w-3xl leading-relaxed">
+            Discover the perfect architecture for your next event at{" "}
+            <span className="text-white border-b-2 border-fuchsia-500/50 pb-1">
+              UiTM Puncak Perdana
+            </span>
+            .
+          </p>
+        </motion.div>
 
-          <div className="relative">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <select
-              value={capacityFilter}
-              onChange={(e) => setCapacityFilter(e.target.value)}
-              className="appearance-none w-full sm:w-48 bg-background border border-border px-12 py-3 text-foreground focus:outline-none focus:border-primary transition-colors rounded-xl cursor-pointer hover:bg-accent/50"
-            >
-              <option className="bg-nebula" value="All">
-                All Sizes
-              </option>
-              <option className="bg-nebula" value="Small">
-                Small (&lt;100)
-              </option>
-              <option className="bg-nebula" value="Medium">
-                Medium (100-500)
-              </option>
-              <option className="bg-nebula" value="Large">
-                Large (500+)
-              </option>
-            </select>
+        {/* Search Bar */}
+        <div className="flex justify-center mb-14 relative z-[100]">
+          <div className="w-full max-w-3xl">
+            <PlaceholdersAndVanishInput
+              placeholders={placeholders}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onSubmit={(e) => e.preventDefault()}
+              value={searchTerm}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredVenues.map((venue, idx) => (
-          <div
-            key={venue.id}
-            className={`animate-in fade-in zoom-in-95 duration-500 delay-${
-              idx * 100
-            }`}
-            style={{
-              animationDelay: `${idx * 100}ms`,
-              animationFillMode: "both",
+        {/* Tabs Section (MATCHING COMMUNITIES) - Dark Glassmorphism */}
+        <div className="mb-20">
+          <Tabs
+            value={activeCategory.toLowerCase()}
+            onValueChange={(val) => {
+              // Strict case check for categories
+              const found = CATEGORIES.find((c) => c.toLowerCase() === val);
+              if (found) setActiveCategory(found);
             }}
+            className="w-full"
           >
-            <VenueCard venue={venue} index={idx} />
-          </div>
-        ))}
-        {filteredVenues.length === 0 && (
-          <div className="col-span-full text-center py-20 text-muted-foreground">
-            No venues found matching your criteria.
-          </div>
-        )}
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1.5 rounded-2xl h-auto">
+              {CATEGORIES.map((cat) => {
+                const Icon =
+                  {
+                    All: LayoutGrid,
+                    Academic: GraduationCap,
+                    Residential: Home,
+                    Social: Users,
+                    Outdoor: Tent,
+                  }[cat] || Filter;
+
+                return (
+                  <TabsTrigger
+                    key={cat}
+                    value={cat.toLowerCase()}
+                    className="data-[state=active]:bg-fuchsia-500/20 data-[state=active]:text-fuchsia-300 transition-all flex items-center justify-center gap-3 py-4 rounded-xl font-clash text-xs font-bold uppercase tracking-widest"
+                  >
+                    <Icon className="w-4 h-4" />
+                    {cat}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Vertical Feed */}
+        <motion.div
+          className="flex flex-col gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredVenues.map((venue, idx) => (
+              <motion.div
+                key={venue.id}
+                layout
+                variants={itemVariants}
+                exit={{
+                  opacity: 0,
+                  scale: 0.95,
+                  transition: { duration: 0.2 },
+                }}
+              >
+                <VenueLandscapeCard venue={venue} index={idx} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {filteredVenues.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-40 border border-white/5 rounded-[3rem] bg-slate-900/20 backdrop-blur-sm"
+            >
+              <div className="text-7xl mb-8 opacity-40 text-fuchsia-500">
+                🔍
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-4 font-clash tracking-tight">
+                No scenes found in this galaxy
+              </h3>
+              <p className="text-slate-400 text-lg font-clash max-w-md mx-auto">
+                Try searching for a different area or switching categories.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setActiveCategory("All");
+                }}
+                className="mt-12 px-10 py-4 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-2xl"
+              >
+                Reset Radar
+              </button>
+            </motion.div>
+          )}
+        </motion.div>
       </div>
     </div>
   );
 };
-
 export default Venues;
