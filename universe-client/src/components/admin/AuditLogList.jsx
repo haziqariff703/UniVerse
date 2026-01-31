@@ -17,30 +17,53 @@ import {
   ChevronRight,
   RefreshCw,
   X,
+  TrendingUp,
 } from "lucide-react";
 
-// eslint-disable-next-line no-unused-vars
-const LogKpiCard = ({ label, value, icon: CardIcon, color, bg, border }) => (
-  <div
-    className={`glass-panel p-5 rounded-2xl border ${border} flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm`}
-  >
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
-      className={`absolute -right-4 -bottom-4 opacity-[0.03] ${color} group-hover:scale-110 group-hover:opacity-10 transition-all duration-500`}
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <CardIcon size={80} />
+      {Icon && <Icon size={80} />}
     </div>
-    <div className="relative z-10">
-      <p className="text-starlight/40 text-xs font-bold uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <h3 className="text-2xl font-black text-starlight leading-none">
-        {value}
-      </h3>
-    </div>
-    <div
-      className={`relative z-10 w-12 h-12 rounded-xl ${bg} flex items-center justify-center border border-white/5 shadow-inner`}
-    >
-      <CardIcon size={24} className={color} />
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -74,7 +97,7 @@ const AuditLogList = () => {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: pagination.currentPage,
-        limit: 15,
+        limit: filters.limit || 15,
         ...filters,
       });
 
@@ -200,37 +223,37 @@ const AuditLogList = () => {
 
       {/* KPI Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <LogKpiCard
-          label="Total Logistics"
+        <KpiCard
+          title="Total Logistics"
           value={stats.totalLogs.toLocaleString()}
           icon={Database}
           color="text-violet-400"
-          bg="bg-violet-400/10"
-          border="border-violet-400/20"
+          subValue="System genealogy"
+          description="Global count of all system operations, administrative tasks, and security events."
         />
-        <LogKpiCard
-          label="Security Alerts"
+        <KpiCard
+          title="Security Alerts"
           value={stats.securityActions.toLocaleString()}
           icon={ShieldAlert}
           color="text-rose-400"
-          bg="bg-rose-400/10"
-          border="border-rose-400/20"
+          subValue="Risk monitoring"
+          description="High-priority logs flagging role modifications or sensitive access attempts."
         />
-        <LogKpiCard
-          label="Event Forensics"
+        <KpiCard
+          title="Event Forensics"
           value={stats.eventActions.toLocaleString()}
           icon={Calendar}
           color="text-cyan-400"
-          bg="bg-cyan-400/10"
-          border="border-cyan-400/20"
+          subValue="Interactivity track"
+          description="Detailed tracking of all event creation, moderation, and infrastructure changes."
         />
-        <LogKpiCard
-          label="Infrastructure"
+        <KpiCard
+          title="Infrastructure"
           value={stats.venueActions.toLocaleString()}
           icon={MapPin}
           color="text-emerald-400"
-          bg="bg-emerald-400/10"
-          border="border-emerald-400/20"
+          subValue="Integrity check"
+          description="Audit trail for all physical venue provisioning and facility data updates."
         />
       </div>
 
@@ -239,7 +262,7 @@ const AuditLogList = () => {
         <div className="relative flex-1 min-w-[240px]">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/20"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
           />
           <input
             name="search"
@@ -283,6 +306,29 @@ const AuditLogList = () => {
             <option value="User">User</option>
             <option value="Registration">Registration</option>
           </select>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={filters.limit || 15}
+              onChange={(e) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  limit: Number(e.target.value),
+                }));
+                setPagination((prev) => ({ ...prev, currentPage: 1 }));
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={15}>15 Entries</option>
+              <option value={20}>20 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -292,19 +338,19 @@ const AuditLogList = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="p-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em] pl-8">
+                <th className="p-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em] pl-8">
                   Operator
                 </th>
-                <th className="p-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                <th className="p-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                   Procedure
                 </th>
-                <th className="p-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                <th className="p-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                   Entity
                 </th>
-                <th className="p-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                <th className="p-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                   Timestamp
                 </th>
-                <th className="p-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em] text-right pr-8">
+                <th className="p-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em] text-right pr-8">
                   Actions
                 </th>
               </tr>
@@ -382,7 +428,7 @@ const AuditLogList = () => {
                     <td className="p-5 text-right pr-8">
                       <button
                         onClick={() => setSelectedLog(log)}
-                        className="p-2.5 rounded-xl bg-white/5 text-starlight/20 hover:text-violet-400 hover:bg-violet-400/10 transition-all active:scale-90 border border-white/5"
+                        className="p-2.5 rounded-xl bg-white/5 text-starlight/60 hover:text-violet-400 hover:bg-violet-400/10 transition-all active:scale-90 border border-white/5"
                       >
                         <MousePointer2 size={18} />
                       </button>
@@ -469,7 +515,7 @@ const AuditLogList = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <p className="text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em] mb-2">
+                    <p className="text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em] mb-2">
                       Operator
                     </p>
                     <div className="flex items-center gap-3">
@@ -482,7 +528,7 @@ const AuditLogList = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em] mb-2">
+                    <p className="text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em] mb-2">
                       Timestamp
                     </p>
                     <div className="flex items-center gap-3">
@@ -497,7 +543,7 @@ const AuditLogList = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#050505]/60 border border-white/5">
-                  <p className="text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <p className="text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <Terminal size={14} className="text-violet-500" />
                     Forensics Metadata Snapshot
                   </p>
@@ -513,7 +559,7 @@ const AuditLogList = () => {
                         size={16}
                         className={getForensicRisk(selectedLog.action).color}
                       />
-                      <span className="text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                      <span className="text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                         Forensic Risk Profile
                       </span>
                     </div>
@@ -532,7 +578,7 @@ const AuditLogList = () => {
                   <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
                     <div className="flex items-center gap-3">
                       <Database size={16} className="text-violet-400" />
-                      <span className="text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                      <span className="text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                         Audit Identity Stamp
                       </span>
                     </div>

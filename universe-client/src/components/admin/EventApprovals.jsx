@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Check,
   X,
@@ -18,7 +18,16 @@ import {
   Activity,
   Users,
   Download,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * EventApprovals "Command Center"
@@ -30,19 +39,23 @@ const EventApprovals = ({ onBack }) => {
   const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterCategory, setFilterCategory] = useState("all");
 
-  useEffect(() => {
-    fetchPendingEvents();
-  }, []);
-
-  const fetchPendingEvents = async () => {
+  const fetchPendingEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("token");
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+
       const response = await fetch(
-        "http://localhost:5000/api/admin/events/pending",
+        `http://localhost:5000/api/admin/events/pending?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -51,13 +64,18 @@ const EventApprovals = ({ onBack }) => {
       if (!response.ok) throw new Error("Failed to fetch pending events");
 
       const data = await response.json();
-      setEvents(data.events);
+      setEvents(data.events || []);
+      if (data.pagination) setTotalPages(data.pagination.totalPages);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchPendingEvents();
+  }, [fetchPendingEvents]);
 
   const handleApprove = async (id) => {
     setProcessingId(id);
@@ -186,36 +204,36 @@ const EventApprovals = ({ onBack }) => {
       {/* 2. KPI Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Pending Review"
+          title="Pending Review"
           value={totalPending}
           icon={Clock}
           color="text-amber-400"
-          bg="bg-amber-500/10"
-          border="border-amber-500/20"
+          subValue="Manual review required"
+          description="Proposals awaiting administrative moderation and platform certification."
         />
         <KpiCard
-          label="Capacity Alerts"
+          title="Capacity Alerts"
           value={highCapacityEvents}
           icon={AlertTriangle}
           color="text-rose-400"
-          bg="bg-rose-500/10"
-          border="border-rose-500/20"
+          subValue="Logistics validation"
+          description="Events with over 500 requested pax requiring logistics validation."
         />
         <KpiCard
-          label="Urgent (7 Days)"
+          title="Urgent (7 Days)"
           value={urgentEvents}
           icon={Activity}
           color="text-cyan-400"
-          bg="bg-cyan-500/10"
-          border="border-cyan-500/20"
+          subValue="High priority"
+          description="Time-sensitive proposals for events scheduled within the next week."
         />
         <KpiCard
-          label="Total Pax"
+          title="Total Pax"
           value={totalCapacityRequested.toLocaleString()}
           icon={Users}
           color="text-emerald-400"
-          bg="bg-emerald-500/10"
-          border="border-emerald-500/20"
+          subValue="Aggregate capacity"
+          description="Combined attendee capacity requested for all pending event proposals."
         />
       </div>
 
@@ -231,23 +249,47 @@ const EventApprovals = ({ onBack }) => {
             placeholder="Search events, organizers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
+            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-starlight/40" />
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
-          >
-            <option value="all">All Categories</option>
-            <option value="technology">Technology</option>
-            <option value="music">Music</option>
-            <option value="art">Art</option>
-            <option value="sports">Sports</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-starlight/40" />
+            <select
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
+            >
+              <option value="all">All Categories</option>
+              <option value="technology">Technology</option>
+              <option value="music">Music</option>
+              <option value="art">Art</option>
+              <option value="sports">Sports</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -285,224 +327,317 @@ const EventApprovals = ({ onBack }) => {
             </p>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
-                    Event Details
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Logistics
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Organizer
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Risk / Status
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right pr-6">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredEvents.map((event) => (
-                  <tr
-                    key={event._id}
-                    className="hover:bg-white/[0.02] transition-colors group"
-                  >
-                    {/* Event Identity */}
-                    <td className="p-4 pl-6 align-top">
-                      <div className="flex gap-4">
-                        {/* Date Box */}
-                        <div className="shrink-0 w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/10">
-                          <span className="text-[10px] uppercase text-rose-400 font-bold">
-                            {new Date(event.date_time).toLocaleString("en-MY", {
-                              month: "short",
-                            })}
-                          </span>
-                          <span className="text-lg font-bold text-starlight leading-none">
-                            {new Date(event.date_time).getDate()}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
-                            {event.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {event.tags?.slice(0, 2).map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-starlight/60 border border-white/5"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Logistics */}
-                    <td className="p-4 align-top">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-xs text-starlight/70">
-                          <Calendar size={12} className="text-violet-400" />
-                          <span>
-                            {formatDate(event.date_time)} •{" "}
-                            {formatTime(event.date_time)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-starlight/70">
-                          <MapPin size={12} className="text-cyan-400" />
-                          <span
-                            className="truncate max-w-[150px]"
-                            title={event.venue_id?.name}
-                          >
-                            {event.venue_id?.name || "No Venue"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-starlight/70">
-                          <Clock size={12} className="text-amber-400" />
-                          <span>{event.duration_minutes} mins</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Organizer */}
-                    <td className="p-4 align-top">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white uppercase">
-                          {event.organizer_id?.name?.substring(0, 2) || "U"}
-                        </div>
-                        <div>
-                          <p className="text-sm text-starlight font-medium">
-                            {event.organizer_id?.name}
-                          </p>
-                          <p className="text-xs text-starlight/40">
-                            {event.organizer_id?.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Risk/Status */}
-                    <td className="p-4 align-top">
-                      <div className="space-y-2">
-                        {/* Capacity Bar */}
-                        <div className="w-full max-w-[140px]">
-                          <div className="flex justify-between text-[10px] text-starlight/50 mb-1">
-                            <span>Capacity</span>
-                            <span>
-                              {event.capacity} / {event.venue_id?.max_capacity}
+          <>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
+                      Event Details
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Logistics
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Organizer
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Risk / Status
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right pr-6">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredEvents.map((event) => (
+                    <tr
+                      key={event._id}
+                      className="hover:bg-white/[0.02] transition-colors group"
+                    >
+                      {/* Event Identity */}
+                      <td className="p-4 pl-6 align-top">
+                        <div className="flex gap-4">
+                          {/* Date Box */}
+                          <div className="shrink-0 w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/10">
+                            <span className="text-[10px] uppercase text-rose-400 font-bold">
+                              {new Date(event.date_time).toLocaleString(
+                                "en-MY",
+                                {
+                                  month: "short",
+                                },
+                              )}
+                            </span>
+                            <span className="text-lg font-bold text-starlight leading-none">
+                              {new Date(event.date_time).getDate()}
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                event.venue_id &&
-                                event.capacity > event.venue_id.max_capacity
-                                  ? "bg-rose-500"
-                                  : "bg-emerald-500"
-                              }`}
-                              style={{
-                                width: `${Math.min(
-                                  ((event.capacity || 0) /
-                                    (event.venue_id?.max_capacity || 100)) *
-                                    100,
-                                  100,
-                                )}%`,
-                              }}
-                            />
+                          <div>
+                            <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
+                              {event.title}
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {event.tags?.slice(0, 2).map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-starlight/60 border border-white/5"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
+                      </td>
 
-                        {/* Alerts */}
-                        {event.venue_id &&
-                          event.capacity > event.venue_id.max_capacity && (
-                            <div className="flex items-center gap-1.5 text-xs text-rose-400 font-medium bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20 w-fit">
-                              <AlertTriangle size={12} />
-                              Over Capacity
+                      {/* Logistics */}
+                      <td className="p-4 align-top">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <Calendar size={12} className="text-violet-400" />
+                            <span>
+                              {formatDate(event.date_time)} •{" "}
+                              {formatTime(event.date_time)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <MapPin size={12} className="text-cyan-400" />
+                            <span
+                              className="truncate max-w-[150px]"
+                              title={event.venue_id?.name}
+                            >
+                              {event.venue_id?.name || "No Venue"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <Clock size={12} className="text-amber-400" />
+                            <span>{event.duration_minutes} mins</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Organizer */}
+                      <td className="p-4 align-top">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white uppercase">
+                            {event.organizer_id?.name?.substring(0, 2) || "U"}
+                          </div>
+                          <div>
+                            <p className="text-sm text-starlight font-medium">
+                              {event.organizer_id?.name}
+                            </p>
+                            <p className="text-xs text-starlight/40">
+                              {event.organizer_id?.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Risk/Status */}
+                      <td className="p-4 align-top">
+                        <div className="space-y-2">
+                          {/* Capacity Bar */}
+                          <div className="w-full max-w-[140px]">
+                            <div className="flex justify-between text-[10px] text-starlight/50 mb-1">
+                              <span>Capacity</span>
+                              <span>
+                                {event.capacity} /{" "}
+                                {event.venue_id?.max_capacity}
+                              </span>
                             </div>
-                          )}
-                      </div>
-                    </td>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  event.venue_id &&
+                                  event.capacity > event.venue_id.max_capacity
+                                    ? "bg-rose-500"
+                                    : "bg-emerald-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(
+                                    ((event.capacity || 0) /
+                                      (event.venue_id?.max_capacity || 100)) *
+                                      100,
+                                    100,
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
 
-                    {/* Actions */}
-                    <td className="p-4 align-middle text-right pr-6">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Proposal Button */}
-                        {event.proposal ? (
-                          <a
-                            href={`http://localhost:5000/${event.proposal}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
-                            title="View Proposal"
-                          >
-                            <FileText size={16} />
-                          </a>
-                        ) : (
-                          <button
-                            disabled
-                            className="p-2 rounded-lg bg-white/5 text-starlight/20 cursor-not-allowed"
-                          >
-                            <FileText size={16} />
-                          </button>
-                        )}
+                          {/* Alerts */}
+                          {event.venue_id &&
+                            event.capacity > event.venue_id.max_capacity && (
+                              <div className="flex items-center gap-1.5 text-xs text-rose-400 font-medium bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20 w-fit">
+                                <AlertTriangle size={12} />
+                                Over Capacity
+                              </div>
+                            )}
+                        </div>
+                      </td>
 
-                        {/* Approve Button */}
-                        <button
-                          onClick={() => handleApprove(event._id)}
-                          disabled={processingId === event._id}
-                          className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all disabled:opacity-50"
-                          title="Approve Event"
-                        >
-                          <Check size={16} />
-                        </button>
+                      {/* Actions */}
+                      <td className="p-4 align-middle text-right pr-6">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 glass-panel border-white/10"
+                            >
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Moderation Ops
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
 
-                        {/* Reject Button */}
-                        <button
-                          onClick={() => handleReject(event._id)}
-                          disabled={processingId === event._id}
-                          className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all disabled:opacity-50"
-                          title="Reject Event"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                              {/* Proposal Action */}
+                              <DropdownMenuItem
+                                disabled={!event.proposal}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {event.proposal ? (
+                                  <a
+                                    href={`http://localhost:5000/${event.proposal}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 w-full"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                      <FileText size={16} />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-blue-400">
+                                      Examine Document
+                                    </span>
+                                  </a>
+                                ) : (
+                                  <>
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-starlight/20">
+                                      <FileText size={16} />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-starlight/20">
+                                      No Document
+                                    </span>
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator className="bg-white/5" />
+
+                              {/* Approval Action */}
+                              <DropdownMenuItem
+                                onClick={() => handleApprove(event._id)}
+                                disabled={processingId === event._id}
+                                className="flex items-center gap-2 p-3 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                  <Check size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  Authorize Clearance
+                                </span>
+                              </DropdownMenuItem>
+
+                              {/* Rejection Action */}
+                              <DropdownMenuItem
+                                onClick={() => handleReject(event._id)}
+                                disabled={processingId === event._id}
+                                className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-500/10 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-all">
+                                  <X size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  Deny Proposal
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+                Page <span className="text-starlight">{currentPage}</span> of{" "}
+                {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 };
 
-const KpiCard = ({ label, value, icon: Icon, color, bg, border }) => (
-  <div
-    className={`glass-panel p-5 rounded-2xl border ${border} flex items-center justify-between relative overflow-hidden group`}
-  >
-    <div className={`absolute -right-4 -bottom-4 opacity-10 ${color}`}>
-      <Icon size={80} />
-    </div>
-
-    <div className="relative z-10">
-      <p className="text-starlight/50 text-xs font-medium uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <h3 className="text-2xl font-bold text-starlight">{value}</h3>
-    </div>
-
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
-      className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center ${color}`}
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <Icon size={20} />
+      {Icon && <Icon size={80} />}
+    </div>
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );

@@ -6,3 +6,4 @@ const EventsListPage = () => {
 };
 
 export default EventsListPage;
+

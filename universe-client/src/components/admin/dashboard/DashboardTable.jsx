@@ -33,7 +33,7 @@ const StatusPill = ({ status, onClick }) => {
         onClick?.();
       }}
       className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${getStatusStyle(
-        status
+        status,
       )} cursor-pointer`}
     >
       {status}
@@ -81,7 +81,7 @@ const DashboardTable = ({ data, columns, onRowClick }) => {
                   </td>
                 ))}
                 <td className="px-6 py-4">
-                  <button className="text-starlight/20 group-hover:text-starlight/60 hover:text-white transition-colors">
+                  <button className="text-starlight/60 hover:text-white transition-colors">
                     <MoreHorizontal size={18} />
                   </button>
                 </td>
@@ -96,3 +96,4 @@ const DashboardTable = ({ data, columns, onRowClick }) => {
 
 export default DashboardTable;
 export { StatusPill };
+

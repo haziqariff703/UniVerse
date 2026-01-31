@@ -7,3 +7,4 @@ const OrganizerApprovalsPage = () => {
 };
 
 export default OrganizerApprovalsPage;
+

@@ -17,13 +17,14 @@ const Category = require('../models/category');
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    const [totalUsers, totalEvents, totalBookings, activeEvents, pendingEvents, pendingOrganizers] = await Promise.all([
+    const [totalUsers, totalEvents, totalBookings, activeEvents, pendingEvents, pendingOrganizers, pendingSpeakers] = await Promise.all([
       User.countDocuments(),
       Event.countDocuments(),
       Registration.countDocuments(),
       Event.countDocuments({ date_time: { $gte: new Date() }, status: 'approved' }),
       Event.countDocuments({ status: 'pending' }),
-      User.countDocuments({ role: 'student', organizerRequest: true })
+      User.countDocuments({ role: 'student', organizerRequest: true }),
+      Speaker.countDocuments({ status: 'pending' })
     ]);
 
     const recentActivity = await Registration.find()
@@ -40,6 +41,7 @@ exports.getDashboardStats = async (req, res) => {
         activeEvents,
         pendingEvents,
         pendingOrganizers,
+        pendingSpeakers,
         revenue: 0
       },
       recentActivity: recentActivity.map(reg => ({

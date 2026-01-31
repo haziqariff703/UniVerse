@@ -65,6 +65,7 @@ const StatCard = ({
   isPositive,
   icon: Icon,
   colorClass,
+  description,
 }) => (
   <div className="bg-[#13131a] border border-white/5 rounded-2xl p-6 flex flex-col justify-between h-full relative overflow-hidden group hover:border-violet-500/30 transition-all duration-300">
     <div className="flex justify-between items-start mb-4">
@@ -78,18 +79,29 @@ const StatCard = ({
         <Icon size={20} />
       </div>
     </div>
-    <div className="flex items-center gap-2 text-xs font-medium">
-      <span
-        className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${
-          isPositive
-            ? "text-emerald-400 bg-emerald-400/10"
-            : "text-rose-400 bg-rose-400/10"
-        }`}
-      >
-        {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-        {change}
-      </span>
-      <span className="text-gray-500">vs. last period</span>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-xs font-medium">
+        <span
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${
+            isPositive
+              ? "text-emerald-400 bg-emerald-400/10"
+              : "text-rose-400 bg-rose-400/10"
+          }`}
+        >
+          {isPositive ? (
+            <ArrowUpRight size={12} />
+          ) : (
+            <ArrowDownRight size={12} />
+          )}
+          {change}
+        </span>
+        <span className="text-gray-500">vs. last period</span>
+      </div>
+      {description && (
+        <p className="text-[10px] text-starlight/60 mt-3 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+          {description}
+        </p>
+      )}
     </div>
   </div>
 );
@@ -185,6 +197,7 @@ const AdminDashboard = () => {
               isPositive={true}
               icon={Calendar}
               colorClass="text-blue-400"
+              description="Sum of all events created, including past, active, and pending listings."
             />
             <StatCard
               title="Active Users"
@@ -193,6 +206,7 @@ const AdminDashboard = () => {
               isPositive={true}
               icon={Users}
               colorClass="text-emerald-400"
+              description="Students and organizers who have logged in within the last 30 days."
             />
             <StatCard
               title="Pending Approvals"
@@ -201,6 +215,7 @@ const AdminDashboard = () => {
               isPositive={false}
               icon={Clock}
               colorClass="text-rose-400"
+              description="New event proposals awaiting administrative review and certification."
             />
             <StatCard
               title="Total Bookings"
@@ -209,6 +224,7 @@ const AdminDashboard = () => {
               isPositive={true}
               icon={CheckCircle}
               colorClass="text-violet-400"
+              description="Total number of successful event registrations across the platform."
             />
           </>
         )}
@@ -342,7 +358,7 @@ const AdminDashboard = () => {
           </div>
           <div className="overflow-x-auto">
             {!stats?.trendingEvents || stats.trendingEvents.length === 0 ? (
-              <div className="py-12 text-center text-starlight/20">
+              <div className="py-12 text-center text-starlight/60">
                 <p>No trending events data available yet.</p>
               </div>
             ) : (
@@ -429,3 +445,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

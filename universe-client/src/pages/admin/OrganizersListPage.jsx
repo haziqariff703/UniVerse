@@ -7,3 +7,4 @@ const OrganizersListPage = () => {
 };
 
 export default OrganizersListPage;
+

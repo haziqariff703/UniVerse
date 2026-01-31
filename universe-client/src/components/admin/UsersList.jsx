@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Filter,
@@ -18,8 +18,17 @@ import {
   Calendar,
   CreditCard,
   User,
+  TrendingUp,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * UsersList "Command Center"
@@ -32,21 +41,18 @@ const UsersList = ({ onBack }) => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [roleFilter, setRoleFilter] = useState("all");
   const [deleteProcessing, setDeleteProcessing] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, roleFilter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 10,
+        limit: itemsPerPage,
         ...(search && { search }),
         ...(roleFilter !== "all" && { role: roleFilter }),
       });
@@ -71,7 +77,11 @@ const UsersList = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, search, roleFilter, itemsPerPage]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -205,36 +215,36 @@ const UsersList = ({ onBack }) => {
       {/* 2. KPI Cards Row (Simulated stats for UI completeness) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Total Users"
+          title="Total Users"
           value={users.length > 0 ? "150+" : "Loading..."} // Placeholder as we don't have global stats readily available in this component yet
           icon={Users}
           color="text-blue-400"
-          bg="bg-blue-500/10"
-          border="border-blue-500/20"
+          subValue="System genealogy"
+          description="Total combined registrations across all user categories and roles."
         />
         <KpiCard
-          label="Active Students"
+          title="Active Students"
           value="120+"
           icon={GraduationCap}
           color="text-emerald-400"
-          bg="bg-emerald-500/10"
-          border="border-emerald-500/20"
+          subValue="Academic population"
+          description="Verified student accounts eligible for event registration and participation."
         />
         <KpiCard
-          label="Organizers"
+          title="Organizers"
           value="15"
           icon={Briefcase}
           color="text-violet-400"
-          bg="bg-violet-500/10"
-          border="border-violet-500/20"
+          subValue="Proposal velocity"
+          description="Members with higher-level permissions to create and manage official events."
         />
         <KpiCard
-          label="Administrators"
+          title="Administrators"
           value="5"
           icon={Shield}
           color="text-rose-400"
-          bg="bg-rose-500/10"
-          border="border-rose-500/20"
+          subValue="Safety & Governance"
+          description="Root-level accounts with full access to platform governance and infrastructure."
         />
       </div>
 
@@ -250,26 +260,47 @@ const UsersList = ({ onBack }) => {
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
+            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
           />
         </form>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-starlight/40" />
-          <select
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
-          >
-            <option value="all">All Roles</option>
-            <option value="student">Student</option>
-            <option value="organizer">Organizer</option>
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-starlight/40" />
+            <select
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
+            >
+              <option value="all">All Roles</option>
+              <option value="student">Student</option>
+              <option value="organizer">Organizer</option>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -296,7 +327,7 @@ const UsersList = ({ onBack }) => {
         ) : users.length === 0 ? (
           <div className="p-12 text-center min-h-[400px] flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-              <UserCheck size={32} className="text-starlight/20" />
+              <UserCheck size={32} className="text-starlight/60" />
             </div>
             <h3 className="text-xl font-bold text-starlight mb-2">
               No Users Found
@@ -408,31 +439,51 @@ const UsersList = ({ onBack }) => {
 
                     {/* Actions */}
                     <td className="p-4 align-middle text-right pr-6">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all group/btn"
-                          title="View Details"
-                        >
-                          <Eye
-                            size={16}
-                            className="group-hover/btn:scale-110 transition-transform"
-                          />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user._id)}
-                          disabled={
-                            deleteProcessing === user._id ||
-                            user.role === "admin"
-                          } // Prevent deleting admins easily for safety
-                          className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn"
-                          title="Delete User"
-                        >
-                          <Trash2
-                            size={16}
-                            className="group-hover/btn:scale-110 transition-transform"
-                          />
-                        </button>
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-2 rounded-xl bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-all">
+                              <MoreVertical size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-56 glass-panel border-white/10"
+                          >
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                              Access Control
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/5" />
+
+                            <DropdownMenuItem
+                              onClick={() => setSelectedUser(user)}
+                              className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                <Eye size={16} />
+                              </div>
+                              <span className="font-bold text-xs font-jakarta">
+                                View Intelligence
+                              </span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteUser(user._id)}
+                              disabled={
+                                deleteProcessing === user._id ||
+                                user.role === "admin"
+                              }
+                              className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                <Trash2 size={16} />
+                              </div>
+                              <span className="font-bold text-xs font-jakarta">
+                                Terminate Access
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
@@ -611,25 +662,50 @@ const UsersList = ({ onBack }) => {
   );
 };
 
-const KpiCard = ({ label, value, icon: Icon, color, bg, border }) => (
-  <div
-    className={`glass-panel p-5 rounded-2xl border ${border} flex items-center justify-between relative overflow-hidden group`}
-  >
-    <div className={`absolute -right-4 -bottom-4 opacity-10 ${color}`}>
-      <Icon size={80} />
-    </div>
-
-    <div className="relative z-10">
-      <p className="text-starlight/50 text-xs font-medium uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <h3 className="text-2xl font-bold text-starlight">{value}</h3>
-    </div>
-
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
-      className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center ${color}`}
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <Icon size={20} />
+      {Icon && <Icon size={80} />}
+    </div>
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );

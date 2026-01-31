@@ -26,12 +26,29 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 /**
  * Intelligence Card Component
  */
-const KpiCard = ({ title, value, icon: Icon, color, subValue, trend }) => (
-  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
       className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
@@ -43,18 +60,27 @@ const KpiCard = ({ title, value, icon: Icon, color, subValue, trend }) => (
           <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
             {title}
           </h3>
-          <div className="text-3xl font-bold text-starlight tracking-tight">
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
             {value}
           </div>
         </div>
-        <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
           {Icon && <Icon size={18} />}
         </div>
       </div>
-      {(subValue || trend) && (
-        <div className="flex items-center gap-1.5 mt-1">
-          {trend && <TrendingUp size={10} className="text-emerald-400" />}
-          <span className={`text-[10px] font-medium ${color}`}>{subValue}</span>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -64,6 +90,8 @@ const KpiCard = ({ title, value, icon: Icon, color, subValue, trend }) => (
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
@@ -242,6 +270,7 @@ const CategoryManager = () => {
           icon={Layers}
           color="text-violet-400"
           subValue="Total distinct categories"
+          description="Total count of all high-level categories currently defined in the system registry."
         />
         <KpiCard
           title="Active Sectors"
@@ -249,6 +278,7 @@ const CategoryManager = () => {
           icon={CheckCircle}
           color="text-emerald-400"
           subValue="Currently visible in UI"
+          description="Categories that are live and available for organizers to select for new events."
         />
         <KpiCard
           title="Dormant Sectors"
@@ -256,6 +286,7 @@ const CategoryManager = () => {
           icon={AlertCircle}
           color="text-amber-400"
           subValue="Requires reactivation"
+          description="Archived categories that are hidden from the frontend but preserved for historical logs."
         />
         <KpiCard
           title="Usage Velocity"
@@ -264,6 +295,7 @@ const CategoryManager = () => {
           color="text-cyan-400"
           subValue="Total system associations"
           trend={true}
+          description="Aggregate number of events and activities linked to all registered categories."
         />
       </div>
 
@@ -272,7 +304,7 @@ const CategoryManager = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
               size={16}
             />
             <input
@@ -287,7 +319,7 @@ const CategoryManager = () => {
           {/* Expanded Filtering Cluster */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
-              <Filter size={14} className="text-starlight/20" />
+              <Filter size={14} className="text-starlight/60" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -306,7 +338,7 @@ const CategoryManager = () => {
             </div>
 
             <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
-              <BarChart3 size={14} className="text-starlight/20" />
+              <BarChart3 size={14} className="text-starlight/60" />
               <select
                 value={usageFilter}
                 onChange={(e) => setUsageFilter(e.target.value)}
@@ -324,6 +356,25 @@ const CategoryManager = () => {
                 <option value="unused" className="bg-[#0A0A0A]">
                   Unused Sectors
                 </option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
               </select>
             </div>
           </div>
@@ -350,81 +401,143 @@ const CategoryManager = () => {
             </p>
           </div>
         ) : (
-          filteredCategories.map((cat) => (
-            <div
-              key={cat._id}
-              className={`glass-panel p-5 rounded-2xl group border ${cat.is_active ? "border-white/5" : "border-rose-500/10 opacity-60"} hover:border-violet-500/30 transition-all relative overflow-hidden`}
-            >
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-                  style={{
-                    backgroundColor: `${cat.color}15`,
-                    color: cat.color,
-                    border: `1px solid ${cat.color}30`,
-                  }}
-                >
-                  <Tag size={20} />
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => openEdit(cat)}
-                    className="p-2 hover:bg-white/10 rounded-lg text-starlight/40 hover:text-white transition-colors"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cat._id)}
-                    className="p-2 hover:bg-white/5 rounded-lg text-starlight/40 hover:text-rose-500 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-bold text-starlight tracking-tight">
-                    {cat.name}
-                  </h3>
-                  {!cat.is_active && (
-                    <span className="text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">
-                      Dormant
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-starlight/40 line-clamp-1 mb-4 h-4">
-                  {cat.description || "No sector brief available."}
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <span className="text-[10px] font-mono text-starlight/20 uppercase tracking-tighter">
-                      {cat.color}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <BarChart3 size={10} className="text-violet-400" />
-                    <span className="text-[10px] text-starlight/60 font-bold">
-                      {cat.usageCount || 0} Events
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subtle background glow */}
+          filteredCategories
+            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+            .map((cat) => (
               <div
-                className="absolute -bottom-4 -right-4 w-16 h-16 blur-2xl opacity-10 transition-opacity group-hover:opacity-20 rounded-full"
-                style={{ backgroundColor: cat.color }}
-              />
-            </div>
-          ))
+                key={cat._id}
+                className={`glass-panel p-5 rounded-2xl group border ${cat.is_active ? "border-white/5" : "border-rose-500/10 opacity-60"} hover:border-violet-500/30 transition-all relative overflow-hidden`}
+              >
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                    style={{
+                      backgroundColor: `${cat.color}15`,
+                      color: cat.color,
+                      border: `1px solid ${cat.color}30`,
+                    }}
+                  >
+                    <Tag size={20} />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-2 rounded-lg bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                          <MoreVertical size={16} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 glass-panel border-white/10"
+                      >
+                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                          Sector Actions
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-white/5" />
+                        <DropdownMenuItem
+                          onClick={() => openEdit(cat)}
+                          className="flex items-center gap-2 p-2.5 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-violet-600/10 flex items-center justify-center text-violet-400 group-hover:bg-violet-600 group-hover:text-white transition-all">
+                            <Edit2 size={14} />
+                          </div>
+                          <span className="font-bold text-xs">
+                            Refine Logic
+                          </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(cat._id)}
+                          className="flex items-center gap-2 p-2.5 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                            <Trash2 size={14} />
+                          </div>
+                          <span className="font-bold text-xs">
+                            Terminate Sector
+                          </span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-lg font-bold text-starlight tracking-tight">
+                      {cat.name}
+                    </h3>
+                    {!cat.is_active && (
+                      <span className="text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                        Dormant
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-starlight/40 line-clamp-1 mb-4 h-4">
+                    {cat.description || "No sector brief available."}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      <span className="text-[10px] font-mono text-starlight/60 uppercase tracking-tighter">
+                        {cat.color}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <BarChart3 size={10} className="text-violet-400" />
+                      <span className="text-[10px] text-starlight/60 font-bold">
+                        {cat.usageCount || 0} Events
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtle background glow */}
+                <div
+                  className="absolute -bottom-4 -right-4 w-16 h-16 blur-2xl opacity-10 transition-opacity group-hover:opacity-20 rounded-full"
+                  style={{ backgroundColor: cat.color }}
+                />
+              </div>
+            ))
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredCategories.length > 0 && (
+        <div className="flex items-center justify-between p-4 border border-white/5 rounded-3xl bg-white/[0.01] mt-6">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+            Page <span className="text-starlight">{currentPage}</span> of{" "}
+            {Math.ceil(filteredCategories.length / itemsPerPage)}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((p) =>
+                Math.min(
+                  Math.ceil(filteredCategories.length / itemsPerPage),
+                  p + 1,
+                ),
+              )
+            }
+            disabled={
+              currentPage ===
+              Math.ceil(filteredCategories.length / itemsPerPage)
+            }
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* Forensic Sector Editor */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

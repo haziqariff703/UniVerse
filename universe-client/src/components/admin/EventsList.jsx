@@ -15,15 +15,34 @@ import {
   Layout,
   FileText,
   Users,
+  Clock,
+  MoreVertical,
+  TrendingUp,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
   <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
     <div
       className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <Icon size={80} />
+      {Icon && <Icon size={80} />}
     </div>
     <div className="relative z-10 flex flex-col justify-between h-full">
       <div className="flex items-start justify-between mb-4">
@@ -31,16 +50,37 @@ const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
           <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
             {title}
           </h3>
-          <div className="text-3xl font-bold text-starlight">{value}</div>
+          <div className="text-3xl font-bold text-starlight leading-none">
+            {value}
+          </div>
         </div>
         <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
-          <Icon size={20} />
+          {Icon && <Icon size={20} />}
         </div>
       </div>
-      {trend && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-emerald-400 font-bold">{trend}</span>
-          <span className="text-starlight/40">vs last month</span>
+      {(subValue || trend || description) && (
+        <div className="space-y-2 mt-2">
+          {subValue && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {trend && <TrendingUp size={10} className="text-emerald-400" />}
+              <span className={`text-[10px] font-medium ${color}`}>
+                {subValue}
+              </span>
+            </div>
+          )}
+          {trend && !subValue && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-emerald-400 font-bold">{trend}</span>
+              <span className="text-starlight/40 font-medium">
+                vs last month
+              </span>
+            </div>
+          )}
+          {description && (
+            <p className="text-[10px] text-starlight/60 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -57,6 +97,7 @@ const EventsList = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
   const [stats, setStats] = useState({
     total: 0,
@@ -73,7 +114,7 @@ const EventsList = () => {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 10,
+        limit: itemsPerPage,
         ...(search && { search }),
       });
 
@@ -99,7 +140,7 @@ const EventsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, search]);
+  }, [currentPage, search, itemsPerPage]);
 
   useEffect(() => {
     fetchEvents();
@@ -182,26 +223,36 @@ const EventsList = () => {
         <KpiCard
           title="Total Events"
           value={stats.total}
-          icon={Layout}
+          icon={Calendar}
+          trend={stats.growth}
           color="text-violet-400"
+          subValue="System-wide registry"
+          description="Total number of events managed on the platform including past, active, and upcoming listings."
         />
         <KpiCard
           title="Approved"
           value={stats.approved}
-          icon={CalendarCheck}
+          icon={CheckCircle}
+          trend="+2 New"
           color="text-emerald-400"
+          subValue="Live & visible"
+          description="Events that have been verified by administrators and are currently visible to all students."
         />
         <KpiCard
           title="Pending"
           value={stats.pending}
-          icon={AlertCircle}
+          icon={Clock}
           color="text-amber-400"
+          subValue="Awaiting review"
+          description="Newly submitted event proposals currently awaiting administrative moderation and certification."
         />
         <KpiCard
           title="Total Registrations"
           value={stats.registrations}
-          icon={Users}
+          icon={BarChart3}
           color="text-cyan-400"
+          subValue="Aggregate attendance"
+          description="The aggregate number of tickets and seats reserved across all platform events."
         />
       </div>
 
@@ -217,23 +268,47 @@ const EventsList = () => {
             placeholder="Search events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
+            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
           />
         </form>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-starlight/40" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
-            <option value="rejected">Rejected</option>
-            <option value="completed">Completed</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-starlight/40" />
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
+            >
+              <option value="all">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -248,116 +323,167 @@ const EventsList = () => {
             No events found.
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
-                    Event
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Logistics
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Organizer
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right">
-                    Registrations
-                  </th>
-                  <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right pr-6">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredEvents.map((event) => (
-                  <tr
-                    key={event._id}
-                    className="hover:bg-white/[0.02] transition-colors group"
-                  >
-                    <td className="p-4 pl-6 align-top">
-                      <div className="flex gap-4">
-                        <div className="shrink-0 w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/10">
-                          <span className="text-[10px] uppercase text-violet-400 font-bold">
-                            {new Date(event.date_time).toLocaleString("en-MY", {
-                              month: "short",
-                            })}
-                          </span>
-                          <span className="text-lg font-bold text-starlight leading-none">
-                            {new Date(event.date_time).getDate()}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
-                            {event.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {event.tags?.slice(0, 2).map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-starlight/60 border border-white/5"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+          <>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
+                      Event
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Logistics
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Organizer
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right">
+                      Registrations
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right pr-6">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredEvents.map((event) => (
+                    <tr
+                      key={event._id}
+                      className="hover:bg-white/[0.02] transition-colors group"
+                    >
+                      <td className="p-4 pl-6 align-top">
+                        <div className="flex gap-4">
+                          <div className="shrink-0 w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/10">
+                            <span className="text-[10px] uppercase text-violet-400 font-bold">
+                              {new Date(event.date_time).toLocaleString(
+                                "en-MY",
+                                {
+                                  month: "short",
+                                },
+                              )}
+                            </span>
+                            <span className="text-lg font-bold text-starlight leading-none">
+                              {new Date(event.date_time).getDate()}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
+                              {event.title}
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {event.tags?.slice(0, 2).map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-starlight/60 border border-white/5"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4 align-top">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-xs text-starlight/70">
-                          <Calendar size={12} className="text-violet-400" />
-                          <span>
-                            {new Date(event.date_time).toLocaleDateString()}
-                          </span>
+                      </td>
+                      <td className="p-4 align-top">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <Calendar size={12} className="text-violet-400" />
+                            <span>
+                              {new Date(event.date_time).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <MapPin size={12} className="text-cyan-400" />
+                            <span className="truncate max-w-[150px]">
+                              {event.venue_id?.name || "No Venue"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-starlight/70">
-                          <MapPin size={12} className="text-cyan-400" />
-                          <span className="truncate max-w-[150px]">
-                            {event.venue_id?.name || "No Venue"}
-                          </span>
+                      </td>
+                      <td className="p-4 align-top">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white uppercase">
+                            {event.organizer_id?.name?.substring(0, 2) || "U"}
+                          </div>
+                          <div>
+                            <p className="text-sm text-starlight font-medium">
+                              {event.organizer_id?.name}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4 align-top">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white uppercase">
-                          {event.organizer_id?.name?.substring(0, 2) || "U"}
+                      </td>
+                      <td className="p-4 align-top">
+                        {getStatusBadge(event.status)}
+                      </td>
+                      <td className="p-4 align-middle text-right">
+                        <div className="flex items-center justify-end gap-2 text-starlight font-bold">
+                          <BarChart3 size={16} className="text-violet-400" />
+                          {event.registrationCount || 0}
                         </div>
-                        <div>
-                          <p className="text-sm text-starlight font-medium">
-                            {event.organizer_id?.name}
-                          </p>
+                      </td>
+                      <td className="p-4 align-middle text-right pr-6">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-48 glass-panel border-white/10"
+                            >
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Event Operations
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
+                              <DropdownMenuItem
+                                onClick={() => setSelectedEvent(event)}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                  <Eye size={16} />
+                                </div>
+                                <span className="font-bold text-xs">
+                                  Inspect Details
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4 align-top">
-                      {getStatusBadge(event.status)}
-                    </td>
-                    <td className="p-4 align-middle text-right">
-                      <div className="flex items-center justify-end gap-2 text-starlight font-bold">
-                        <BarChart3 size={16} className="text-violet-400" />
-                        {event.registrationCount || 0}
-                      </div>
-                    </td>
-                    <td className="p-4 align-middle text-right pr-6">
-                      <button
-                        onClick={() => setSelectedEvent(event)}
-                        className="p-2 rounded-lg bg-white/5 text-starlight hover:bg-violet-500 hover:text-white transition-colors"
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+                Page <span className="text-starlight">{currentPage}</span> of{" "}
+                {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   MapPin,
   Plus,
@@ -18,7 +18,18 @@ import {
   X,
   Check,
   ImageIcon,
+  MoreVertical,
+  ExternalLink,
+  TrendingUp,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * Common facilities usually available on campus.
@@ -56,25 +67,35 @@ const VenueManager = ({ onBack }) => {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    fetchVenues();
-  }, []);
-
-  const fetchVenues = async () => {
+  const fetchVenues = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/venues", {
-        headers: { Authorization: `Bearer ${token}` },
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(searchQuery && { search: searchQuery }),
+        ...(filterFacility !== "all" && { facility: filterFacility }),
       });
+
+      const response = await fetch(
+        `http://localhost:5000/api/admin/venues?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!response.ok) throw new Error("Failed to fetch venues");
 
       const data = await response.json();
       const venuesData = data.venues || [];
       setVenues(venuesData);
+      if (data.pagination) setTotalPages(data.pagination.totalPages);
 
       // Extract all unique facilities to populate the selectable list
       const allFacilities = [
@@ -89,7 +110,11 @@ const VenueManager = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, searchQuery, filterFacility]);
+
+  useEffect(() => {
+    fetchVenues();
+  }, [fetchVenues]);
 
   const openCreateModal = () => {
     setEditingVenue(null);
@@ -253,15 +278,8 @@ const VenueManager = ({ onBack }) => {
   };
 
   // --- Filtering ---
-  const filteredVenues = venues.filter((v) => {
-    const matchesSearch =
-      v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.location_code.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFacility =
-      filterFacility === "all" ||
-      (v.facilities && v.facilities.includes(filterFacility));
-    return matchesSearch && matchesFacility;
-  });
+  // Filtering is now handled by API
+  const filteredVenues = venues;
 
   const uniqueFacilitiesList = [
     ...new Set(venues.flatMap((v) => v.facilities || [])),
@@ -306,69 +324,98 @@ const VenueManager = ({ onBack }) => {
       {/* 2. KPI Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Total Venues"
+          title="Total Venues"
           value={venues.length}
           icon={MapPin}
           color="text-violet-400"
-          bg="bg-violet-400/10"
-          border="border-violet-400/20"
+          subValue="Asset registry"
+          description="Total count of all campus facilities currently registered in the system."
         />
         <KpiCard
-          label="Total Capacity"
+          title="Total Capacity"
           value={venues.reduce((acc, v) => acc + (v.max_capacity || 0), 0)}
           icon={Users}
           color="text-cyan-400"
-          bg="bg-cyan-400/10"
-          border="border-cyan-400/20"
+          subValue="Aggregate logistics"
+          description="Aggregate seating and standing capacity across all active platform venues."
         />
         <KpiCard
-          label="Premium Venues"
+          title="Premium Venues"
           value={venues.filter((v) => (v.max_capacity || 0) > 500).length}
           icon={Zap}
           color="text-amber-400"
-          bg="bg-amber-400/10"
-          border="border-amber-400/20"
+          subValue="High capacity index"
+          description="High-tier facilities with specialized equipment and large-scale capacity."
         />
         <KpiCard
-          label="Unique Facilities"
+          title="Unique Facilities"
           value={new Set(venues.flatMap((v) => v.facilities || [])).size}
           icon={Cpu}
           color="text-emerald-400"
-          bg="bg-emerald-400/10"
-          border="border-emerald-400/20"
+          subValue="Facility velocity"
+          description="Total number of distinct equipment and service types across all venues."
         />
       </div>
 
       {/* 3. Control Toolbar */}
       <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center shadow-sm">
-        <div className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search venue name, location code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
-          />
-        </div>
+        <div className="flex flex-col md:flex-row gap-4 items-center flex-1 w-full">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search venue name, location code..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <FilterIcon size={16} className="text-starlight/40" />
-          <select
-            value={filterFacility}
-            onChange={(e) => setFilterFacility(e.target.value)}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
-          >
-            <option value="all">All Facilities</option>
-            {uniqueFacilitiesList.sort().map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Facility:
+            </span>
+            <select
+              value={filterFacility}
+              onChange={(e) => {
+                setFilterFacility(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value="all">All Facilities</option>
+              {uniqueFacilitiesList.sort().map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -397,7 +444,7 @@ const VenueManager = ({ onBack }) => {
         ) : filteredVenues.length === 0 ? (
           <div className="p-12 text-center min-h-[400px] flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-              <MapPin size={32} className="text-starlight/20" />
+              <MapPin size={32} className="text-starlight/60" />
             </div>
             <h3 className="text-xl font-bold text-starlight mb-2">
               No results found
@@ -408,117 +455,169 @@ const VenueManager = ({ onBack }) => {
             </p>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider pl-6">
-                    Venue Details
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider">
-                    Infrastructure
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider border-none">
-                    Status
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider text-right pr-12">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredVenues.map((venue) => (
-                  <tr
-                    key={venue._id}
-                    className="hover:bg-white/[0.02] transition-colors group"
-                  >
-                    {/* Venue Identity */}
-                    <td className="p-4 pl-6 align-top">
-                      <div className="flex gap-4">
-                        <div className="shrink-0 w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
-                          <MapPin size={24} className="text-violet-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
-                            {venue.name}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-starlight/40">
-                            <Users size={12} />
-                            <span>Max Pax: {venue.max_capacity}</span>
+          <>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider pl-6">
+                      Venue Details
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider">
+                      Infrastructure
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider border-none">
+                      Status
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/40 uppercase tracking-wider text-right pr-12">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {venues.map((venue) => (
+                    <tr
+                      key={venue._id}
+                      className="hover:bg-white/[0.02] transition-colors group"
+                    >
+                      {/* Venue Identity */}
+                      <td className="p-4 pl-6 align-top">
+                        <div className="flex gap-4">
+                          <div className="shrink-0 w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
+                            <MapPin size={24} className="text-violet-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
+                              {venue.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-starlight/40">
+                              <Users size={12} />
+                              <span>Max Pax: {venue.max_capacity}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Location */}
-                    <td className="p-4 align-top">
-                      <div className="inline-flex items-center gap-2 bg-white/5 px-2 py-1 rounded-lg text-xs font-medium text-starlight/70 border border-white/5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                        {venue.location_code}
-                      </div>
-                    </td>
+                      {/* Location */}
+                      <td className="p-4 align-top">
+                        <div className="inline-flex items-center gap-2 bg-white/5 px-2 py-1 rounded-lg text-xs font-medium text-starlight/70 border border-white/5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                          {venue.location_code}
+                        </div>
+                      </td>
 
-                    {/* Facilities */}
-                    <td className="p-4 align-top">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {venue.facilities?.length > 0 ? (
-                          venue.facilities.map((facility, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-starlight/60 border border-white/5"
-                            >
-                              {facility}
+                      {/* Facilities */}
+                      <td className="p-4 align-top">
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {venue.facilities?.length > 0 ? (
+                            venue.facilities.map((facility, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-starlight/60 border border-white/5"
+                              >
+                                {facility}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-starlight/60 italic">
+                              No facilities listed
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-[10px] text-starlight/20 italic">
-                            No facilities listed
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* Status */}
-                    <td className="p-4 align-top">
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full ${
-                          venue.max_capacity >= 1000
-                            ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                            : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                        }`}
-                      >
-                        <Activity size={10} />
-                        {venue.max_capacity >= 1000 ? "Premium" : "Standard"}
-                      </span>
-                    </td>
+                      {/* Status */}
+                      <td className="p-4 align-top">
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full ${
+                            venue.max_capacity >= 1000
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                              : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          }`}
+                        >
+                          <Activity size={10} />
+                          {venue.max_capacity >= 1000 ? "Premium" : "Standard"}
+                        </span>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="p-4 pr-10 align-middle text-right">
-                      <div className="flex justify-end gap-2 transition-all duration-200">
-                        <button
-                          onClick={() => openEditModal(venue)}
-                          className="p-2 rounded-xl bg-violet-600/10 text-violet-400 hover:bg-violet-600 hover:text-white border border-violet-600/20 transition-all"
-                          title="Edit Infrastructure"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(venue._id)}
-                          className="p-2 rounded-xl bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white border border-rose-600/20 transition-all"
-                          title="Decommission"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      {/* Actions */}
+                      <td className="p-4 pr-10 align-middle text-right">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-48 glass-panel border-white/10"
+                            >
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Operational Actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
+                              <DropdownMenuItem
+                                onClick={() => openEditModal(venue)}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-violet-600/10 flex items-center justify-center text-violet-400 group-hover:bg-violet-600 group-hover:text-white transition-all">
+                                  <Edit2 size={16} />
+                                </div>
+                                <span className="font-bold text-xs font-jakarta">
+                                  Edit Details
+                                </span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(venue._id)}
+                                className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                  <Trash2 size={16} />
+                                </div>
+                                <span className="font-bold text-xs font-jakarta">
+                                  Decommission
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-jakarta uppercase tracking-widest"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+                Page{" "}
+                <span className="text-starlight font-bold">{currentPage}</span>{" "}
+                of{" "}
+                <span className="text-starlight font-bold">{totalPages}</span>
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-jakarta uppercase tracking-widest"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -624,7 +723,7 @@ const VenueManager = ({ onBack }) => {
                     </label>
                     <div className="relative">
                       <Users
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/20"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
                         size={18}
                       />
                       <input
@@ -659,7 +758,7 @@ const VenueManager = ({ onBack }) => {
                         value={customFacility}
                         onChange={(e) => setCustomFacility(e.target.value)}
                         placeholder="Add manual facility..."
-                        className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-xs text-starlight placeholder:text-starlight/20 focus:outline-none focus:border-violet-500/50 min-w-[200px]"
+                        className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-xs text-starlight placeholder:text-starlight/60 focus:outline-none focus:border-violet-500/50 min-w-[200px]"
                       />
                       <button
                         type="button"
@@ -739,28 +838,50 @@ const VenueManager = ({ onBack }) => {
   );
 };
 
-// eslint-disable-next-line no-unused-vars
-const KpiCard = ({ label, value, icon: CardIcon, color, bg, border }) => (
-  <div
-    className={`glass-panel p-5 rounded-2xl border ${border} flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm`}
-  >
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
-      className={`absolute -right-4 -bottom-4 opacity-[0.03] ${color} group-hover:scale-110 group-hover:opacity-10 transition-all duration-500`}
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <CardIcon size={80} />
+      {Icon && <Icon size={80} />}
     </div>
-    <div className="relative z-10">
-      <p className="text-starlight/40 text-xs font-bold uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <h3 className="text-2xl font-black text-starlight leading-none">
-        {value}
-      </h3>
-    </div>
-    <div
-      className={`relative z-10 w-12 h-12 rounded-xl ${bg} flex items-center justify-center border border-white/5 shadow-inner`}
-    >
-      <CardIcon size={24} className={color} />
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );
