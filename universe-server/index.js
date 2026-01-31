@@ -13,6 +13,7 @@ const userRoutes = require("./routes/userRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const venueRoutes = require("./routes/venueRoutes");
+const speakerRoutes = require("./routes/speakerRoutes");
 
 // Middleware
 app.use(cors());
@@ -27,6 +28,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin/audit-logs", auditRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/venues", venueRoutes);
+app.use("/api/speakers", speakerRoutes);
 app.use("/api/crew", require("./routes/crewRoutes"));
 
 // Basic Route for Testing

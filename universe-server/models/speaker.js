@@ -7,7 +7,10 @@ const speakerSchema = new mongoose.Schema({
   social_links: {
     linkedin: String,
     twitter: String
-  }
+  },
+  status: { type: String, enum: ['pending', 'verified'], default: 'verified' },
+  proposal_url: { type: String },
+  requested_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
 module.exports = mongoose.model('Speaker', speakerSchema);
