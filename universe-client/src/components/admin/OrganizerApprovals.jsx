@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+// Optimized for Command Center View
 import {
   Check,
   X,
@@ -15,15 +16,33 @@ import {
   XCircle,
   AlertCircle,
   Users,
+  MoreVertical,
+  TrendingUp,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
-  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
       className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <Icon size={80} />
+      {Icon && <Icon size={80} />}
     </div>
     <div className="relative z-10 flex flex-col justify-between h-full">
       <div className="flex items-start justify-between mb-4">
@@ -31,16 +50,27 @@ const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
           <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
             {title}
           </h3>
-          <div className="text-3xl font-bold text-starlight">{value}</div>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
         </div>
-        <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
-          <Icon size={20} />
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
         </div>
       </div>
-      {trend && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-emerald-400 font-bold">{trend}</span>
-          <span className="text-starlight/40">vs last month</span>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -50,21 +80,24 @@ const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
 const OrganizerApprovals = () => {
   const [organizers, setOrganizers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    fetchPendingOrganizers();
-  }, []);
-
-  const fetchPendingOrganizers = async () => {
+  const fetchPendingOrganizers = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const token = localStorage.getItem("token");
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(search && { search }),
+      });
+
       const response = await fetch(
-        "http://localhost:5000/api/admin/organizers/pending",
+        `http://localhost:5000/api/admin/organizers/pending?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -74,12 +107,17 @@ const OrganizerApprovals = () => {
 
       const data = await response.json();
       setOrganizers(data.users || []);
+      if (data.pagination) setTotalPages(data.pagination.totalPages);
     } catch (err) {
-      setError(err.message);
+      console.error("Error fetching organizers:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, search]);
+
+  useEffect(() => {
+    fetchPendingOrganizers();
+  }, [fetchPendingOrganizers]);
 
   const handleApprove = async (id) => {
     if (!confirm("Are you sure you want to approve this organizer request?"))
@@ -129,12 +167,8 @@ const OrganizerApprovals = () => {
     }
   };
 
-  const filteredOrganizers = organizers.filter(
-    (org) =>
-      org.name.toLowerCase().includes(search.toLowerCase()) ||
-      org.email.toLowerCase().includes(search.toLowerCase()) ||
-      org.student_id.toLowerCase().includes(search.toLowerCase()),
-  );
+  // Search is now handled by API
+  const filteredOrganizers = organizers;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -165,29 +199,57 @@ const OrganizerApprovals = () => {
           value={organizers.length}
           icon={AlertCircle}
           color="text-amber-400"
+          subValue="Identity audit required"
+          description="New organizer applications currently awaiting platform certification and review."
         />
         <KpiCard
+          title="Proposals to Review"
           value={organizers.filter((o) => o.confirmation_letter_url).length}
           icon={FileText}
           color="text-cyan-400"
-          title="Proposals to Review"
+          subValue="Policy compliance check"
+          description="Applications that have submitted official documentation for forensic verification."
         />
       </div>
 
       {/* 3. Controls */}
       <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search pending requests..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
-          />
+        <div className="flex flex-col md:flex-row gap-4 items-center flex-1">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search pending requests..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -202,8 +264,8 @@ const OrganizerApprovals = () => {
             No pending requests found. Good job!
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <>
+            <div className="w-full overflow-x-auto">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
                   <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
@@ -254,69 +316,167 @@ const OrganizerApprovals = () => {
                       </div>
                     </td>
                     <td className="p-4 align-top">
-                      <div className="flex flex-col gap-2">
-                        {org.confirmation_letter_url ? (
-                          <a
-                            href={
-                              org.confirmation_letter_url.startsWith("http")
-                                ? org.confirmation_letter_url
-                                : `http://localhost:5000/${org.confirmation_letter_url}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-300 text-xs font-bold hover:bg-violet-500 hover:text-white transition-colors w-fit"
-                          >
-                            <FileText size={14} />
-                            View Proposal Letter
-                          </a>
-                        ) : (
-                          <span className="text-starlight/20 text-xs italic">
-                            No proposal uploaded
+                      {org.confirmation_letter_url || org.id_card_url ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/60 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 w-fit">
+                            Files Attached
                           </span>
-                        )}
-
-                        {org.id_card_url && (
-                          <a
-                            href={
-                              org.id_card_url.startsWith("http")
-                                ? org.id_card_url
-                                : `http://localhost:5000/${org.id_card_url}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-starlight/60 text-xs font-bold hover:bg-white/10 hover:text-starlight transition-colors w-fit"
-                          >
-                            <User size={14} />
-                            View ID Card
-                          </a>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-starlight/20 bg-white/5 px-2 py-0.5 rounded border border-white/5 w-fit">
+                          No Files
+                        </span>
+                      )}
                     </td>
                     <td className="p-4 align-middle text-right pr-6">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleApprove(org._id)}
-                          disabled={processingId === org._id}
-                          className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
-                          title="Approve Request"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleReject(org._id)}
-                          disabled={processingId === org._id}
-                          className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
-                          title="Reject Request"
-                        >
-                          <X size={18} />
-                        </button>
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                              <MoreVertical size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-56 glass-panel border-white/10"
+                          >
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                              Access Moderation
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/5" />
+
+                            {/* Document Actions */}
+                            <DropdownMenuItem
+                              disabled={!org.confirmation_letter_url}
+                              className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
+                            >
+                              {org.confirmation_letter_url ? (
+                                <a
+                                  href={
+                                    org.confirmation_letter_url.startsWith(
+                                      "http",
+                                    )
+                                      ? org.confirmation_letter_url
+                                      : `http://localhost:5000/${org.confirmation_letter_url}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 w-full"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 group-hover:bg-violet-500 group-hover:text-white transition-all">
+                                    <FileText size={16} />
+                                  </div>
+                                  <span className="font-bold text-xs uppercase tracking-widest text-violet-400">
+                                    Verify Proposal
+                                  </span>
+                                </a>
+                              ) : (
+                                <>
+                                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-starlight/20">
+                                    <FileText size={16} />
+                                  </div>
+                                  <span className="font-bold text-xs uppercase tracking-widest text-starlight/20">
+                                    No Proposal
+                                  </span>
+                                </>
+                              )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              disabled={!org.id_card_url}
+                              className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
+                            >
+                              {org.id_card_url ? (
+                                <a
+                                  href={
+                                    org.id_card_url.startsWith("http")
+                                      ? org.id_card_url
+                                      : `http://localhost:5000/${org.id_card_url}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 w-full"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                    <User size={16} />
+                                  </div>
+                                  <span className="font-bold text-xs uppercase tracking-widest text-blue-400">
+                                    Verify Identity
+                                  </span>
+                                </a>
+                              ) : (
+                                <>
+                                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-starlight/20">
+                                    <User size={16} />
+                                  </div>
+                                  <span className="font-bold text-xs uppercase tracking-widest text-starlight/20">
+                                    No ID Card
+                                  </span>
+                                </>
+                              )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator className="bg-white/5" />
+
+                            {/* Execution Actions */}
+                            <DropdownMenuItem
+                              onClick={() => handleApprove(org._id)}
+                              disabled={processingId === org._id}
+                              className="flex items-center gap-2 p-3 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                <Check size={16} />
+                              </div>
+                              <span className="font-bold text-xs uppercase tracking-widest">
+                                Grant Access
+                              </span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => handleReject(org._id)}
+                              disabled={processingId === org._id}
+                              className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                <X size={16} />
+                              </div>
+                              <span className="font-bold text-xs uppercase tracking-widest">
+                                Revoke Candidate
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+                Page <span className="text-starlight">{currentPage}</span> of{" "}
+                {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

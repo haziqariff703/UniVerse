@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2026-01-31]
 
 - **Professional Overhaul (v10)**: Re-standardized student workspace for premium corporate aesthetic.
   - **Dashboard Reversion**: Restored full-bleed layout, removed container constraints, and eliminated fixed student sidebar.
@@ -65,6 +65,50 @@ All notable changes to this project will be documented in this file.
   - **Intelligent RSVP States**: Added conditional logic for "YOU'RE GOING" badges and `🎟️ VIEW QR CODE` buttons for today's events.
   - **4:3 Cinema Standard**: Enforced strict aspect ratio uniformity for all event event photography.
   - **Merit Pills**: Added glowing `+X Merit` badges to cards to gamify student participation.
+- **Administrative Pagination & Table Controls**: Implemented comprehensive server-side pagination across 6 major administrative modules (`Events List`, `Event Approvals`, `Organizer Approvals`, `Speaker Approvals`, `Speakers List`, `Venue Manager`).
+- **Data Entry Limits**: Integrated "Items Per Page" (Limit) selectors and "Previous/Next" navigation controls to manage high-density data views efficiently.
+- **Search & Filter Synchronization**: Optimized fetch logic to handle search queries and facility filters directly via the API, ensuring real-time data consistency and performance.
+
+### Changed
+
+- **Fetch Logic**: Migrated all admin list components from client-side filtering to `useCallback`-memoized server-side fetching with support for `page`, `limit`, and `query` parameters.
+- **State Management**: Standardized `currentPage`, `totalPages`, and `itemsPerPage` state across the administrative suite.
+
+### Fixed
+
+- **JSX Fragment Consistency**: Resolved multiple "Missing Closing Tag" and "Unexpected Token" errors in `VenueManager.jsx` caused by complex nested ternary operations.
+- **Table Data Synchronization**: Fixed an issue where the `VenueManager` table was mapped to `filteredVenues` (now deprecated) instead of the fresh paginated `venues` state.
+
+### Added
+
+- **Admin UI Standardization**: Replaced legacy icon-based action buttons with `shadcn/ui` Dropdown Menus across all major administrative modules (`Venue Manager`, `Users List`, `Category Manager`, `Reviews List`, `Speakers List`, `Notifications Manager`, `Events List`, `Organizers List`, `Event Approvals`, `Organizer Approvals`, `Speaker Approvals`).
+- **High-Density Menu Operations**: Integrated "Management Ops" dropdowns with combined icons and semantic labels (e.g., "Inspect Details", "Authorize Clearance", "Forensic Audit") to improve scannability and density.
+- **Visual Intelligence**: Standardized table action columns with `MoreVertical` triggers and premium glassmorphism menu styling.
+
+- **Admin Navbar Intelligence**: Integrated a real-time Malaysia clock (Date & Time) and a proactive "System Alerts" panel in the global admin header.
+- **Alert Synchronization**: Implemented real-time tracking for Pending Events, Organizers, and Speakers with dynamic notification badges.
+- **Command Center Intelligence Enrichment**: Implemented high-density KPI descriptions across all administrative modules to provide granular operational context.
+- **KPI Card Standardization**: Refactored `StatCard`, `KpiCard`, and `LogKpiCard` across 12+ components to support a unified `description` prop with premium glassmorphism styling.
+- **Admin Dashboard Enhancement**: Added real-time metric explanations for Events, Users, Approvals, and Bookings.
+- **Audit Log Intelligence**: Integrated forensic descriptions for Logistics, Security, and Infrastructure metrics.
+- **User Registry Insights**: Added identity-focused descriptions for Student, Organizer, and Admin counts.
+- **Venue & Event Analytics**: enriched Venue, Event, and Category dashboards with deep-dive metadata tooltips.
+- **Talent & Sentiment Metrics**: Added descriptions for Speaker diversity and Review sentiment pulse.
+- **KPI subValue Standardization**: Implemented descriptive `subValue` strings across all major administrative Command Centers to provide high-density process-level context (e.g., "Policy compliance check", "Manual review required").
+- **KpiCard Universal Refactor**: Standardized the `KpiCard` component structure across 10+ modules to match the premium "Intelligence Card" aesthetic from the Categories Command Center.
+
+### Changed
+
+- **Visual Refinement**: Standardized all low-contrast UI elements (KPI descriptions, labels, table headers) from `text-starlight/20` to `text-starlight/60` for optimal readability in dark mode.
+- **Visual Refinement**: Implemented `hover:scale-[1.02]` and smooth `shadow-sm` transitions for all Intelligence Cards.
+- **Typography**: Standardized internal KPI font weights and tracking for maximum legibility in high-density views.
+
+### Fixed
+
+- **UI Consistency**: Restored missing Lucide icons in `EventsList.jsx` KPI cards and resolved a missing `Clock` import to ensure correct rendering.
+- **System Stability**: Restored corrupted filenames in `src/pages/admin` (e.g., `SpeakersPage.jsx`) and fixed a critical `Icon` syntax error in `OrganizersList.jsx` that was causing reload failures.
+- **Code Integrity**: Resolved 10+ lint warnings related to unused props (`Icon`, `CardIcon`) and missing effect dependencies (`useCallback` integration) across the admin suite.
+- **State Stabilization**: Optimized `UsersList` and `OrganizersList` with stable callback dependencies to prevent redundant re-renders.
 
 - **Cinema Restoration**: Refactored the Venues Hub to match the signature /communities layout.
 - **Horizontal Tabs**: Integrated horizontal pill-driven category filters.
@@ -135,6 +179,7 @@ All notable changes to this project will be documented in this file.
 - **Fixed**: Improved contrast for IDs and data snapshots in Audit Logs for better legibility.
 - **Fixed**: Repaired syntax and resolved lint warnings in `VenueManager.jsx`.
 - **Fixed**: Improved contrast for IDs and metadata in Audit Logs for better legibility.
+- **Fixed**: Resolved `ReferenceError` in `EventApprovals.jsx` caused by `useEffect` dependency hoisting.
 - **Fixed**: Repaired syntax errors and resolved lint warnings in `VenueManager.jsx` and `AuditLogList.jsx`.
 - **Added**: Audit Logs Forensics Command Center with KPI cards and snapshot viewer.
 - **Added**: Venue Image Uploads with real-time preview and Multer backend support.

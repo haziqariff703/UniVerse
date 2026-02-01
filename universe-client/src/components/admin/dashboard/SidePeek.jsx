@@ -52,3 +52,4 @@ const SidePeek = ({ isOpen, onClose, title, children, actions }) => {
 };
 
 export default SidePeek;
+

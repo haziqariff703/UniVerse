@@ -8,3 +8,4 @@ const VenuesPage = () => {
 };
 
 export default VenuesPage;
+

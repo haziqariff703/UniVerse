@@ -6,3 +6,4 @@ const SpeakerApprovalsPage = () => {
 };
 
 export default SpeakerApprovalsPage;
+

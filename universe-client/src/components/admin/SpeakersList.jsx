@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; // Fixed imports
+import React, { useState, useEffect, useCallback } from "react"; // Fixed imports
 import {
   Search,
   Plus,
@@ -16,6 +16,7 @@ import {
   Sparkles,
   Zap,
   ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,29 +27,59 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// eslint-disable-next-line no-unused-vars
-const KpiCard = ({ label, value, icon: CardIcon, color, bg, border }) => (
-  <div
-    className={`glass-panel p-5 rounded-2xl border ${border} flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm`}
-  >
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
-      className={`absolute -right-4 -bottom-4 opacity-[0.03] ${color} group-hover:scale-110 group-hover:opacity-10 transition-all duration-500`}
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
-      <CardIcon size={80} />
+      {Icon && <Icon size={80} />}
     </div>
-    <div className="relative z-10">
-      <p className="text-starlight/40 text-[10px] font-black uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <h3 className="text-2xl font-black text-starlight leading-none">
-        {value}
-      </h3>
-    </div>
-    <div
-      className={`relative z-10 w-12 h-12 rounded-xl ${bg} flex items-center justify-center border border-white/5 shadow-inner`}
-    >
-      <CardIcon size={24} className={color} />
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
+          {Icon && <Icon size={18} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -65,6 +96,9 @@ const SpeakersList = () => {
     social_links: { linkedin: "", twitter: "", website: "" },
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const stats = {
     total: speakers.length,
@@ -85,25 +119,35 @@ const SpeakersList = () => {
     ),
   };
 
-  useEffect(() => {
-    fetchSpeakers();
-  }, []);
-
-  const fetchSpeakers = async () => {
+  const fetchSpeakers = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/speakers", {
-        headers: { Authorization: `Bearer ${token}` },
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(searchQuery && { search: searchQuery }),
       });
+
+      const response = await fetch(
+        `http://localhost:5000/api/admin/speakers?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await response.json();
-      setSpeakers(data.speakers);
+      setSpeakers(data.speakers || []);
+      if (data.pagination) setTotalPages(data.pagination.totalPages);
     } catch (error) {
       console.error("Error fetching speakers:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, searchQuery]);
+
+  useEffect(() => {
+    fetchSpeakers();
+  }, [fetchSpeakers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -174,11 +218,8 @@ const SpeakersList = () => {
     setIsDataDialogOpen(true);
   };
 
-  const filteredSpeakers = speakers.filter(
-    (s) =>
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.expertise?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Search is now handled by API
+  const filteredSpeakers = speakers;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -224,36 +265,36 @@ const SpeakersList = () => {
       {/* 2. KPI Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Total Talent Identity"
+          title="Total Talent Ident"
           value={stats.total}
           icon={Users}
           color="text-violet-400"
-          bg="bg-violet-400/10"
-          border="border-violet-400/20"
+          subValue="Industry experts"
+          description="Total number of speakers and experts registered in the platform talent pool."
         />
         <KpiCard
-          label="Expertise Diversity"
+          title="Expertise Diversity"
           value={stats.expertiseDiversity}
           icon={Zap}
           color="text-amber-400"
-          bg="bg-amber-400/10"
-          border="border-amber-400/20"
+          subValue="Knowledge velocity"
+          description="Count of unique professional expertise areas covered by current speakers."
         />
         <KpiCard
-          label="Registry Integrity"
+          title="Registry Integrity"
           value={`${stats.bioDensity}%`}
           icon={ShieldCheck}
           color="text-emerald-400"
-          bg="bg-emerald-400/10"
-          border="border-emerald-400/20"
+          subValue="Portfolio verified"
+          description="System measurement of profile completeness and biography detail density."
         />
         <KpiCard
-          label="Connectivity Index"
+          title="Connectivity Index"
           value={`${stats.connectivityIndex}%`}
           icon={Sparkles}
           color="text-cyan-400"
-          bg="bg-cyan-400/10"
-          border="border-cyan-400/20"
+          subValue="Social reach"
+          description="Percentage of talent profiles with verified social media and web presence."
         />
       </div>
 
@@ -262,15 +303,37 @@ const SpeakersList = () => {
         <div className="relative flex-1 min-w-[300px]">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/20"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
           />
           <input
             type="text"
             placeholder="Search by name or expertise area..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10 font-bold text-xs"
           />
+        </div>
+
+        <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+          <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+            Limit:
+          </span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+          >
+            <option value={10}>10 Entries</option>
+            <option value={25}>25 Entries</option>
+            <option value={50}>50 Entries</option>
+            <option value={100}>100 Entries</option>
+          </select>
         </div>
       </div>
 
@@ -285,7 +348,7 @@ const SpeakersList = () => {
       ) : filteredSpeakers.length === 0 ? (
         <div className="p-20 text-center flex flex-col items-center justify-center text-starlight/40 border border-white/5 rounded-3xl glass-panel bg-white/[0.01]">
           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
-            <Mic2 size={32} className="text-starlight/20" />
+            <Mic2 size={32} className="text-starlight/60" />
           </div>
           <p className="text-xl font-bold text-starlight mb-2">
             No Talent Records Found
@@ -300,19 +363,19 @@ const SpeakersList = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/5">
-                  <th className="px-6 py-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                  <th className="px-6 py-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                     Name & Identity
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                  <th className="px-6 py-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                     Primary Expertise
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                  <th className="px-6 py-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                     Bio Snapshot
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                  <th className="px-6 py-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                     Social Pulse
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black text-starlight/20 uppercase tracking-[0.2em]">
+                  <th className="px-6 py-5 text-[10px] font-black text-starlight/60 uppercase tracking-[0.2em]">
                     Management
                   </th>
                 </tr>
@@ -332,7 +395,7 @@ const SpeakersList = () => {
                           <p className="text-starlight font-bold text-sm tracking-tight">
                             {speaker.name}
                           </p>
-                          <p className="text-[10px] font-mono text-starlight/20 uppercase truncate max-w-[120px]">
+                          <p className="text-[10px] font-mono text-starlight/60 uppercase truncate max-w-[120px]">
                             {speaker._id}
                           </p>
                         </div>
@@ -381,25 +444,73 @@ const SpeakersList = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEdit(speaker)}
-                          className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-starlight/40 hover:text-blue-400 hover:bg-white/5 transition-all"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(speaker._id)}
-                          className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-starlight/40 hover:text-rose-400 hover:bg-white/5 transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <div className="flex justify-start">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                              <MoreVertical size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-48 glass-panel border-white/10"
+                          >
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                              Talent Ops
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/5" />
+                            <DropdownMenuItem
+                              onClick={() => openEdit(speaker)}
+                              className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                <Edit2 size={16} />
+                              </div>
+                              <span className="font-bold text-xs">
+                                Sync Record
+                              </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(speaker._id)}
+                              className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                <Trash2 size={16} />
+                              </div>
+                              <span className="font-bold text-xs">
+                                Terminate Talent
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+              Page <span className="text-starlight">{currentPage}</span> of{" "}
+              {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
@@ -426,7 +537,7 @@ const SpeakersList = () => {
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                   Full Identity Name
                 </Label>
                 <Input
@@ -440,7 +551,7 @@ const SpeakersList = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                   Field of Expertise
                 </Label>
                 <Input
@@ -455,7 +566,7 @@ const SpeakersList = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+              <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                 Professional Biography
               </Label>
               <Textarea
@@ -470,7 +581,7 @@ const SpeakersList = () => {
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                   LinkedIn Profile URL
                 </Label>
                 <Input
@@ -489,7 +600,7 @@ const SpeakersList = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                   Twitter / X Handle
                 </Label>
                 <Input

@@ -12,6 +12,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 const NotificationsManager = () => {
   const [notifications, setNotifications] = useState([]);
@@ -267,12 +276,33 @@ const NotificationsManager = () => {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDelete(notif._id)}
-                      className="p-2 text-starlight/20 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-2 rounded-lg bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                          <MoreVertical size={16} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 glass-panel border-white/10"
+                      >
+                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                          Log Management
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-white/5" />
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(notif._id)}
+                          className="flex items-center gap-2 p-2.5 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                            <Trash2 size={14} />
+                          </div>
+                          <span className="font-bold text-xs uppercase tracking-widest">
+                            Wipe Log
+                          </span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </div>

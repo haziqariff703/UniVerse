@@ -8,11 +8,29 @@ import {
   Mail,
   Shield,
   FileText,
+  MoreVertical,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-
-const KpiCard = ({ title, value, icon: Icon, color }) => (
-  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
       className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
@@ -24,12 +42,31 @@ const KpiCard = ({ title, value, icon: Icon, color }) => (
           <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
             {title}
           </h3>
-          <div className="text-3xl font-bold text-starlight">{value}</div>
+          <div className="text-3xl font-bold text-starlight leading-none">
+            {value}
+          </div>
         </div>
-        <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
           <Icon size={20} />
         </div>
       </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2 mt-2">
+          {subValue && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {trend && <TrendingUp size={10} className="text-emerald-400" />}
+              <span className={`text-[10px] font-medium ${color}`}>
+                {subValue}
+              </span>
+            </div>
+          )}
+          {description && (
+            <p className="text-[10px] text-starlight/60 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -40,6 +77,7 @@ const OrganizersList = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // New state
   const [selectedOrganizer, setSelectedOrganizer] = useState(null);
 
   const fetchOrganizers = useCallback(async () => {
@@ -48,7 +86,7 @@ const OrganizersList = () => {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 10,
+        limit: itemsPerPage, // Use itemsPerPage here
         role: "organizer", // Filter by role
         ...(search && { search }),
       });
@@ -64,13 +102,13 @@ const OrganizersList = () => {
 
       const data = await response.json();
       setOrganizers(data.users);
-      setTotalPages(data.pagination.totalPages);
+      if (data.pagination) setTotalPages(data.pagination.totalPages); // Added check
     } catch (error) {
       console.error("Error fetching organizers:", error);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, search]);
+  }, [currentPage, itemsPerPage, search]); // Added itemsPerPage to deps
 
   useEffect(() => {
     fetchOrganizers();
@@ -79,44 +117,24 @@ const OrganizersList = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1);
-    // fetchOrganizers will trigger via effect because search changed (if search state update is immediate, but here it is state)
-    // Wait, with current implementation fetch is triggered by currentPage change or when called explicitly.
-    // If we want search to trigger it, we need `search` in dependency of effect or call it here.
-    // Given the effect depends on `fetchOrganizers` which depends on `search`, changing `search` re-creates `fetchOrganizers` which triggers effect?
-    // Yes, if `search` changes -> `fetchOrganizers` changes -> `useEffect` runs.
-    // But `setSearch` is async. Better to remove `search` from `fetchOrganizers` deps and pass it as argument?
-    // Or just rely on re-render.
-    // For now, simpler: we call `fetchOrganizers` (which uses current state search) in effect.
-    // When `handleSearch` is called (onSubmit), it doesn't change `search` state (onChange does).
-    // `onChange` updates `search`. `onSubmit` sets page to 1.
-    // So modifying `search` already triggers re-fetch if we add `fetchOrganizers` to effect deps and `search` to `useCallback` deps.
-    // BUT! We usually don't want search-as-you-type to API. We want explicit search on Enter.
-    // So let's remove `search` from `useCallback` deps and pass it as arg?
-    // Or keep `search` state as "input value" and `query` state as "submitted value".
-    // I'll stick to current: `onChange` updates `search`. `useCallback` has `search` dep. So typing triggers fetch. This is "live search".
-    // If I want submit-only, I need `query` state.
-    // I will stick to live search logic for now as it's simpler and responsive.
+    // fetchOrganizers triggers via dependency
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+      {/* 1. Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-starlight to-starlight/60">
-            All Organizers
+            Organizer Command Center
           </h1>
           <p className="text-starlight/40 text-sm">
-            Manage all verified event organizers on the platform.
+            Manage profiles, monitor activity, and oversee organizer privileges.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              setCurrentPage(1);
-              // Force fetch if needed, but page change triggers it.
-              if (currentPage === 1) fetchOrganizers();
-            }}
+            onClick={fetchOrganizers}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
           >
             <RefreshCw size={14} /> <span>Refresh</span>
@@ -124,18 +142,43 @@ const OrganizersList = () => {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 2. KPI Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Total Organizers"
-          value={organizers.length} // Should specificy total from pagination stats ideally, but using length for now or add stats to API
-          icon={Briefcase}
+          value={organizers.length}
+          icon={Users}
           color="text-violet-400"
+          subValue="Verified partners"
+          description="Active organizer accounts currently managed in the registry."
         />
-        {/* Placeholder for other stats like Active Events or Total Events by Organizers */}
+        <KpiCard
+          title="Active Proposals"
+          value={0} // Placeholder until backend support
+          icon={Briefcase}
+          color="text-emerald-400"
+          subValue="In development"
+          description="Draft and pending event proposals under development."
+        />
+        <KpiCard
+          title="Events Managed"
+          value={0} // Placeholder
+          icon={Calendar}
+          color="text-cyan-400"
+          subValue="Cumulative success"
+          description="Total successful events executed by registered organizers."
+        />
+        <KpiCard
+          title="Verification Status"
+          value="100%"
+          icon={Shield}
+          color="text-amber-400"
+          subValue="Policy compliance"
+          description="Compliance rate for identity verification and policy adherence."
+        />
       </div>
 
-      {/* Controls */}
+      {/* 3. Control Toolbar */}
       <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
         <form onSubmit={handleSearch} className="relative w-full md:w-96">
           <Search
@@ -144,12 +187,34 @@ const OrganizersList = () => {
           />
           <input
             type="text"
-            placeholder="Search organizers..."
+            placeholder="Search organizers by name, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/20"
+            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
           />
         </form>
+
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          {/* Limit Selector (Consistent with EventsList) */}
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -216,13 +281,35 @@ const OrganizersList = () => {
                         </div>
                       </td>
                       <td className="p-4 align-middle text-right pr-6">
-                        <button
-                          onClick={() => setSelectedOrganizer(user)}
-                          className="p-2 rounded-lg bg-white/5 text-starlight hover:bg-violet-500 hover:text-white transition-colors"
-                          title="View Profile"
-                        >
-                          <Eye size={16} />
-                        </button>
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-52 glass-panel border-white/10"
+                            >
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Management Ops
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
+                              <DropdownMenuItem
+                                onClick={() => setSelectedOrganizer(user)}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                  <Eye size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  Intelligence Peek
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </td>
                     </tr>
                   ))}

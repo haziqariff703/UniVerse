@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   MessageSquare,
   Star,
@@ -11,7 +11,17 @@ import {
   Filter,
   TrendingDown,
   TrendingUp,
+  MoreVertical,
+  Eye,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +32,16 @@ import {
 /**
  * KPI Card Component
  */
-const KpiCard = ({ title, value, icon: Icon, color, subValue }) => (
-  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 shadow-sm">
     <div
       className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
     >
@@ -35,17 +53,27 @@ const KpiCard = ({ title, value, icon: Icon, color, subValue }) => (
           <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
             {title}
           </h3>
-          <div className="text-3xl font-bold text-starlight tracking-tight">
+          <div className="text-3xl font-bold text-starlight tracking-tight leading-none">
             {value}
           </div>
         </div>
-        <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
+        <div className={`p-2 rounded-xl bg-white/5 ${color} shrink-0`}>
           {Icon && <Icon size={18} />}
         </div>
       </div>
-      {subValue && (
-        <div className="flex items-center gap-1.5 mt-2">
-          <span className={`text-[10px] font-bold ${color}`}>{subValue}</span>
+      {(subValue || trend || description) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 mt-1">
+            {trend && <TrendingUp size={10} className="text-emerald-400" />}
+            <span className={`text-[10px] font-medium ${color}`}>
+              {subValue}
+            </span>
+          </div>
+          {description && (
+            <p className="text-[10px] text-starlight/60 mt-2 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -59,27 +87,39 @@ const ReviewsList = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/reviews", {
-        headers: { Authorization: `Bearer ${token}` },
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
       });
+
+      const response = await fetch(
+        `http://localhost:5000/api/admin/reviews?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await response.json();
       setReviews(data.reviews || []);
       setStats(data.stats || { total: 0, average: 0, critical: 0 });
+      if (data.pagination) setTotalPages(data.pagination.totalPages);
     } catch (error) {
       console.error("Error fetching reviews:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleDelete = async (id) => {
     if (
@@ -161,25 +201,24 @@ const ReviewsList = () => {
           value={stats.total}
           icon={MessageSquare}
           color="text-violet-400"
-          subValue="Total reviews captured"
+          subValue="Student feedback captured"
+          description="A cumulative tally of user reviews across all events and platform sectors."
         />
         <KpiCard
           title="Global Sentiment"
           value={`${stats.average}/5.0`}
           icon={Star}
           color="text-amber-400"
-          subValue={
-            stats.average >= 4
-              ? "Exceptional engagement"
-              : "Optimizable ratings"
-          }
+          subValue="Aggregate sentiment index"
+          description="Average rating across all attendee feedback, representing the platform's satisfaction index."
         />
         <KpiCard
           title="Critical Alerts"
           value={stats.critical}
           icon={AlertCircle}
           color="text-rose-400"
-          subValue="Requires forensic review"
+          subValue="Manual audit required"
+          description="Low-rated reviews (1-2 stars) that require immediate administrative attention for resolution."
         />
       </div>
 
@@ -188,7 +227,7 @@ const ReviewsList = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
               size={18}
             />
             <input
@@ -196,15 +235,16 @@ const ReviewsList = () => {
               placeholder="Search feedback, reviewers, or specific events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/20"
+              className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/60"
             />
           </div>
-          <div className="flex items-center gap-2 px-4 bg-black/40 border border-white/5 rounded-2xl min-w-[180px]">
-            <Filter size={14} className="text-starlight/20" />
+
+          <div className="flex items-center gap-2 px-4 bg-black/40 border border-white/5 rounded-2xl min-w-[170px]">
+            <Filter size={14} className="text-starlight/60" />
             <select
               value={ratingFilter}
               onChange={(e) => setRatingFilter(e.target.value)}
-              className="bg-transparent text-sm text-starlight/60 focus:outline-none w-full py-4 cursor-pointer"
+              className="bg-transparent text-sm text-starlight/60 focus:outline-none w-full py-4 cursor-pointer font-bold"
             >
               <option value="all" className="bg-[#0A0A0A]">
                 All Ratings
@@ -221,6 +261,25 @@ const ReviewsList = () => {
               <option value="2" className="bg-[#0A0A0A]">
                 Critical (1-2)
               </option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+              Limit:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            >
+              <option value={10}>10 Entries</option>
+              <option value={25}>25 Entries</option>
+              <option value={50}>50 Entries</option>
+              <option value={100}>100 Entries</option>
             </select>
           </div>
         </div>
@@ -278,7 +337,7 @@ const ReviewsList = () => {
                       "Identity confirmed. No written testimony provided."}
                     "
                   </p>
-                  <div className="flex items-center gap-3 mt-4 text-[10px] text-starlight/20 font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-3 mt-4 text-[10px] text-starlight/60 font-bold uppercase tracking-widest">
                     <Calendar size={12} />
                     {new Date(review.created_at).toLocaleDateString(undefined, {
                       year: "numeric",
@@ -289,24 +348,68 @@ const ReviewsList = () => {
                 </div>
 
                 {/* Final Actions */}
-                <div className="flex items-center md:flex-col justify-center gap-3 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-8">
-                  <button
-                    onClick={() => setSelectedReview(review)}
-                    className="flex-1 md:w-full px-5 py-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-starlight/40 hover:text-starlight hover:bg-white/10 transition-all border border-white/5"
-                  >
-                    Examine
-                  </button>
-                  <button
-                    onClick={() => handleDelete(review._id)}
-                    className="flex-1 md:w-full px-5 py-3 rounded-2xl bg-rose-500/5 text-[10px] font-black uppercase tracking-widest text-rose-500/40 hover:text-white hover:bg-rose-600 transition-all border border-rose-500/10"
-                  >
-                    Strip Entry
-                  </button>
+                <div className="flex items-center justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-8">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                        <MoreVertical size={18} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-52 glass-panel border-white/10"
+                    >
+                      <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                        Moderation Ops
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-white/5" />
+                      <DropdownMenuItem
+                        onClick={() => setSelectedReview(review)}
+                        className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                          <Eye size={16} />
+                        </div>
+                        <span className="font-bold text-xs">Examine Case</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(review._id)}
+                        className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                          <Trash2 size={16} />
+                        </div>
+                        <span className="font-bold text-xs">Strip Entry</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between p-4 border border-white/5 rounded-3xl bg-white/[0.01]">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+            Page <span className="text-starlight">{currentPage}</span> of{" "}
+            {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Examining Modal */}
@@ -342,7 +445,7 @@ const ReviewsList = () => {
 
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                  <label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                     Reviewer Profile
                   </label>
                   <div className="flex items-center gap-3">
@@ -360,7 +463,7 @@ const ReviewsList = () => {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-starlight/20 uppercase tracking-widest">
+                  <label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
                     Target Lifecycle
                   </label>
                   <div>
