@@ -13,6 +13,18 @@ export const HERO_EVENT = {
   target: "All FPM Students",
   benefit: "University Merit",
   theme: "cyan", // FPM
+  meritValue: 20,
+  attendingFriends: [
+    { id: 101, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ali" },
+    {
+      id: 102,
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    },
+    {
+      id: 103,
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Megat",
+    },
+  ],
   attendees: 420,
 };
 
@@ -32,6 +44,17 @@ export const FEATURED_EVENTS = [
       "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2574&auto=format&fit=crop",
     target: "College Residents",
     benefit: "Kupon Kolej",
+    meritValue: 15,
+    attendingFriends: [
+      {
+        id: 104,
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad",
+      },
+      {
+        id: 105,
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tan",
+      },
+    ],
     theme: "purple",
   },
   {
@@ -457,5 +480,48 @@ export const UPCOMING_EVENTS = [
       "https://images.unsplash.com/photo-1534423839368-1791a1ad2f60",
       "https://images.unsplash.com/photo-1542751110-97427bbecf20",
     ],
+  },
+];
+
+export const PAST_EVENTS = [
+  {
+    id: "tedx-uitm-2023",
+    title: "TEDxUiTM: Breaking Barriers",
+    date: "2023-11-15",
+    time: "09:00 AM",
+    category: "Academic",
+    description:
+      "An inspiring day of talks from industry leaders and student innovators.",
+    organizer: { name: "TEDxUiTM" },
+    venue: { name: "Dewan Agung Tuanku Canselor" },
+    image: "/images/events/tedx.png",
+    target: "All Students",
+    theme: "red",
+  },
+  {
+    id: "color-run-2023",
+    title: "Neon Run: Night Edition",
+    date: "2023-10-31",
+    time: "08:00 PM",
+    category: "Lifestyle",
+    description: "5KM night run with glow sticks and neon paint stations.",
+    organizer: { name: "Sports Club" },
+    venue: { name: "Stadium UiTM" },
+    image: "/images/events/neon-run.png",
+    target: "Round Campus",
+    theme: "purple",
+  },
+  {
+    id: "fita-fest-2023",
+    title: "FiTA Theatre Festival",
+    date: "2023-09-20",
+    time: "08:00 PM",
+    category: "Creative",
+    description: "A showcase of student-directed plays and performances.",
+    organizer: { name: "FiTA" },
+    venue: { name: "Panggung Percubaan" },
+    image: "/images/events/theatre.png",
+    target: "Open to Public",
+    theme: "orange",
   },
 ];

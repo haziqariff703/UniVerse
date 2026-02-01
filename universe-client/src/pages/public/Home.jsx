@@ -10,6 +10,7 @@ import Communities from "@/components/home/Communities";
 import Footer from "@/components/common/Footer";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
 import { FEATURED_EVENTS } from "@/data/mockEvents";
+import StudentDashboard from "@/pages/student/StudentDashboard";
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,26 @@ const Home = () => {
     }, 800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Check for logged in user to show Dashboard instead
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user", e);
+      }
+    }
+  }, []);
+
+  // If user is logged in AND is a student (or undefined role), show the Student Dashboard
+  // Organizers and Admins should see the standard landing page (or their own dashboards)
+  if (user && (!user.role || user.role === "student")) {
+    return <StudentDashboard user={user} />;
+  }
 
   return (
     <>

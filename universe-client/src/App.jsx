@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import { cn } from "@/lib/utils";
 
 // Public Pages
 import Home from "./pages/public/Home";
@@ -81,11 +82,12 @@ import { useState, useEffect } from "react";
 import MainSidebar from "./components/layout/MainSidebar";
 import Navbar from "./components/layout/Navbar";
 import FloatingLines from "./components/animate-ui/components/backgrounds/FloatingLines";
+import StudentSidebar from "./components/layout/StudentSidebar";
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Default to collapsed/hidden for hamburger
 
   useEffect(() => {
     const checkUser = () => {
@@ -128,8 +130,28 @@ const Layout = ({ children }) => {
           parallaxStrength={0.2}
         />
       </div>
-      {user && <MainSidebar user={user} collapsed={sidebarCollapsed} />}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+
+      {user && user.role === "student" ? (
+        <StudentSidebar
+          user={user}
+          isOpen={!sidebarCollapsed}
+          onLogout={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            setUser(null);
+            window.location.href = "/login";
+          }}
+        />
+      ) : (
+        user && <MainSidebar user={user} collapsed={sidebarCollapsed} />
+      )}
+
+      <div
+        className={cn(
+          "flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300",
+          user?.role === "student" && !sidebarCollapsed ? "ml-[280px]" : "ml-0",
+        )}
+      >
         <Navbar
           user={user}
           collapsed={sidebarCollapsed}
@@ -154,7 +176,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/news" element={<News />} />
+
               <Route path="/communities" element={<Communities />} />
               <Route path="/start-club" element={<ClubProposal />} />
               <Route path="/communities/:id" element={<ClubDetails />} />
@@ -187,6 +209,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/news"
+                element={
+                  <ProtectedRoute>
+                    <News />
                   </ProtectedRoute>
                 }
               />
@@ -496,6 +526,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Catch-all for undefined routes - Redirects to Home/Dashboard */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
         </div>

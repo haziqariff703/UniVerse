@@ -1,22 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import VenueLandscapeCard from "@/components/venues/VenueLandscapeCard";
 import { MOCK_VENUES } from "@/data/mockVenues";
-import {
-  Filter,
-  ChevronDown,
-  Check,
-  LayoutGrid,
-  GraduationCap,
-  Home,
-  Tent,
-  Users,
-} from "lucide-react";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import TrueFocus from "@/components/ui/TrueFocus";
-
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VIBE_TAGS } from "@/data/liveVenueStatus";
+import { Sparkles, X } from "lucide-react";
 
 const CATEGORIES = ["All", "Academic", "Residential", "Social", "Outdoor"];
 
@@ -42,18 +32,41 @@ const itemVariants = {
 
 const Venues = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeVibe, setActiveVibe] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user", e);
+      }
+    }
+  }, []);
 
   const filteredVenues = MOCK_VENUES.filter((venue) => {
+    // 1. Search Logic (Always applies)
     const matchesSearch =
       venue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       venue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       venue.location_code.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory =
-      activeCategory === "All" || venue.type === activeCategory;
+    // 2. Vibe Logic
+    const matchesVibe =
+      !activeVibe ||
+      (activeVibe === "quiet"
+        ? ["Academic", "Residential"].includes(venue.type)
+        : activeVibe === "ac"
+          ? venue.facilities?.some((f) => f.toLowerCase().includes("ac"))
+          : activeVibe === "wifi"
+            ? venue.facilities?.some((f) => f.toLowerCase().includes("wifi"))
+            : activeVibe === "social"
+              ? ["Social", "Outdoor"].includes(venue.type)
+              : true);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesVibe;
   });
 
   const placeholders = [
@@ -66,15 +79,15 @@ const Venues = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-12 pb-20 px-4 md:px-8">
+    <div className="min-h-screen pt-4 pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Cinema Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
+          className="mb-6"
         >
-          <div className="mb-6">
+          <div className="mb-4">
             <TrueFocus
               sentence="Venues Hub"
               manualMode={false}
@@ -86,7 +99,7 @@ const Venues = () => {
             />
           </div>
           <p className="text-xl md:text-2xl text-slate-400 font-clash max-w-3xl leading-relaxed">
-            Discover the perfect architecture for your next event at{" "}
+            Find your perfect study spot, event space, or hangout zone at{" "}
             <span className="text-white border-b-2 border-fuchsia-500/50 pb-1">
               UiTM Puncak Perdana
             </span>
@@ -94,53 +107,42 @@ const Venues = () => {
           </p>
         </motion.div>
 
-        {/* Search Bar */}
-        <div className="flex justify-center mb-14 relative z-[100]">
-          <div className="w-full max-w-3xl">
-            <PlaceholdersAndVanishInput
-              placeholders={placeholders}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onSubmit={(e) => e.preventDefault()}
-              value={searchTerm}
-            />
+        {/* Combined Search & Discovery Hero */}
+        <div className="relative z-[50] mb-16">
+          {/* Search Bar */}
+          <div className="flex justify-center mb-8">
+            <div className="w-full max-w-2xl">
+              <PlaceholdersAndVanishInput
+                placeholders={placeholders}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onSubmit={(e) => e.preventDefault()}
+                value={searchTerm}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Tabs Section (MATCHING COMMUNITIES) - Dark Glassmorphism */}
-        <div className="mb-20">
-          <Tabs
-            value={activeCategory.toLowerCase()}
-            onValueChange={(val) => {
-              // Strict case check for categories
-              const found = CATEGORIES.find((c) => c.toLowerCase() === val);
-              if (found) setActiveCategory(found);
-            }}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1.5 rounded-2xl h-auto">
-              {CATEGORIES.map((cat) => {
-                const Icon =
-                  {
-                    All: LayoutGrid,
-                    Academic: GraduationCap,
-                    Residential: Home,
-                    Social: Users,
-                    Outdoor: Tent,
-                  }[cat] || Filter;
-
-                return (
-                  <TabsTrigger
-                    key={cat}
-                    value={cat.toLowerCase()}
-                    className="data-[state=active]:bg-fuchsia-500/20 data-[state=active]:text-fuchsia-300 transition-all flex items-center justify-center gap-3 py-4 rounded-xl font-clash text-xs font-bold uppercase tracking-widest"
-                  >
-                    <Icon className="w-4 h-4" />
-                    {cat}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </Tabs>
+          {/* VIBE CHIPS (Integrated) */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {VIBE_TAGS.map((vibe) => (
+              <button
+                key={vibe.id}
+                onClick={() =>
+                  setActiveVibe(activeVibe === vibe.id ? null : vibe.id)
+                }
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all backdrop-blur-xl border select-none",
+                  activeVibe === vibe.id
+                    ? "bg-slate-900/80 text-white border-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.3)] scale-105"
+                    : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                {activeVibe === vibe.id && (
+                  <Sparkles className="w-3 h-3 text-fuchsia-400 animate-pulse" />
+                )}
+                {vibe.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Vertical Feed */}
@@ -150,19 +152,16 @@ const Venues = () => {
           initial="hidden"
           animate="visible"
         >
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {filteredVenues.map((venue, idx) => (
               <motion.div
                 key={venue.id}
-                layout
-                variants={itemVariants}
-                exit={{
-                  opacity: 0,
-                  scale: 0.95,
-                  transition: { duration: 0.2 },
-                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
               >
-                <VenueLandscapeCard venue={venue} index={idx} />
+                <VenueLandscapeCard venue={venue} index={idx} user={user} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -185,7 +184,7 @@ const Venues = () => {
               <button
                 onClick={() => {
                   setSearchTerm("");
-                  setActiveCategory("All");
+                  setActiveVibe(null);
                 }}
                 className="mt-12 px-10 py-4 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-2xl"
               >

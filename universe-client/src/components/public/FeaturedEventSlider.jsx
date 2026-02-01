@@ -9,10 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-const FeaturedEventSlider = ({ events, isSmall = false }) => {
+const FeaturedEventSlider = ({ events, user, isSmall = false }) => {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -38,7 +39,7 @@ const FeaturedEventSlider = ({ events, isSmall = false }) => {
     <div
       className={cn(
         "relative w-full rounded-[2.5rem] overflow-hidden group",
-        isSmall ? "h-[300px] md:h-[350px]" : "h-[550px] md:h-[600px]",
+        isSmall ? "h-[300px] md:h-[350px]" : "h-[450px] md:h-[500px]",
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -140,7 +141,7 @@ const FeaturedEventSlider = ({ events, isSmall = false }) => {
                   "font-bold font-clash text-white leading-tight tracking-tighter relative z-10",
                   isSmall
                     ? "text-2xl md:text-3xl mb-3"
-                    : "text-4xl md:text-6xl mb-5",
+                    : "text-4xl md:text-5xl mb-4",
                 )}
               >
                 {currentEvent.title}
@@ -148,7 +149,7 @@ const FeaturedEventSlider = ({ events, isSmall = false }) => {
 
               {/* Description */}
               {!isSmall && (
-                <p className="text-slate-300 text-lg font-medium font-clash max-w-2xl mb-8 leading-relaxed relative z-10 opacity-90">
+                <p className="text-slate-300 text-base md:text-lg font-medium font-clash max-w-2xl mb-6 leading-relaxed relative z-10 opacity-90">
                   {currentEvent.description}
                 </p>
               )}
@@ -202,22 +203,37 @@ const FeaturedEventSlider = ({ events, isSmall = false }) => {
                 </div>
 
                 <div className="md:ml-auto">
-                  <Link to={`/events/${currentEvent.id}`} className="block">
-                    <button
-                      className={cn(
-                        "relative rounded-xl font-bold font-clash transition-all duration-300 overflow-hidden group/btn shadow-2xl",
-                        isSmall ? "px-6 py-2.5 text-sm" : "px-10 py-4 text-lg",
-                        currentEvent.theme === "cyan"
-                          ? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-cyan-500/20"
-                          : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20",
-                      )}
+                  <div
+                    onClick={(e) => {
+                      if (!user) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate("/login");
+                      }
+                    }}
+                  >
+                    <Link
+                      to={user ? `/events/${currentEvent.id}` : "#"}
+                      className="block"
                     >
-                      <span className="relative z-10">
-                        {isSmall ? "Details" : "Register Interest"}
-                      </span>
-                      <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
-                    </button>
-                  </Link>
+                      <button
+                        className={cn(
+                          "relative rounded-xl font-bold font-clash transition-all duration-300 overflow-hidden group/btn shadow-2xl",
+                          isSmall
+                            ? "px-6 py-2.5 text-sm"
+                            : "px-8 py-3 text-base md:text-lg",
+                          currentEvent.theme === "cyan"
+                            ? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-cyan-500/20"
+                            : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20",
+                        )}
+                      >
+                        <span className="relative z-10">
+                          {isSmall ? "Details" : "Register Interest"}
+                        </span>
+                        <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </motion.div>

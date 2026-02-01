@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -9,10 +9,36 @@ import {
   Target,
   Award,
   Map,
+  Zap,
+  Ticket,
+  CheckCircle,
 } from "lucide-react";
 import { Spotlight } from "@/components/ui/spotlight";
 
 const EventCard = ({ event, index }) => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        // In real app, we check a registrations array.
+        // For mock, we'll check if we "set" it locally in this session
+        const sessionRegs = JSON.parse(
+          localStorage.getItem("mock_regs") || "[]",
+        );
+        if (sessionRegs.includes(event.id)) setIsRegistered(true);
+      } catch (e) {
+        console.error("Auth sync error", e);
+      }
+    }
+  }, [event.id]);
+
   // Determine Theme
   const isFPM =
     event.theme === "cyan" ||
@@ -25,6 +51,24 @@ const EventCard = ({ event, index }) => {
     ? "rgba(6, 182, 212, 0.25)" // Cyan
     : "rgba(168, 85, 247, 0.4)"; // Purple
 
+  const handleQuickJoin = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const sessionRegs = JSON.parse(localStorage.getItem("mock_regs") || "[]");
+      if (!sessionRegs.includes(event.id)) {
+        sessionRegs.push(event.id);
+        localStorage.setItem("mock_regs", JSON.stringify(sessionRegs));
+      }
+      setIsRegistered(true);
+      setIsLoading(false);
+    }, 800);
+  };
+
+  const isToday = event.date === "2024-05-15"; // Mock comparison for demo
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,104 +78,151 @@ const EventCard = ({ event, index }) => {
     >
       <Spotlight
         spotlightColor={spotlightColor}
-        className="h-full rounded-2xl border border-slate-800 bg-slate-950/50 backdrop-blur-sm overflow-hidden"
+        className="h-full rounded-[2.5rem] border border-white/5 bg-slate-950/40 backdrop-blur-xl overflow-hidden"
       >
         <Link
-          to={`/events/${event.id}`}
+          to={user ? `/events/${event.id}` : "#"}
+          onClick={(e) => {
+            if (!user) {
+              e.preventDefault();
+              navigate("/login");
+            }
+          }}
           className="block h-full relative z-10 flex flex-col"
         >
-          {/* Image Section */}
-          <div className="relative h-56 overflow-hidden">
+          {/* Image Section - Enforced Aspect Ratio */}
+          <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={event.image}
               alt={event.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-80" />
 
             {/* Top Badges */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
+            <div className="absolute top-5 left-5 flex flex-col gap-2">
+              {/* NEW: Merit Pill */}
+              {user && event.meritValue && (
+                <motion.span
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-400 backdrop-blur-md flex items-center gap-1.5 shadow-[0_0_15px_rgba(217,70,239,0.3)]"
+                >
+                  <Zap size={10} fill="currentColor" />+{event.meritValue} Merit
+                </motion.span>
+              )}
               {event.target && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold font-clash bg-black/50 border border-white/10 text-white backdrop-blur-md flex items-center gap-1.5 w-fit">
+                <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/60 border border-white/10 text-white backdrop-blur-md flex items-center gap-1.5 w-fit">
                   <Target size={12} className={`text-${themeColor}-400`} />
                   {event.target}
                 </span>
               )}
             </div>
 
-            <div className="absolute top-4 right-4">
-              {event.benefit && (
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold font-clash backdrop-blur-md border flex items-center gap-1.5 ${
-                    isFPM
-                      ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                      : "bg-purple-500/10 border-purple-500/30 text-purple-300"
-                  }`}
+            <div className="absolute top-5 right-5">
+              {isRegistered && (
+                <motion.span
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 backdrop-blur-md flex items-center gap-1.5"
                 >
-                  <Award size={12} />
-                  {event.benefit}
-                </span>
+                  <CheckCircle size={12} />
+                  You're Going
+                </motion.span>
               )}
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 flex flex-col flex-grow relative">
+          <div className="p-7 flex flex-col flex-grow relative">
             {/* Title */}
-            <h3
-              className={`text-2xl font-bold font-clash mb-3 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r transition-all duration-300 ${
-                isFPM
-                  ? "from-cyan-400 to-blue-400"
-                  : "from-purple-400 to-pink-400"
-              }`}
-            >
+            <h3 className="text-xl md:text-2xl font-bold font-clash mb-4 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-white to-slate-400 transition-all duration-300">
               {event.title}
             </h3>
 
             {/* Meta Details */}
-            <div className="space-y-3 mb-6 flex-grow">
-              <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-300 transition-colors">
+            <div className="space-y-4 mb-8 flex-grow">
+              <div className="flex items-center gap-3 text-slate-400">
                 <Calendar size={16} className={`text-${themeColor}-400`} />
-                <span className="font-clash text-sm font-medium">
+                <span className="font-clash text-xs font-semibold tracking-wide">
                   {event.date}
                 </span>
               </div>
 
-              {/* Venue with Satellite Icon */}
-              <div
-                className="flex items-center gap-3 text-slate-400 group-hover:text-white transition-colors cursor-pointer"
-                title="View on Campus Map"
-              >
+              <div className="flex items-center gap-3 text-slate-400">
                 <MapPin size={16} className={`text-${themeColor}-400`} />
-                <span className="font-clash text-sm font-medium truncate pr-2">
+                <span className="font-clash text-xs font-semibold tracking-wide truncate">
                   {event.venue?.name}
                 </span>
-                <Map
-                  size={14}
-                  className="ml-auto opacity-50 group-hover:opacity-100"
-                />
               </div>
             </div>
 
-            {/* Action Row */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-              <span className="text-xs font-clash text-slate-500 uppercase tracking-wider">
-                {event.organizer?.name}
-              </span>
+            {/* NEW: Bottom Action Row */}
+            <div className="flex items-center justify-between pt-6 border-t border-white/5 transition-all">
+              {/* Social Facepile */}
+              {user && event.attendingFriends && (
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {event.attendingFriends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="w-6 h-6 rounded-full border-2 border-slate-950 overflow-hidden bg-slate-900"
+                      >
+                        <img
+                          src={friend.avatar}
+                          alt="friend"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-400 transition-colors">
+                    {event.attendingFriends[0].name || "Friends"} attending
+                  </span>
+                </div>
+              )}
 
-              <div
-                className={`flex items-center gap-2 text-sm font-bold font-clash transition-all duration-300 ${
-                  isFPM
-                    ? "text-cyan-400 group-hover:text-cyan-300"
-                    : "text-purple-400 group-hover:text-purple-300"
-                }`}
-              >
-                View Details
-                <ArrowRight
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </div>
+              {user ? (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleQuickJoin}
+                  disabled={isLoading || isRegistered}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    isRegistered
+                      ? isToday
+                        ? "bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(217,70,239,0.4)]"
+                        : "bg-white/10 text-slate-400"
+                      : "bg-white text-black hover:bg-slate-200"
+                  }`}
+                >
+                  {isLoading ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : isRegistered ? (
+                    isToday ? (
+                      <>
+                        <Ticket size={12} />
+                        View QR
+                      </>
+                    ) : (
+                      "Registered"
+                    )
+                  ) : (
+                    <>
+                      <Zap size={10} fill="currentColor" />
+                      Quick Join
+                    </>
+                  )}
+                </motion.button>
+              ) : (
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  View Details
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </Link>

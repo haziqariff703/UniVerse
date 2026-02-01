@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   MapPin,
   Users,
   ArrowLeft,
+  ArrowRight,
   Wifi,
   Monitor,
   Mic2,
@@ -14,6 +16,7 @@ import {
   Speaker,
   Plug,
   PenTool,
+  Lightbulb,
 } from "lucide-react";
 import EventCard from "@/components/common/EventCard";
 import { MOCK_VENUES } from "@/data/mockVenues";
@@ -108,11 +111,6 @@ const VenueDetails = () => {
                 <Users className="w-3.5 h-3.5" /> {venue.max_capacity} Max
                 Capacity
               </span>
-              {venue.type && (
-                <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold text-white/90 border border-white/10">
-                  {venue.type}
-                </span>
-              )}
             </div>
             <h1 className="text-3xl md:text-5xl font-clash font-bold text-white mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 tracking-tight">
               {venue.name}
@@ -123,90 +121,259 @@ const VenueDetails = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Col: Facilities & Info */}
-          <div className="lg:col-span-1 space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
-            <div className="glass-panel p-8 rounded-[2rem] border border-border bg-card/50 backdrop-blur-xl">
-              <h3 className="text-2xl font-clash font-bold text-card-foreground mb-6 flex items-center gap-2">
+        {/* --- LUMA HYBRID LAYOUT --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+          {/* LEFT COLUMN (Information Stack) - Span 8 */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* 1. Amenities (Smart Update) */}
+            <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-xl">
+              <h3 className="text-2xl font-clash font-bold text-white mb-6 flex items-center gap-2">
                 Amenities{" "}
-                <span className="text-sm font-mono text-muted-foreground opacity-50 font-normal">
+                <span className="text-sm font-mono text-slate-500 font-normal">
                   // Full List
                 </span>
               </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {venue.facilities.map((facility, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-4 text-muted-foreground p-4 rounded-2xl bg-muted/50 border border-border transition-colors hover:border-primary/50 group"
-                  >
-                    <div className="p-2 rounded-xl bg-background border border-border group-hover:text-primary transition-colors">
-                      {getIconForFacility(facility)}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {venue.facilities.map((facility, idx) => {
+                  // Mock Status Generation based on facility name
+                  let status = "Active";
+                  if (facility.toLowerCase().includes("wifi"))
+                    status = "Excellent (5G)";
+                  if (facility.toLowerCase().includes("power"))
+                    status = "24 Ports Available";
+                  if (facility.toLowerCase().includes("projector"))
+                    status = "4K Laser";
+                  if (facility.toLowerCase().includes("ac"))
+                    status = "21°C Climate Control";
+
+                  return (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5 transition-colors hover:border-white/10 group"
+                    >
+                      <div className="flex items-center gap-3 text-slate-300">
+                        <div className="p-2 rounded-xl bg-black/40 border border-white/10 group-hover:text-fuchsia-400 transition-colors">
+                          {getIconForFacility(facility)}
+                        </div>
+                        <span className="font-medium text-sm md:text-base">
+                          {facility}
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 bg-white/5 px-2 py-1 rounded-md">
+                        {status}
+                      </span>
                     </div>
-                    <span className="font-medium">{facility}</span>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Essential Info (New) */}
+            <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-xl">
+              <h3 className="text-xl font-clash font-bold text-white mb-6">
+                Essential Info
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                  <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
+                    Access Hours
+                  </p>
+                  <p className="text-lg font-bold text-white">08:00 - 22:00</p>
+                </div>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                  <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
+                    Access Level
+                  </p>
+                  <p className="text-lg font-bold text-white flex items-center gap-2">
+                    Student ID
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  </p>
+                </div>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                  <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
+                    Managed By
+                  </p>
+                  <p className="text-lg font-bold text-white">HEP Office</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Availability Widget (Live Schedule) */}
+            <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-clash font-bold text-white">
+                  Live Schedule
+                </h3>
+                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />{" "}
+                  Live Updates
+                </span>
+              </div>
+              {/* Visual Timeline Strip */}
+              <div className="relative h-12 w-full bg-white/5 rounded-xl overflow-hidden flex items-center">
+                {/* Simulated Timeline Blocks */}
+                <div
+                  className="flex-1 h-full bg-emerald-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                  title="08:00 - 10:00 (Free)"
+                >
+                  08:00
+                </div>
+                <div
+                  className="flex-[2] h-full bg-rose-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-rose-400 cursor-not-allowed pattern-diagonal-lines"
+                  title="10:00 - 14:00 (Booked)"
+                >
+                  Booked
+                </div>
+                <div
+                  className="flex-1 h-full bg-emerald-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                  title="14:00 - 16:00 (Free)"
+                >
+                  14:00
+                </div>
+                <div
+                  className="flex-[1.5] h-full bg-rose-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-rose-400 cursor-not-allowed"
+                  title="16:00 - 19:00 (Booked)"
+                >
+                  Booked
+                </div>
+                <div
+                  className="flex-1 h-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                  title="19:00 - 21:00 (Free)"
+                >
+                  19:00
+                </div>
+              </div>
+              <div className="flex justify-between mt-3 text-xs font-mono text-slate-500">
+                <span>08:00</span>
+                <span>22:00</span>
+              </div>
+            </div>
+
+            {/* 4. Insider Radar */}
+            <div className="glass-panel p-8 rounded-[2.5rem] border border-fuchsia-500/20 bg-fuchsia-500/5 backdrop-blur-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                <Lightbulb size={60} className="text-fuchsia-400" />
+              </div>
+
+              <h3 className="text-xl font-clash font-bold text-white mb-6 flex items-center gap-2">
+                Student Inside Radar
+              </h3>
+
+              <div className="space-y-4">
+                {[
+                  {
+                    txt: "Best Wi-Fi signal is near the north-facing windows.",
+                    time: "Verified 2 days ago",
+                  },
+                  {
+                    txt: "Hoodie required: AC is set to a constant 16°C here.",
+                    time: "Verified 5 days ago",
+                  },
+                  {
+                    txt: "Peak crowds from 2PM - 4PM daily.",
+                    time: "Live Traffic",
+                  },
+                  {
+                    txt: "Hidden power sockets are located behind the back pillars.",
+                    time: "Verified 1 week ago",
+                  },
+                ].map((hack, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + i * 0.1 }}
+                    className="flex justify-between items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-default"
+                  >
+                    <div className="flex gap-4">
+                      <div className="w-1 h-auto bg-fuchsia-500 rounded-full shrink-0" />
+                      <p className="text-sm text-slate-300 leading-relaxed font-sans">
+                        {hack.txt}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-[9px] font-mono text-slate-500 uppercase tracking-wide">
+                      {hack.time}
+                    </span>
+                  </motion.div>
                 ))}
               </div>
             </div>
-
-            <div
-              className={`glass-panel p-8 rounded-[2rem] bg-gradient-to-br transition-all duration-500 ${
-                venue.glowColor === "cyan"
-                  ? "from-cyan-900/40 to-indigo-900/40 border-cyan-500/20 shadow-cyan-500/10"
-                  : "from-purple-900/40 to-indigo-900/40 border-purple-500/20 shadow-purple-500/10"
-              } border shadow-xl`}
-            >
-              <h3 className="text-xl font-clash font-bold text-foreground mb-3">
-                Ready to Organize?
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                This venue is managed by the UiTM Puncak Perdana management. You
-                can request booking when creating an official club event.
-              </p>
-              <button
-                onClick={() => navigate("/organizer/create-event")}
-                className="w-full py-4 bg-primary hover:bg-primary/80 text-primary-foreground rounded-2xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
-              >
-                Book This Venue
-              </button>
-            </div>
           </div>
 
-          {/* Right Col: Upcoming Events */}
-          <div className="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 delay-300">
-            <div className="flex items-center justify-between">
-              <h3 className="text-3xl font-clash font-bold text-foreground flex items-center gap-3">
-                Live Events{" "}
-                <span className="text-sm font-mono text-muted-foreground font-normal tracking-tighter">
-                  @ {venue.name}
-                </span>
-              </h3>
-            </div>
+          {/* RIGHT COLUMN (Sticky Sidebar) - Span 4 */}
+          <div className="lg:col-span-4 space-y-8 h-full">
+            <div className="sticky top-24 space-y-8 max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pr-1">
+              {/* 1. Booking Card (Moved to Top) */}
+              <div
+                className={`glass-panel p-8 rounded-[2.5rem] bg-gradient-to-br transition-all duration-500 ${
+                  venue.glowColor === "cyan"
+                    ? "from-cyan-900/40 to-indigo-900/40 border-cyan-500/20 shadow-cyan-500/10"
+                    : "from-purple-900/40 to-indigo-900/40 border-purple-500/20 shadow-purple-500/10"
+                } border shadow-xl relative overflow-hidden`}
+              >
+                {/* Decorative Blur */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 blur-[50px] rounded-full pointer-events-none" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {venue.upcomingEvents.map((event, idx) => (
-                <div
-                  key={idx}
-                  className="hover:-translate-y-2 transition-transform duration-300"
-                >
-                  <EventCard
-                    event={{ ...event, location: venue.name }}
-                    index={idx}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {venue.upcomingEvents.length === 0 && (
-              <div className="p-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-muted/30 text-muted-foreground">
-                <div className="text-4xl mb-4">📅</div>
-                <p className="text-lg font-medium">
-                  No upcoming events scheduled at this venue.
+                <h3 className="text-2xl font-clash font-bold text-white mb-2">
+                  Ready to Organize?
+                </h3>
+                <p className="text-sm text-slate-300 mb-6 leading-relaxed opacity-90">
+                  Secure this venue for your club's next big event. Approval
+                  required from HEP.
                 </p>
-                <p className="text-sm">
-                  Be the first to organize something great here!
+                <button
+                  onClick={() => navigate("/organizer/create-event")}
+                  className="w-full py-4 bg-white text-black rounded-2xl font-bold font-clash transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
+                >
+                  Book This Venue <ArrowRight className="w-4 h-4" />
+                </button>
+                <p className="text-[10px] text-center text-white/40 mt-3 font-mono">
+                  Instant availability check
                 </p>
               </div>
-            )}
+
+              {/* 2. Live Events Stack */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-clash font-bold text-white flex items-center gap-2">
+                    Live Events{" "}
+                    <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                      LIVE
+                    </span>
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  {venue.upcomingEvents.map((event, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative p-5 rounded-[2rem] bg-black/40 border border-white/10 hover:border-white/20 transition-all"
+                    >
+                      <div className="absolute top-4 right-4 text-[10px] text-slate-500 font-mono">
+                        {event.date}
+                      </div>
+                      <h4 className="text-lg font-bold text-white font-clash mb-1 group-hover:text-fuchsia-400 transition-colors">
+                        {event.title}
+                      </h4>
+                      <p className="text-sm text-slate-400 mb-4">
+                        {event.time}
+                      </p>
+                      <button className="w-full py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider">
+                        RSVP Now
+                      </button>
+                    </div>
+                  ))}
+
+                  {venue.upcomingEvents.length === 0 && (
+                    <div className="p-8 text-center border border-dashed border-white/10 rounded-[2rem]">
+                      <p className="text-slate-500 text-sm">
+                        No events scheduled.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

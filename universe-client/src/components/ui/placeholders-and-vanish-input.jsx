@@ -147,9 +147,9 @@ export function PlaceholdersAndVanishInput({
           setValue("");
           setAnimating(false);
           // CRITICAL FIX: Notify parent that value is cleared
-          // if (onChange) {
-          //   onChange({ target: { value: "" } });
-          // }
+          if (onChange) {
+            onChange({ target: { value: "" } });
+          }
         }
       });
     };

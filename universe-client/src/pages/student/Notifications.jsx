@@ -6,35 +6,21 @@ import {
   CheckCircle2,
   Info,
   AlertTriangle,
-  Search,
-  MoreVertical,
-  Trash2,
   Check,
 } from "lucide-react";
-import { Tab } from "@headlessui/react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const Notifications = () => {
-  const [activeTab, setActiveTab] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  const studentNotifications = [
+  const signalData = [
     {
       id: "s1",
       title: "Registration Confirmed",
@@ -42,6 +28,7 @@ const Notifications = () => {
         "You have successfully registered for 'Nebula Music Festival'. Your QR code is ready.",
       type: "success",
       time: "2 hours ago",
+      group: "Today",
       isRead: false,
     },
     {
@@ -51,6 +38,7 @@ const Notifications = () => {
         "The 'Quantum Physics Symposium' is starting in 30 minutes at Mars Campus.",
       type: "info",
       time: "30 mins ago",
+      group: "Today",
       isRead: false,
     },
     {
@@ -59,326 +47,230 @@ const Notifications = () => {
       message:
         "The venue for 'Astro-Culinary Workshop' has been changed to Saturn Ring Station.",
       type: "alert",
-      time: "1 day ago",
+      time: "Yesterday",
+      group: "Yesterday",
       isRead: true,
     },
-  ];
-
-  const organizerNotifications = [
     {
-      id: "o1",
-      title: "New Registration",
-      message: "Sarah Jenkins registered for 'Tech Innovation Summit 2024'",
+      id: "s4",
+      title: "Merit Points Updated",
+      message: "You earned +20 Merit for attending 'Cyber Security Talk'.",
       type: "success",
-      time: "2 mins ago",
-      isRead: false,
-    },
-    {
-      id: "o2",
-      title: "Crew Application",
-      message: "Mike Ross applied for 'Head of Logistics' at 'AI Workshop'",
-      type: "info",
-      time: "1 hour ago",
-      isRead: false,
-    },
-    {
-      id: "o3",
-      title: "Venue Conflict",
-      message: "Main Hall unavailable for 'Startup Night' due to maintenance.",
-      type: "alert",
-      time: "3 hours ago",
+      time: "3 days ago",
+      group: "Older",
       isRead: true,
     },
   ];
 
-  const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    if (user) {
-      if (user.role === "organizer" || user.role === "admin") {
-        setNotifications([...organizerNotifications, ...studentNotifications]);
-      } else {
-        setNotifications(studentNotifications);
-      }
-    }
-  }, [user]);
+  const [signals, setSignals] = useState(signalData);
 
   const getIcon = (type) => {
     switch (type) {
       case "success":
-        return <CheckCircle2 className="text-emerald-400" size={18} />;
+        return (
+          <CheckCircle2
+            className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+            size={28}
+          />
+        );
       case "alert":
-        return <AlertTriangle className="text-red-400" size={18} />;
-      case "info":
-        return <Info className="text-blue-400" size={18} />;
+        return (
+          <AlertTriangle
+            className="text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.8)]"
+            size={28}
+          />
+        );
       default:
-        return <Bell className="text-violet-400" size={18} />;
+        return (
+          <Info
+            className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]"
+            size={28}
+          />
+        );
     }
   };
 
-  const filteredNotifications = notifications
-    .filter((n) => {
-      if (activeTab === 1) return !n.isRead;
-      return true;
-    })
-    .filter(
-      (n) =>
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+  const filteredSignals = signals.filter((s) => {
+    if (activeTab === "unread") return !s.isRead;
+    return true;
+  });
 
-  const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
-  };
-
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
+  const groupedSignals = {
+    Today: filteredSignals.filter((s) => s.group === "Today"),
+    Yesterday: filteredSignals.filter((s) => s.group === "Yesterday"),
+    Older: filteredSignals.filter((s) => s.group === "Older"),
   };
 
   const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+    setSignals(signals.map((s) => ({ ...s, isRead: true })));
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { duration: 0.5, ease: "backOut" },
+    },
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1000px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <Link
-            to={
-              user?.role === "organizer" || user?.role === "admin"
-                ? "/organizer/my-events"
-                : "/profile"
-            }
-            className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-white"
-          >
-            <ArrowLeft size={20} />
-          </Link>
+    <div className="min-h-screen pt-12 pb-20 px-6 md:px-12 bg-transparent relative">
+      {/* Background Glow for visibility */}
+      <div className="fixed top-0 left-0 right-0 h-[40vh] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none z-0" />
+
+      <div className="relative z-10 max-w-5xl mx-auto">
+        {/* HERO HUD */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div>
-            <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
+            <div className="flex items-center gap-4 mb-2">
+              <Link
+                to="/"
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all"
+              >
+                <ArrowLeft size={20} />
+              </Link>
+              <span className="text-xs font-mono font-bold text-fuchsia-400 tracking-[0.2em] uppercase glow-text">
+                / SIGNAL CENTER
+              </span>
+            </div>
+
+            <h1 className="text-6xl md:text-7xl font-black font-clash text-white tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]">
               Notifications
             </h1>
-            <p className="text-white/40 text-sm">
-              {user?.role === "organizer" || user?.role === "admin"
-                ? "Stay updated with event and guest activities"
-                : "Stay updated with your latest alerts and announcements"}
-            </p>
+          </div>
+
+          {/* UNIFIED HUD BAR */}
+          <div className="flex items-center gap-1 bg-black/60 backdrop-blur-xl border border-white/20 p-1.5 rounded-full shadow-2xl">
+            {["all", "unread"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "relative px-6 py-2.5 rounded-full text-xs font-bold font-mono uppercase tracking-widest transition-all",
+                  activeTab === tab
+                    ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+                    : "text-slate-400 hover:text-white hover:bg-white/10",
+                )}
+              >
+                {tab}
+                {tab === "unread" && signals.some((s) => !s.isRead) && (
+                  <span className="ml-2 w-2 h-2 inline-block rounded-full bg-fuchsia-500 animate-pulse shadow-[0_0_10px_#d946ef]" />
+                )}
+              </button>
+            ))}
+            <div className="w-[1px] h-5 bg-white/20 mx-2" />
+            <button
+              onClick={markAllRead}
+              className="p-2.5 text-slate-400 hover:text-fuchsia-400 hover:bg-white/10 rounded-full transition-colors"
+              title="Mark all read"
+            >
+              <Check size={18} />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10 h-9"
-            onClick={markAllRead}
-          >
-            <Check className="mr-2" size={14} />
-            Mark all read
-          </Button>
-        </div>
-      </div>
-
-      {/* Content Card */}
-      <div className="bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-        <Tab.Group onChange={setActiveTab}>
-          <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 flex-wrap gap-4">
-            <Tab.List className="flex gap-6">
-              <Tab
-                className={({ selected }) =>
-                  cn(
-                    "text-sm font-bold transition-all relative pb-2 outline-none",
-                    selected
-                      ? "text-violet-400"
-                      : "text-white/40 hover:text-white/60",
-                  )
-                }
-              >
-                All
-                {activeTab === 0 && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-violet-400 rounded-full" />
-                )}
-              </Tab>
-              <Tab
-                className={({ selected }) =>
-                  cn(
-                    "text-sm font-bold transition-all relative pb-2 outline-none",
-                    selected
-                      ? "text-violet-400"
-                      : "text-white/40 hover:text-white/60",
-                  )
-                }
-              >
-                Unread
-                <span className="ml-2 px-1.5 py-0.5 bg-white/5 rounded text-[10px]">
-                  {notifications.filter((n) => !n.isRead).length}
-                </span>
-                {activeTab === 1 && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-violet-400 rounded-full" />
-                )}
-              </Tab>
-            </Tab.List>
-
-            <div className="relative flex-1 max-w-sm">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20"
-                size={16}
-              />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notifications..."
-                className="pl-10 bg-white/5 border-white/10 text-white h-9 focus-visible:ring-violet-400/50"
-              />
-            </div>
-          </div>
-
-          <Tab.Panels className="p-0">
-            <Tab.Panel className="divide-y divide-white/5">
-              {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={cn(
-                      "group p-6 flex gap-4 hover:bg-white/[0.02] transition-colors relative",
-                      !notification.isRead && "bg-violet-400/[0.02]",
-                    )}
-                  >
-                    <div className="mt-1">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                        {getIcon(notification.type)}
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3
-                          className={cn(
-                            "font-bold text-white transition-colors",
-                            !notification.isRead
-                              ? "text-base"
-                              : "text-sm text-white/80",
-                          )}
-                        >
-                          {notification.title}
-                        </h3>
-                        <span className="text-[10px] uppercase tracking-widest text-white/20 font-bold whitespace-nowrap">
-                          {notification.time}
-                        </span>
-                      </div>
-                      <p className="text-sm text-white/40 leading-relaxed mb-3">
-                        {notification.message}
-                      </p>
-
-                      {!notification.isRead && (
-                        <button
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
-                        >
-                          Mark as read
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-white/10"
-                          >
-                            <MoreVertical size={14} className="text-white/40" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="bg-[#0f0f0f] border-white/10 text-white"
-                        >
-                          <DropdownMenuItem
-                            onClick={() => deleteNotification(notification.id)}
-                            className="text-red-400 focus:text-red-400 focus:bg-red-400/10 cursor-pointer"
-                          >
-                            <Trash2 className="mr-2" size={14} />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {!notification.isRead && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-violet-400 rounded-r-full" />
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="p-20 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10 mb-4">
-                    <Bell className="text-white/20" size={32} />
-                  </div>
-                  <h3 className="text-white font-bold text-lg mb-1">
-                    No notifications found
+        {/* CHRONOLOGICAL FEED */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
+          {Object.entries(groupedSignals).map(
+            ([group, groupSignals]) =>
+              groupSignals.length > 0 && (
+                <div key={group}>
+                  <h3 className="text-xs font-mono font-bold text-fuchsia-300/80 uppercase tracking-[0.3em] pl-1 mb-4 flex items-center gap-4">
+                    {group}
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-fuchsia-500/30 to-transparent" />
                   </h3>
-                  <p className="text-white/40 text-sm max-w-xs">
-                    We couldn't find any notifications matching your current
-                    filters.
-                  </p>
-                </div>
-              )}
-            </Tab.Panel>
 
-            <Tab.Panel className="divide-y divide-white/5">
-              {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="group p-6 flex gap-4 hover:bg-white/[0.02] transition-colors relative bg-violet-400/[0.02]"
-                  >
-                    <div className="mt-1">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                        {getIcon(notification.type)}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-white text-base">
-                          {notification.title}
-                        </h3>
-                        <span className="text-[10px] uppercase tracking-widest text-white/20 font-bold whitespace-nowrap">
-                          {notification.time}
-                        </span>
-                      </div>
-                      <p className="text-sm text-white/40 leading-relaxed mb-3">
-                        {notification.message}
-                      </p>
-                      <button
-                        onClick={() => markAsRead(notification.id)}
-                        className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
+                  <div className="grid gap-4">
+                    {groupSignals.map((signal) => (
+                      <motion.div
+                        key={signal.id}
+                        variants={itemVariants}
+                        className={cn(
+                          "group relative flex items-center gap-6 p-5 md:p-6 rounded-[2.5rem] border transition-all duration-300",
+                          !signal.isRead
+                            ? "bg-white/[0.08] border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)] backdrop-blur-xl"
+                            : "bg-black/40 border-white/10 hover:border-white/30 backdrop-blur-md opacity-90 hover:opacity-100",
+                        )}
                       >
-                        Mark as read
-                      </button>
-                    </div>
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-violet-400 rounded-r-full" />
+                        {/* Icon Halo */}
+                        <div className="shrink-0 relative">
+                          <div
+                            className={cn(
+                              "absolute inset-0 opacity-20 blur-xl rounded-full transition-opacity group-hover:opacity-40",
+                              signal.type === "success"
+                                ? "bg-emerald-500"
+                                : signal.type === "alert"
+                                  ? "bg-rose-500"
+                                  : "bg-blue-500",
+                            )}
+                          />
+                          <div className="relative w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
+                            {getIcon(signal.type)}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <h4
+                              className={cn(
+                                "text-lg font-clash font-bold tracking-wide truncate pr-4",
+                                !signal.isRead
+                                  ? "text-white drop-shadow-md"
+                                  : "text-slate-300",
+                              )}
+                            >
+                              {signal.title}
+                            </h4>
+                            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest whitespace-nowrap bg-black/30 px-2 py-1 rounded-lg border border-white/5">
+                              {signal.time}
+                            </span>
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm leading-relaxed truncate pr-8",
+                              !signal.isRead
+                                ? "text-slate-200 font-medium"
+                                : "text-slate-500",
+                            )}
+                          >
+                            {signal.message}
+                          </p>
+                        </div>
+
+                        {/* Unread Indicator */}
+                        <div className="shrink-0 flex items-center justify-center">
+                          {!signal.isRead && (
+                            <div className="w-3 h-3 rounded-full bg-fuchsia-500 shadow-[0_0_15px_#d946ef] animate-pulse" />
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <div className="p-20 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10 mb-4">
-                    <CheckCircle2 className="text-emerald-400/40" size={32} />
-                  </div>
-                  <h3 className="text-white font-bold text-lg mb-1">
-                    All caught up!
-                  </h3>
-                  <p className="text-white/40 text-sm">
-                    You have no unread notifications.
-                  </p>
                 </div>
-              )}
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tab.Group>
+              ),
+          )}
+
+          {filteredSignals.length === 0 && (
+            <div className="py-24 text-center border border-dashed border-white/20 rounded-[3rem] bg-white/[0.02] backdrop-blur-sm">
+              <Bell className="w-16 h-16 text-slate-700 mx-auto mb-6 opacity-50" />
+              <p className="text-slate-500 font-mono text-sm uppercase tracking-widest">
+                No signals detected in this sector
+              </p>
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );

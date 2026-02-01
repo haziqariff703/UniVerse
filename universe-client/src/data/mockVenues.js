@@ -21,6 +21,9 @@ export const MOCK_VENUES = [
     image:
       "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=1200",
     glowColor: "cyan", // Academic branding
+    occupancyStatus: "Busy",
+    liveOccupancy: 85,
+    nextAvailable: "04:00 PM",
   },
   {
     id: 2,
@@ -41,6 +44,9 @@ export const MOCK_VENUES = [
     bestFor: ["Religious Talks", "Ghazal", "Gatherings"],
     image: surauImage,
     glowColor: "purple",
+    occupancyStatus: "Available",
+    liveOccupancy: 20,
+    nextAvailable: "Now",
   },
   {
     id: 3,
@@ -64,6 +70,9 @@ export const MOCK_VENUES = [
     image:
       "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=1200",
     glowColor: "purple",
+    occupancyStatus: "Closed",
+    liveOccupancy: 0,
+    nextAvailable: "Tomorrow, 08:00 AM",
   },
   {
     id: 4,
@@ -107,6 +116,9 @@ export const MOCK_VENUES = [
     image:
       "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=1200",
     glowColor: "cyan",
+    occupancyStatus: "Moderate",
+    liveOccupancy: 65,
+    nextAvailable: "Now",
   },
   {
     id: 6,

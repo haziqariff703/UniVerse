@@ -89,31 +89,33 @@ const Navbar = ({ user, onToggleSidebar }) => {
           </div>
 
           {/* CENTER: Nav Links with Sliding Pill */}
+          {/* CENTER: Nav Links with Sliding Pill - HIDDEN FOR STUDENTS */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="relative px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
-                onMouseEnter={() => setHoveredLink(link.href)}
-                onMouseLeave={() => setHoveredLink(null)}
-              >
-                {/* Sliding Pill Background */}
-                {(hoveredLink === link.href ||
-                  location.pathname === link.href) && (
-                  <motion.div
-                    layoutId="navbar-pill"
-                    className="absolute inset-0 bg-white/[0.06] rounded-md"
-                    transition={{
-                      type: "spring",
-                      bounce: 0.2,
-                      duration: 0.6,
-                    }}
-                  />
-                )}
-                <span className="relative z-10">{link.name}</span>
-              </Link>
-            ))}
+            {(!user || user.role !== "student") &&
+              NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="relative px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                  onMouseEnter={() => setHoveredLink(link.href)}
+                  onMouseLeave={() => setHoveredLink(null)}
+                >
+                  {/* Sliding Pill Background */}
+                  {(hoveredLink === link.href ||
+                    location.pathname === link.href) && (
+                    <motion.div
+                      layoutId="navbar-pill"
+                      className="absolute inset-0 bg-white/[0.06] rounded-md"
+                      transition={{
+                        type: "spring",
+                        bounce: 0.2,
+                        duration: 0.6,
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">{link.name}</span>
+                </Link>
+              ))}
           </nav>
 
           {/* RIGHT: Actions */}
@@ -122,7 +124,7 @@ const Navbar = ({ user, onToggleSidebar }) => {
             {user && (
               <button
                 onClick={onToggleSidebar}
-                className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+                className="p-2 text-slate-400 hover:text-white transition-colors"
               >
                 <Menu className="h-5 w-5" />
               </button>
