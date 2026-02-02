@@ -3,7 +3,10 @@ const router = express.Router();
 const registrationController = require('../controllers/registrationController');
 const { auth, authorize } = require('../middleware/auth');
 
-// All routes require authentication
+// Public route (no auth required)
+router.get('/event/:id/public', registrationController.getPublicEventRegistrations);
+
+// All routes below require authentication
 router.use(auth);
 
 // User routes

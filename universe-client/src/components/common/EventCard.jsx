@@ -18,7 +18,7 @@ import { Spotlight } from "@/components/ui/spotlight";
 const EventCard = ({ event, index }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(event.isRegistered || false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -27,17 +27,18 @@ const EventCard = ({ event, index }) => {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        // In real app, we check a registrations array.
-        // For mock, we'll check if we "set" it locally in this session
-        const sessionRegs = JSON.parse(
-          localStorage.getItem("mock_regs") || "[]",
-        );
-        if (sessionRegs.includes(event.id)) setIsRegistered(true);
       } catch (e) {
         console.error("Auth sync error", e);
       }
     }
-  }, [event.id]);
+  }, []);
+
+  // Sync isRegistered if prop changes
+  useEffect(() => {
+    if (event.isRegistered !== undefined) {
+      setIsRegistered(event.isRegistered);
+    }
+  }, [event.isRegistered]);
 
   // Determine Theme
   const isFPM =
@@ -51,20 +52,40 @@ const EventCard = ({ event, index }) => {
     ? "rgba(6, 182, 212, 0.25)" // Cyan
     : "rgba(168, 85, 247, 0.4)"; // Purple
 
-  const handleQuickJoin = (e) => {
+  const handleQuickJoin = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const sessionRegs = JSON.parse(localStorage.getItem("mock_regs") || "[]");
-      if (!sessionRegs.includes(event.id)) {
-        sessionRegs.push(event.id);
-        localStorage.setItem("mock_regs", JSON.stringify(sessionRegs));
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
       }
+
+      const res = await fetch(`http://localhost:5000/api/registrations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId: event.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
       setIsRegistered(true);
+    } catch (err) {
+      console.error("Quick join error:", err);
+      alert(err.message);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const isToday = event.date === "2024-05-15"; // Mock comparison for demo
@@ -88,7 +109,7 @@ const EventCard = ({ event, index }) => {
               navigate("/login");
             }
           }}
-          className="block h-full relative z-10 flex flex-col"
+          className="relative z-10 flex flex-col h-full"
         >
           {/* Image Section - Enforced Aspect Ratio */}
           <div className="relative aspect-[4/3] overflow-hidden">

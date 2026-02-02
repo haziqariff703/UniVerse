@@ -1,7 +1,16 @@
-import React from "react";
-import { Users, Filter } from "lucide-react";
+import { useState } from "react";
+import { Users, Filter, Edit2 } from "lucide-react";
+import MemberEditDialog from "./MemberEditDialog";
 
-const TeamRosterTable = ({ crew }) => {
+const TeamRosterTable = ({ crew, onUpdate, isOwner = false }) => {
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEditClick = (member) => {
+    setSelectedMember(member);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -13,9 +22,11 @@ const TeamRosterTable = ({ crew }) => {
           <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2">
             <Filter size={14} /> Filter
           </button>
-          <button className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all">
-            + Recruit AJK
-          </button>
+          {isOwner && (
+            <button className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all">
+              + Recruit AJK
+            </button>
+          )}
         </div>
       </div>
 
@@ -27,7 +38,7 @@ const TeamRosterTable = ({ crew }) => {
               <th className="py-4">Role</th>
               <th className="py-4">Department</th>
               <th className="py-4">Status</th>
-              <th className="py-4 pr-4 text-right">Actions</th>
+              {isOwner && <th className="py-4 pr-4 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="text-sm font-medium">
@@ -39,12 +50,16 @@ const TeamRosterTable = ({ crew }) => {
                 <td className="py-3 pl-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-xs text-white border border-white/10">
-                      {member.user_id.name.charAt(0)}
+                      {member.user_id?.name
+                        ? member.user_id.name.charAt(0)
+                        : "?"}
                     </div>
                     <div>
-                      <div className="text-white">{member.user_id.name}</div>
+                      <div className="text-white">
+                        {member.user_id?.name || "Unknown User"}
+                      </div>
                       <div className="text-[10px] text-gray-500">
-                        {member.user_id.email}
+                        {member.user_id?.email}
                       </div>
                     </div>
                   </div>
@@ -58,26 +73,40 @@ const TeamRosterTable = ({ crew }) => {
                 <td className="py-3">
                   <div
                     className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      member.status === "Approved" ||
                       member.status === "accepted"
                         ? "bg-emerald-500/10 text-emerald-400"
-                        : member.status === "applied"
-                          ? "bg-blue-500/10 text-blue-400"
-                          : "bg-amber-500/10 text-amber-400"
+                        : "bg-amber-500/10 text-amber-400"
                     }`}
                   >
                     {member.status}
                   </div>
                 </td>
-                <td className="py-3 pr-4 text-right">
-                  <button className="text-gray-500 hover:text-white transition-colors text-xs font-bold">
-                    Edit
-                  </button>
-                </td>
+                {isOwner && (
+                  <td className="py-3 pr-4 text-right">
+                    <button
+                      onClick={() => handleEditClick(member)}
+                      className="flex items-center gap-2 ml-auto text-gray-500 hover:text-white transition-colors text-xs font-bold"
+                    >
+                      <Edit2 size={14} />
+                      Edit
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {isOwner && (
+        <MemberEditDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          member={selectedMember}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 };

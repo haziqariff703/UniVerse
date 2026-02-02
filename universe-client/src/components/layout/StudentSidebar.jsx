@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 
 const StudentSidebar = ({ isOpen, user, onLogout }) => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const NAV_ITEMS = [
     { label: "Dashboard", path: "/", icon: Home },
@@ -25,6 +24,12 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
     { label: "Venues", path: "/venues", icon: MapPin },
     { label: "Communities", path: "/communities", icon: Users },
     { label: "My Bookings", path: "/my-bookings", icon: Ticket },
+  ];
+
+  const ORGANIZER_ITEMS = [
+    { label: "My Events", path: "/organizer/my-events", icon: Calendar },
+    { label: "Workforce", path: "/organizer/workforce", icon: Users },
+    { label: "Analytics", path: "/organizer/analytics", icon: Rocket },
   ];
 
   const handleLogout = () => {
@@ -54,7 +59,7 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
           </div>
 
           {/* Galaxy Rail - Navigation */}
-          <div className="flex-1 px-4 space-y-3 overflow-y-auto no-scrollbar">
+          <div className="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
             {NAV_ITEMS.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -68,9 +73,6 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
                     <motion.div
                       layoutId="active-nav-glow"
                       className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/10 rounded-2xl border border-white/5"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                     />
                   )}
 
@@ -98,10 +100,58 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
                 </Link>
               );
             })}
+
+            {/* Organizer Suite - Only for approved organizers */}
+            {(user?.is_organizer_approved || user?.role === "admin") && (
+              <>
+                <div className="mx-6 my-2 h-px bg-white/5" />
+                <div className="px-6 pt-4 pb-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-500/60">
+                    Organizer Suite
+                  </p>
+                </div>
+                {ORGANIZER_ITEMS.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className="group relative flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300"
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="active-nav-glow"
+                          className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/10 rounded-2xl border border-white/5"
+                        />
+                      )}
+                      <item.icon
+                        className={cn(
+                          "w-5 h-5 relative z-10 transition-all duration-300 group-hover:scale-110",
+                          isActive
+                            ? "text-fuchsia-400"
+                            : "text-slate-400 group-hover:text-white",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-sm font-medium relative z-10 transition-colors duration-300",
+                          isActive
+                            ? "text-white"
+                            : "text-slate-400 group-hover:text-white",
+                        )}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </div>
 
           {/* Bottom Rail - Settings & Logout */}
           <div className="px-4 mt-auto space-y-3">
+            <div className="mx-4 mb-4 h-px bg-white/5" />
             <Link
               to="/profile"
               className="group flex items-center gap-4 px-6 py-3 rounded-2xl hover:bg-white/5 transition-all text-slate-400 hover:text-white"

@@ -61,6 +61,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  is_organizer_approved: {
+    type: Boolean,
+    default: false
+  },
+  current_merit: {
+    type: Number,
+    default: 0
+  },
+  merit_goal: {
+    type: Number,
+    default: 500
+  },
 
   created_at: { 
     type: Date, 

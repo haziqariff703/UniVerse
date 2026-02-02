@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   motion,
@@ -21,8 +21,9 @@ import {
   Utensils,
   ChevronDown,
 } from "lucide-react";
-import { FEATURED_EVENTS, UPCOMING_EVENTS } from "@/data/mockEvents";
 import { cn } from "@/lib/utils";
+
+const API_BASE = "http://localhost:5000";
 
 // Magic UI Simulated Border Beam
 const BorderBeam = () => (
@@ -38,19 +39,25 @@ const BorderBeam = () => (
 
 // PHASE 4: SUCCESS PARTICLES (STARDUST)
 const SuccessParticles = () => {
-  const particles = Array.from({ length: 40 });
-  const colors = ["#d946ef", "#8b5cf6", "#06b6d4"];
+  const colors = useMemo(() => ["#d946ef", "#8b5cf6", "#06b6d4"], []);
+
+  // Use a ref to store stable random values
+  const [particles] = useState(() =>
+    Array.from({ length: 40 }).map((_, i) => ({
+      angle: (i / 40) * Math.PI * 2 + Math.random(),
+      distance: 100 + Math.random() * 200,
+      size: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      delay: Math.random() * 0.2,
+      rotate: Math.random() * 360,
+    })),
+  );
 
   return (
     <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-[100]">
-      {particles.map((_, i) => {
-        const angle = (i / 40) * Math.PI * 2 + Math.random();
-        const distance = 100 + Math.random() * 200;
-        const x = Math.cos(angle) * distance;
-        const y = Math.sin(angle) * distance;
-        const size = Math.random() * 4 + 2;
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const delay = Math.random() * 0.2;
+      {particles.map((p, i) => {
+        const x = Math.cos(p.angle) * p.distance;
+        const y = Math.sin(p.angle) * p.distance;
 
         return (
           <motion.div
@@ -61,22 +68,32 @@ const SuccessParticles = () => {
               opacity: [1, 1, 0],
               x,
               y,
-              rotate: Math.random() * 360,
+              rotate: p.rotate,
             }}
             transition={{
-              x: { type: "spring", stiffness: 100, damping: 10, delay },
-              y: { type: "spring", stiffness: 100, damping: 10, delay },
-              scale: { duration: 1.5, times: [0, 0.2, 1], delay },
-              opacity: { duration: 1.5, times: [0, 0.8, 1], delay },
-              rotate: { duration: 1.5, delay },
+              x: {
+                type: "spring",
+                stiffness: 100,
+                damping: 10,
+                delay: p.delay,
+              },
+              y: {
+                type: "spring",
+                stiffness: 100,
+                damping: 10,
+                delay: p.delay,
+              },
+              scale: { duration: 1.5, times: [0, 0.2, 1], delay: p.delay },
+              opacity: { duration: 1.5, times: [0, 0.8, 1], delay: p.delay },
+              rotate: { duration: 1.5, delay: p.delay },
             }}
             style={{
-              width: size,
-              height: size,
-              background: color,
+              width: p.size,
+              height: p.size,
+              background: p.color,
               borderRadius: "50%",
               position: "absolute",
-              boxShadow: `0 0 12px ${color}`,
+              boxShadow: `0 0 12px ${p.color}`,
               filter: "blur(1px)",
             }}
           />
@@ -90,11 +107,17 @@ const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState(null);
   const [registering, setRegistering] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState(null);
-  const [currentFill, setCurrentFill] = useState(85);
+  const [currentFill, setCurrentFill] = useState(0);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [publicRegs, setPublicRegs] = useState({
+    totalCount: 0,
+    recentNames: [],
+  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -103,37 +126,136 @@ const EventDetails = () => {
     }
   }, []);
 
-  const event = useMemo(() => {
-    const allEvents = [...FEATURED_EVENTS, ...UPCOMING_EVENTS];
-    return allEvents.find((e) => e.id === id);
-  }, [id]);
+  const fetchEvent = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/events/${id}`);
+      if (!res.ok) throw new Error("Event not found");
+      const data = await res.json();
+
+      // Map API data to component props
+      const mappedEvent = {
+        ...data,
+        id: data._id,
+        image: data.image
+          ? `${API_BASE}/${data.image}`
+          : "/placeholder-event.jpg",
+        date: new Date(data.date_time).toLocaleDateString("en-MY", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        time: new Date(data.date_time).toLocaleTimeString("en-MY", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        venue: {
+          name: data.venue_id?.name || data.location || "TBA",
+          location: data.venue_id?.location_code || "",
+        },
+        organizer: data.organizer_id || { name: "UniVerse" },
+        meritValue: data.merit_points || 0,
+      };
+
+      setEvent(mappedEvent);
+      // Calculate capacity percentage
+      if (data.capacity > 0) {
+        const fill = Math.min(
+          100,
+          Math.round((data.current_attendees / data.capacity) * 100),
+        );
+        setCurrentFill(fill);
+      }
+
+      const token = localStorage.getItem("token");
+
+      // Check if user is already registered
+      if (token) {
+        const bookingsRes = await fetch(
+          `${API_BASE}/api/registrations/my-bookings`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (bookingsRes.ok) {
+          const bookings = await bookingsRes.json();
+          const alreadyJoined = bookings.some(
+            (b) => b.event_id?._id === id || b.event_id === id,
+          );
+          setIsRegistered(alreadyJoined);
+        }
+      }
+
+      // Fetch public registration info for social proof
+      const regRes = await fetch(
+        `${API_BASE}/api/registrations/event/${id}/public`,
+      );
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        setPublicRegs(regData);
+      }
+    } catch (err) {
+      console.error("Fetch error", err);
+      navigate("/events");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, navigate]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchEvent();
+  }, [fetchEvent]);
 
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, 150]);
   const heroOpacity = useTransform(scrollY, [0, 600], [1, 0.2]);
 
-  const handleRegister = () => {
-    setRegistering(true);
-    // Simulate API Call
-    setTimeout(() => {
-      setRegistering(false);
-      setShowSuccess(true);
+  const handleRegister = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
+    if (isRegistered) return;
+
+    setRegistering(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/registrations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId: event.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      setShowSuccess(true);
+      setIsRegistered(true);
       // Phase 2: Show Modal after particles travel 50%
       setTimeout(() => setShowModal(true), 400);
 
       // Phase 3: Cleanup and Status update
       setTimeout(() => {
         setShowSuccess(false);
-        setCurrentFill((prev) => Math.max(0, prev + 1)); // -1 Spot = More Filled (simulated)
+        setCurrentFill((prev) => Math.min(100, prev + 1));
       }, 2000);
-    }, 1500);
+
+      // Re-fetch event to get updated attendee count
+      fetchEvent();
+    } catch (err) {
+      console.error("Registration error:", err);
+      alert(err.message);
+    } finally {
+      setRegistering(false);
+    }
   };
 
   if (loading) {
@@ -155,7 +277,7 @@ const EventDetails = () => {
   const fillPercentage = currentFill;
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-fuchsia-500/30 font-inter overflow-x-hidden">
+    <div className="min-h-screen text-white selection:bg-fuchsia-500/30 font-inter overflow-x-hidden">
       {/* I. NAVIGATION (FLOATING GHOST) */}
       <div className="fixed top-24 left-6 md:left-12 z-50">
         <button
@@ -252,7 +374,7 @@ const EventDetails = () => {
                   Participant Rewards
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="group p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-fuchsia-500/20 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-fuchsia-500/40 transition-all backdrop-blur-xl text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] transition-all">
                       <Zap size={20} fill="currentColor" />
                     </div>
@@ -263,7 +385,7 @@ const EventDetails = () => {
                       University Rank
                     </p>
                   </div>
-                  <div className="group p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-cyan-500/20 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-cyan-500/40 transition-all backdrop-blur-xl text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
                       <Award size={20} />
                     </div>
@@ -274,7 +396,7 @@ const EventDetails = () => {
                       Digital Credential
                     </p>
                   </div>
-                  <div className="group p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-violet-500/40 transition-all backdrop-blur-xl text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all">
                       <Utensils size={20} />
                     </div>
@@ -303,7 +425,7 @@ const EventDetails = () => {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.1 }}
-                      className="group flex gap-6 p-6 rounded-[2rem] bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all"
+                      className="group flex gap-6 p-6 rounded-[2rem] bg-slate-900/40 hover:bg-slate-900/60 border border-white/10 hover:border-white/20 transition-all"
                     >
                       <span className="text-sm font-black text-fuchsia-500 font-mono pt-1">
                         {item.time}
@@ -367,7 +489,7 @@ const EventDetails = () => {
           <div className="lg:w-2/5">
             <div className="sticky top-28 space-y-8">
               {/* LAUNCHPAD CARD */}
-              <div className="p-8 bg-white/[0.03] backdrop-blur-3xl rounded-[3rem] border border-white/10 relative overflow-hidden shadow-2xl">
+              <div className="p-8 bg-slate-950/80 backdrop-blur-3xl rounded-[3rem] border border-white/20 relative overflow-hidden shadow-2xl">
                 <BorderBeam />
 
                 <div className="relative z-10 space-y-10">
@@ -375,17 +497,21 @@ const EventDetails = () => {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-5">
                       <Ticket size={12} />
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] font-clash">
-                        Free Admission
+                        {event.ticket_price > 0
+                          ? "Paid Entry"
+                          : "Free Admission"}
                       </span>
                     </div>
                     <h3 className="text-4xl md:text-5xl font-clash font-bold text-white tracking-tighter leading-none mb-2">
-                      FREE
+                      {event.ticket_price > 0
+                        ? `RM ${event.ticket_price}`
+                        : "FREE"}
                     </h3>
                   </div>
 
                   {/* INFO GRID */}
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/5 rounded-[2rem] hover:border-white/10 transition-all">
+                    <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-[2rem] hover:border-white/20 transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-slate-900/80 flex items-center justify-center text-fuchsia-400 border border-white/5">
                         <Clock className="w-6 h-6" />
                       </div>
@@ -398,7 +524,7 @@ const EventDetails = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/5 rounded-[2rem] hover:border-white/10 transition-all">
+                    <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-[2rem] hover:border-white/20 transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-slate-900/80 flex items-center justify-center text-cyan-400 border border-white/5">
                         <MapPin className="w-6 h-6" />
                       </div>
@@ -416,21 +542,42 @@ const EventDetails = () => {
                   {/* SECURE SPOT ACTION */}
                   <div className="space-y-4 pt-4">
                     <motion.button
-                      whileHover={{
-                        scale: 1.02,
-                        boxShadow: "0 0 40px rgba(217, 70, 239, 0.4)",
-                      }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={
+                        !isRegistered
+                          ? {
+                              scale: 1.02,
+                              boxShadow: "0 0 40px rgba(217, 70, 239, 0.4)",
+                            }
+                          : {}
+                      }
+                      whileTap={!isRegistered ? { scale: 0.98 } : {}}
                       onClick={handleRegister}
-                      disabled={registering}
+                      disabled={registering || isRegistered}
                       className={cn(
-                        "relative w-full group overflow-hidden rounded-[2rem] bg-gradient-to-r from-fuchsia-600 to-violet-600 p-[1.5px] transition-all",
-                        fillPercentage > 80 && "animate-pulse",
+                        "relative w-full group overflow-hidden rounded-[2rem] p-[1.5px] transition-all",
+                        isRegistered
+                          ? "bg-emerald-500/50"
+                          : "bg-gradient-to-r from-fuchsia-600 to-violet-600",
+                        !isRegistered && fillPercentage > 80 && "animate-pulse",
                       )}
                     >
-                      <div className="relative bg-black group-hover:bg-transparent transition-all py-6 rounded-[1.9rem] flex items-center justify-center gap-3">
+                      <div
+                        className={cn(
+                          "relative transition-all py-6 rounded-[1.9rem] flex items-center justify-center gap-3",
+                          isRegistered
+                            ? "bg-emerald-950/20"
+                            : "bg-black group-hover:bg-transparent",
+                        )}
+                      >
                         {registering ? (
                           <div className="w-6 h-6 border-t-2 border-white rounded-full animate-spin" />
+                        ) : isRegistered ? (
+                          <>
+                            <Activity className="w-4 h-4 text-emerald-400" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-emerald-400">
+                              Registered!
+                            </span>
+                          </>
                         ) : (
                           <>
                             <Zap className="w-4 h-4 text-fuchsia-400 group-hover:text-white" />
@@ -448,28 +595,51 @@ const EventDetails = () => {
               </div>
 
               {/* SOCIAL PROOF & URGENCY (PHASE 3) */}
-              <div className="p-8 bg-white/[0.02] backdrop-blur-2xl rounded-[3rem] border border-white/10 space-y-8">
+              <div className="p-8 bg-slate-950/80 backdrop-blur-2xl rounded-[3rem] border border-white/20 space-y-8">
                 {/* Facepile + Count */}
                 <div className="flex flex-col items-center gap-4">
                   <div className="flex -space-x-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="w-10 h-10 rounded-full border-2 border-slate-950 overflow-hidden ring-4 ring-white/5"
-                      >
-                        <img
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Friend${i}`}
-                          className="w-full h-full object-cover"
-                        />
+                    {publicRegs.recentNames.length > 0 ? (
+                      publicRegs.recentNames.slice(0, 4).map((name, i) => (
+                        <div
+                          key={i}
+                          className="w-10 h-10 rounded-full border-2 border-slate-950 overflow-hidden ring-4 ring-white/5 bg-slate-900"
+                        >
+                          <img
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`}
+                            className="w-full h-full object-cover"
+                            alt={name}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-900 flex items-center justify-center text-[10px] font-black ring-4 ring-white/5">
+                        <Ticket size={16} />
                       </div>
-                    ))}
-                    <div className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-900 flex items-center justify-center text-[10px] font-black ring-4 ring-white/5">
-                      +47
-                    </div>
+                    )}
+                    {publicRegs.totalCount > 4 && (
+                      <div className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-900 flex items-center justify-center text-[10px] font-black ring-4 ring-white/5 text-fuchsia-400">
+                        +{publicRegs.totalCount - 4}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <span className="text-white">Ahmad, Sarah,</span> and 47
-                    others are going
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                    {publicRegs.totalCount > 0 ? (
+                      <>
+                        <span className="text-white">
+                          {publicRegs.recentNames
+                            .slice(0, 2)
+                            .map((n) => n.split(" ")[0])
+                            .join(", ")}
+                        </span>
+                        {publicRegs.totalCount > 2 && (
+                          <> and {publicRegs.totalCount - 2} others</>
+                        )}
+                        {" are going"}
+                      </>
+                    ) : (
+                      "Be the first to secure a spot!"
+                    )}
                   </p>
                 </div>
 
@@ -488,7 +658,7 @@ const EventDetails = () => {
                       {fillPercentage}% Filled
                     </p>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden border border-white/10">
                     <motion.div
                       initial={{ width: 0 }}
                       whileInView={{ width: `${fillPercentage}%` }}
@@ -511,7 +681,7 @@ const EventDetails = () => {
               </div>
 
               {/* HOST CARD */}
-              <div className="p-6 bg-white/[0.01] hover:bg-white/[0.04] transition-all border border-white/5 rounded-[2.5rem] flex items-center gap-5 group cursor-pointer">
+              <div className="p-6 bg-slate-950/60 hover:bg-slate-900/80 transition-all border border-white/10 rounded-[2.5rem] flex items-center gap-5 group cursor-pointer">
                 <div className="w-14 h-14 rounded-2xl bg-black/40 border border-white/10 p-1">
                   <img
                     src={

@@ -4,6 +4,7 @@ const Registration = require('../models/registration');
 const Venue = require('../models/venue');
 const AuditLog = require('../models/auditLog');
 const Category = require('../models/category');
+const Notification = require('../models/notification');
 
 /**
  * Admin Controller
@@ -275,6 +276,13 @@ exports.approveEvent = async (req, res) => {
     );
 
     if (event) {
+      // Create notification
+      await Notification.create({
+        user_id: event.organizer_id,
+        message: `Your event "${event.title}" has been approved!`,
+        type: 'success'
+      });
+
       await AuditLog.create({
         admin_id: req.user.id,
         action: 'APPROVE_EVENT',
@@ -303,20 +311,31 @@ exports.approveEvent = async (req, res) => {
 exports.rejectEvent = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
 
     const event = await Event.findByIdAndUpdate(
       id,
-      { status: 'rejected' },
+      { 
+        status: 'rejected',
+        rejection_reason: reason 
+      },
       { new: true }
     );
 
     if (event) {
+      // Create notification
+      await Notification.create({
+        user_id: event.organizer_id,
+        message: `Your event "${event.title}" has been rejected. Reason: ${reason || 'No reason provided'}`,
+        type: 'alert'
+      });
+
       await AuditLog.create({
         admin_id: req.user.id,
         action: 'REJECT_EVENT',
         target_type: 'Event',
         target_id: event._id,
-        details: { title: event.title },
+        details: { title: event.title, reason },
         ip_address: req.ip
       });
     }
@@ -366,6 +385,13 @@ exports.approveOrganizer = async (req, res) => {
     ).select('-password');
 
     if (user) {
+      // Create notification
+      await Notification.create({
+        user_id: user._id,
+        message: 'Your request to become an organizer has been approved!',
+        type: 'success'
+      });
+
       await AuditLog.create({
         admin_id: req.user.id,
         action: 'APPROVE_ORGANIZER',
@@ -394,6 +420,7 @@ exports.approveOrganizer = async (req, res) => {
 exports.rejectOrganizer = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
 
     const user = await User.findByIdAndUpdate(
       id,
@@ -402,12 +429,19 @@ exports.rejectOrganizer = async (req, res) => {
     ).select('-password');
 
     if (user) {
+      // Create notification (primary way to inform user of rejection reason)
+      await Notification.create({
+        user_id: user._id,
+        message: `Your request to become an organizer has been rejected. Reason: ${reason || 'No reason provided'}`,
+        type: 'alert'
+      });
+
       await AuditLog.create({
         admin_id: req.user.id,
         action: 'REJECT_ORGANIZER',
         target_type: 'User',
         target_id: user._id,
-        details: { email: user.email },
+        details: { email: user.email, reason },
         ip_address: req.ip
       });
     }
@@ -964,7 +998,7 @@ exports.deleteCategory = async (req, res) => {
 
 // ==================== NOTIFICATION MANAGEMENT ====================
 
-const Notification = require('../models/notification');
+// Notification model already imported at top
 
 /**
  * Get System Notifications

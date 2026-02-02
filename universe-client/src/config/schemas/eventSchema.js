@@ -37,15 +37,13 @@ export const eventSchema = {
           label: "Category",
           type: "select",
           options: [
-            "Music",
-            "Technology",
-            "Art",
-            "Sports",
-            "Education",
-            "Networking",
-            "Gaming",
-            "Science",
+            "Academic",
+            "Creative",
+            "Lifestyle",
+            "Community",
+            "Leadership",
           ],
+          required: true,
           width: "half"
         },
         {
@@ -55,6 +53,16 @@ export const eventSchema = {
           placeholder: "e.g. innovation, web3, future (comma separated)",
           width: "half",
           icon: Hash
+        },
+        {
+          name: "community_id",
+          label: "Host Organization",
+          type: "select",
+          options: [], // Will be populated dynamically in component
+          required: true,
+          width: "full",
+          icon: Users,
+          note: "Select which club/association is hosting this event."
         },
         {
           name: "description",
@@ -151,6 +159,28 @@ export const eventSchema = {
           icon: DollarSign,
           note: "Set to 0 for Free Entry.",
         },
+        {
+          name: "target_audience",
+          label: "Target Audience",
+          type: "select",
+          options: [
+            "All Students",
+            "FPM Students",
+            "FiTA Students",
+            "FSKM Students",
+            "College Jasmine",
+            "Final Year Students",
+          ],
+          width: "half",
+        },
+        {
+          name: "merit_points",
+          label: "Merit Points Awarded",
+          type: "number",
+          placeholder: "0",
+          width: "half",
+          note: "Points credited to attendees upon check-in.",
+        },
       ],
     },
     {
@@ -173,6 +203,7 @@ export const eventSchema = {
           type: "file",
           accept: ".pdf",
           width: "full",
+          required: true,
           note: "Upload detailed proposal for admin approval."
         },
       ],

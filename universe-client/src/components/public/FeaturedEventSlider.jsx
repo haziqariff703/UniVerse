@@ -228,7 +228,11 @@ const FeaturedEventSlider = ({ events, user, isSmall = false }) => {
                         )}
                       >
                         <span className="relative z-10">
-                          {isSmall ? "Details" : "Register Interest"}
+                          {isSmall
+                            ? "Details"
+                            : currentEvent.isRegistered
+                              ? "You're Going"
+                              : "Register Interest"}
                         </span>
                         <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
                       </button>

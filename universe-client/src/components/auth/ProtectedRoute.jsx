@@ -1,4 +1,3 @@
-import React from "react";
 import { Navigate } from "react-router-dom";
 
 /**
@@ -17,13 +16,21 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Logged in, but role not allowed
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to a sensible default based on their actual role
-    if (user.role === "admin") {
-      return <Navigate to="/admin/dashboard" replace />;
+  // Logged in, check role-based access
+  if (allowedRoles) {
+    const hasAllowedRole = allowedRoles.includes(user.role);
+
+    // Special case: users with is_organizer_approved can access "organizer" routes
+    const isApprovedOrganizer =
+      allowedRoles.includes("organizer") && user.is_organizer_approved;
+
+    if (!hasAllowedRole && !isApprovedOrganizer) {
+      // Redirect to a sensible default based on their actual role
+      if (user.role === "admin") {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      return <Navigate to="/" replace />;
     }
-    return <Navigate to="/" replace />;
   }
 
   return children;

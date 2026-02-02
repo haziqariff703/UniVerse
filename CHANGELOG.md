@@ -23,23 +23,104 @@ All notable changes to this project will be documented in this file.
   - **Chronological Logic**: Grouped alerts by "Today", "Yesterday", and "Older" for better cognitive load management.
   - **Hero HUD**: Added a minimalist glass tab switcher for "All" vs "Unread" filtering.
 
+## [2026-02-02]
+
+### Added
+
+- **Enhanced Event Roadmap Tooltips**: Redesigned the "Schedule Overview" tooltips with a richer UI, including category badges, correct ticket pricing (RM vs FREE), attendee capacity tracking, and merit points display.
+- **Organizer Finance & Revenue Dashboard**: Launched a real-time financial tracking center for organizers to monitor revenue from paid events.
+- **Financial Analytics Engine**: Implemented backend logic to calculate total revenue, ticket sales volume, and average ticket price using live registration data.
+- **Revenue Performance Tracking**: Integrated monthly performance charts showing revenue trends and registration growth.
+- **Transaction Explorer & Export**: Created a detailed transaction history modal with CSV export capabilities for financial reporting.
+- **Dynamic KPI Growth Trends**: Enhanced finance cards to display real-time month-over-month growth percentages calculated from live registration data.
+- **Insight Panel**: Added a registration trend insight card with a mini bar chart visualization showing recent activity trends.
+- **Recent Activity Feed**: Integrated a live activity stream showing the latest registrations across all organizer events with relative timestamps.
+- **MyEvents Command Center Enhancement**: Upgraded `DashboardStats.jsx` to fetch real-time analytics including dynamic growth trends for Total Events, Total Attendees, Monthly Growth, and Active Venues.
+- **Live Insights Panel**: Updated `InsightsPanel.jsx` to display real-time registration trends, dynamic sparkline charts, and the 5 most recent registration activities sourced from backend data.
+- **Event-Specific Analytics API**: Created `/api/events/:id/analytics` endpoint returning event-specific registration trends (7-day chart), combined activity feed (registrations + audit logs), and insight summaries.
+- **Context-Aware InsightsPanel**: Enhanced `InsightsPanel` component to accept an `eventId` prop, displaying event-specific data when viewing an individual EventDashboard.
+- **Interactive Activity Log**: Implemented row selection, bulk export, and a high-fidelity "Snapshot Viewer" modal for detailed audit trail analysis. Added toast notifications for user interactions.
+- **Extended Audit Log Model**: Added organizer actions (`CREATE_EVENT`, `UPDATE_EVENT`, `CHECKIN_ATTENDEE`, `CANCEL_REGISTRATION`) to enable event-level audit tracking.
+- **Organizer Activity Logs API**: Created `GET /api/audit/organizer` endpoint that fetches combined audit logs and registrations for an organizer's events, with support for eventId filtering, search, date range, and pagination.
+- **Real-time Activity Log UI**: Connected `ActivityLog.jsx` to the backend, replacing mock data with live audit logs and registrations. Added working search, date filters, pagination, CSV export, and dynamic KPI stats.
+- **Organizer Analytics & Feedback Explorer**: Implemented real-time analytics for organizers, including KPI cards (Total Reviews, Avg Rating, Sentiment), rating distribution charts, and a "Feedback Explorer" modal to view and filter all reviews by specific events.
+- **Venue & Event Fetching**: Corrected API parsing for Venues and Events to handle array responses directly, ensuring dropdowns and the roadmap are correctly populated.
+- **Category Intelligence Analytics**: Implemented strategic analytics by event category.
+  - **Backend**: Created `getCategoryIntelligence` endpoint aggregating revenue, attendance, ratings, and sentiment per category.
+  - **Analytics Page Overhaul**: Standardized layout with aligned cards for Sentiment, Ratings, and Category Matrix. Integrated Strategic Insights into a unified high-density grid.
+  - **Finance Page Refinement**: Simplified view by removing redundant activity logs and registration trends, elevating "Revenue by Category" to a primary position below main performance charts.
+- **Interactive Event Roadmap**: Added manual schedule management to the organizer dashboard. Organizers can now add, edit, and clear schedule items.
+- **Dynamic Task Management**: Implemented a real-time to-do list module on the dashboard with add/toggle/delete functionality and backend persistence.
+- **Project Knowledge Base**: Created `knowledge.md` to document strategic insights and technical logic for academic/professional reporting.
+- **Community Leadership Visibility**: Implemented automatic "Viewer" access for community leaders (AJK, President, Secretary, Treasurer, Committee) to see all events organized under their community.
+  - **New Helper Function**: Created `getAccessibleEventIds(userId)` in `eventController.js` to unify access logic across ownership, crew membership, and community leadership.
+  - **Updated Endpoints**: `getOrganizerFinanceStats`, `getOrganizerReviews`, `getCategoryIntelligence`, `getOrganizerTransactions` now use the unified helper for consistent visibility.
+
+### Changed
+
+- **Backend Event Filtering**: Updated the `getAllEvents` controller to support `status=all`, allowing organizers to see all scheduled events (including pending ones) on the roadmap.
+- **Frontend Fetch Strategy**: Switched to the public `/api/venues` endpoint for better consistency across roles.
+
 ## [2026-02-01]
 
-### Added
+### Community-Led Event Management
 
-- **Cinema-Grade News Hub (v1)**:
-  - **Immersive Hero**: Implemented a full-width auto-playing carousel with active fuchsia progress bar.
-  - **Bento Feed**: Designed an asymmetrical grid layout highlighting feature stories alongside quick updates.
-  - **Glass Navigation**: Added integrated filter tabs ("All Signals", "Campus Alerts", etc.).
-  - **Global Nav**: Added direct "News" and "My Bookings" links to the main navbar for quick access.
-
-- **News Hub Refinement (v13 Final)**:
-  - **Hero UI**: Centered text with `backdrop-blur-md` pill for improved readability against lighter gradients.
-  - **Unified Sidebar**: Grouped "Quick Updates" into a single unified glass container; compressed Calendar widget.
-  - **Terminology Standard**: Updated to "Block 7", "Campus Calendar", and "Read Full Article".
-  - **Visuals**: Enforced `Geist Mono` for all metadata and `Clash Display` for headers.
+- **Changed**: Transitioned from individual organizer model to community-led association model (all AJKs/Presidents of a club can now manage events and workforce collectively).
+- **Added**: `community_id` to `Event` model and schema.
+- **Added**: Backend endpoint `/api/communities/my-communities` to fetch authorized associations.
+- **Improved**: `Workforce` page now supports management across multiple associations.
+- **Fixed**: Authorization checks in `updateEvent` and `getEventRegistrations` to support community-wide permissions.
+- **Changed**: Removed unused 'motion' and 'user' variables to resolve lint warnings.
 
 ### Added
+
+- **Real Registration Flow Implementation**:
+  - **End-to-End Persistence**: Replaced mocked registration logic in `EventDetails.jsx` and `EventCard.jsx` with real API calls to `/api/registrations`.
+  - **State Synchronization**: Implemented registration fetching in `Events.jsx` to ensure "You're Going" badges reflect actual database state.
+  - **Auth Integration**: Secured registration endpoints with Bearer token authentication from `localStorage`.
+  - **Dynamic Capacity Updates**: Added automatic attendee count re-fetching after successful registration.
+
+### Added
+
+- **Community & Workforce Management System**:
+  - **Backend Infrastructure**: Created `Community` and `CommunityMember` models to handle organization data and recruitment workflows.
+  - **Recruitment Engine**: Implemented `/api/communities` endpoints for fetching clubs, applying for membership, and managing member statuses (Applied, Interviewing, Approved).
+  - **Dual-Role Automation**: Integrated logic to automatically approve students as organizers once they are accepted into a community committee.
+  - **Live Data Integration**: Refactored `Communities.jsx` to fetch and display real-time organization data and stats.
+  - **Workforce Dashboard**: Developed a full recruitment Command Center in `Workforce.jsx` featuring:
+    - **Applicants Queue**: Real-time management of student applications with "Set Interview" capability.
+    - **Organization Council**: High-impact UI cards for Faculty Advisor and Community President.
+    - **Team Roster**: Centralized management of approved committee (AJK) members.
+  - **Dynamic Navigation**: Updated `StudentSidebar` to conditionally reveal the "Organizer Suite" for approved student leaders.
+
+### Fixed
+
+- **Real-time Social Proof**: Implemented public attendee API and wired it to `EventDetails.jsx` to show actual registration names and counts.
+- **Student Merit Progress**: Integrated the `Events` dashboard with real-time student merit scores and progress tracking.
+- **UI Refinement**: Removed solid black backgrounds from the Event Details page to allow global background effects to show through.
+- **Mocked Registration Discrepancy**: Resolved the issue where bookings were "saved" in local session but were invisible in "My Bookings" and the database.
+- **Frontend Syntax & Imports**: Cleaned up multiple parsing errors and unused/missing imports across `Events.jsx`, `EventCard.jsx`, and `EventDetails.jsx`.
+- **Impure Particle Render**: Fixed React purity errors in `EventDetails.jsx` by stabilizing particle generation with `useState`.
+- **JSX Fragment Consistency**: Resolved multiple "Missing Closing Tag" and "Unexpected Token" errors in `VenueManager.jsx`.
+- **Lint Cleanup**: Fixed unused variables (`navigate`, `motion`) and hook dependency warnings in `Workforce.jsx` and `StudentSidebar.jsx`.
+
+### Added
+
+- **Frontend Approval Workflow Integration**:
+  - **Rejection Modals**: Integrated sophisticated `shadcn/ui` Dialog-based rejection modals in `EventApprovals.jsx` and `OrganizerApprovals.jsx`.
+  - **Backend Synchronization**: Seamlessly wired rejection reasons to the backend API.
+- **Student Notification Feed (Real Data)**:
+  - **Live Data Fetching**: Upgraded `Notifications.jsx` from mock signals to real-time backend data fetching (`/api/notifications`).
+  - **Interaction persistence**: Implemented "Mark as Read" and "Mark All as Read" functionality synced with the database.
+  - **Dynamic Chronology**: Added intelligent grouping for notifications (Today, Yesterday, Older) based on actual timestamps.
+- **Administrative Logic**:
+  - **Organizer Approval Workflow**: Implemented backend-to-frontend logic for elevated role transitions and status notifications.
+  - **Event Approval Workflow**: integrated `rejection_reason` storage and display for organizer feedback loops.
+
+### Fixed
+
+- **JSX Structural Integrity**: Resolved critical syntax errors in `OrganizerApprovals.jsx` and `Notifications.jsx` caused by complex layout refactoring.
+- **State Synchronization**: fixed an issue where the administrative rejection button did not correctly trigger the feedback modal.
 
 - **Venues Hub Student Enhancements**: Transformed the Venues page into a "Live Campus Pulse" finder.
   - **Live Status Indicators**: Added real-time "Available", "Busy", and "Closed" status pulses to venue cards.

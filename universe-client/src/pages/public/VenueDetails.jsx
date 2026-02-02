@@ -13,34 +13,11 @@ import {
   Layout,
   Wind,
   CheckCircle2,
-  Speaker,
   Plug,
   PenTool,
   Lightbulb,
 } from "lucide-react";
-import EventCard from "@/components/common/EventCard";
-import { MOCK_VENUES } from "@/data/mockVenues";
-
-const UPCOMING_EVENTS_MOCK = [
-  {
-    id: 101,
-    title: "Annual Tech Symposium",
-    date: "2026-04-12",
-    time: "10:00 AM",
-    category: "Tech",
-    image:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=400",
-  },
-  {
-    id: 102,
-    title: "Classical Music Night",
-    date: "2026-04-20",
-    time: "7:00 PM",
-    category: "Art",
-    image:
-      "https://images.unsplash.com/photo-1507838153414-b4b713384ebd?auto=format&fit=crop&q=80&w=400",
-  },
-];
+import useMalaysiaTime from "@/hooks/useMalaysiaTime";
 
 const getIconForFacility = (facility) => {
   const lower = facility.toLowerCase();
@@ -62,25 +39,135 @@ const VenueDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [venue, setVenue] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const { time: malaysianTime } = useMalaysiaTime();
+
+  const API_BASE = "http://localhost:5000";
 
   useEffect(() => {
-    // Find venue from shared data
-    const foundVenue = MOCK_VENUES.find((v) => v.id === parseInt(id));
-    if (foundVenue) {
-      // Add fake upcoming events for presentation
-      setVenue({ ...foundVenue, upcomingEvents: UPCOMING_EVENTS_MOCK });
+    const storedUser = localStorage.getItem("user");
+    if (storedUser && storedUser !== "undefined") {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchVenue = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/api/venues/${id}`);
+        if (!res.ok) {
+          throw new Error("Venue not found");
+        }
+        const data = await res.json();
+
+        // Fetch upcoming events for this venue
+        const eventsRes = await fetch(`${API_BASE}/api/venues/${id}/events`);
+        let events = [];
+        if (eventsRes.ok) {
+          events = await eventsRes.json();
+        }
+
+        setVenue({
+          ...data,
+          upcomingEvents: events.length > 0 ? events : [], // Use real events or empty
+        });
+      } catch (err) {
+        console.error("Failed to fetch venue:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchVenue();
     }
   }, [id]);
 
-  if (!venue)
+  if (loading)
     return (
-      <div className="min-h-screen pt-28 flex justify-center text-foreground text-xl">
-        Loading Venue...
+      <div className="min-h-screen pt-28 flex flex-col items-center justify-center text-foreground text-xl">
+        <div className="w-16 h-16 border-4 border-fuchsia-500/20 border-t-fuchsia-500 rounded-full animate-spin mb-6" />
+        <p className="animate-pulse">Loading Venue...</p>
+      </div>
+    );
+
+  if (error || !venue)
+    return (
+      <div className="min-h-screen pt-28 flex flex-col items-center justify-center text-foreground text-xl">
+        <p className="text-rose-500 mb-6">{error || "Venue not found"}</p>
+        <button
+          onClick={() => navigate("/venues")}
+          className="px-6 py-2 bg-white text-black rounded-full font-bold text-sm"
+        >
+          Back to Venues
+        </button>
       </div>
     );
 
   const accentGlow =
     venue.glowColor === "cyan" ? "bg-cyan-600/90" : "bg-purple-600/90";
+
+  // --- Live Schedule Logic ---
+  const getScheduleSlots = () => {
+    // Helper to get consistent Malaysia time parts
+    const getMYTimeContext = (dateObj) => {
+      const formatter = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Kuala_Lumpur",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "numeric",
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(dateObj);
+      const d = {};
+      parts.forEach(({ type, value }) => {
+        d[type] = value;
+      });
+      return {
+        dateStr: `${d.year}-${d.month}-${d.day}`, // YYYY-MM-DD
+        hour: parseInt(d.hour),
+      };
+    };
+
+    const nowContext = getMYTimeContext(malaysianTime);
+    const slots = [];
+    const startHour = 8;
+    const endHour = 22;
+
+    // Filter events for "Today" in Malaysia
+    const todayEvents = venue.upcomingEvents.filter((event) => {
+      const d = event.date_time || event.date;
+      if (!d) return false;
+      const eventContext = getMYTimeContext(new Date(d));
+      return eventContext.dateStr === nowContext.dateStr;
+    });
+
+    for (let h = startHour; h <= endHour; h++) {
+      const hourStr = h.toString().padStart(2, "0") + ":00";
+
+      const isBooked = todayEvents.some((event) => {
+        if (!event.date_time) return false;
+
+        const eventDate = new Date(event.date_time);
+        const eventContext = getMYTimeContext(eventDate);
+        const duration = event.duration_minutes || 60;
+        const startH = eventContext.hour;
+        const endH = startH + Math.ceil(duration / 60);
+
+        return h >= startH && h < endH;
+      });
+
+      slots.push({ time: hourStr, status: isBooked ? "Booked" : "Free" });
+    }
+    return slots;
+  };
+
+  const scheduleSlots = getScheduleSlots();
 
   return (
     <div className="min-h-screen pt-6 pb-20 px-4 md:px-6">
@@ -168,7 +255,7 @@ const VenueDetails = () => {
               </div>
             </div>
 
-            {/* 2. Essential Info (New) */}
+            {/* 2. Essential Info (Live Data) */}
             <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-xl">
               <h3 className="text-xl font-clash font-bold text-white mb-6">
                 Essential Info
@@ -178,14 +265,16 @@ const VenueDetails = () => {
                   <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
                     Access Hours
                   </p>
-                  <p className="text-lg font-bold text-white">08:00 - 22:00</p>
+                  <p className="text-lg font-bold text-white">
+                    {venue.accessHours || "08:00 - 22:00"}
+                  </p>
                 </div>
                 <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
                   <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
                     Access Level
                   </p>
                   <p className="text-lg font-bold text-white flex items-center gap-2">
-                    Student ID
+                    {venue.accessLevel || "Student ID"}
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   </p>
                 </div>
@@ -193,7 +282,9 @@ const VenueDetails = () => {
                   <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">
                     Managed By
                   </p>
-                  <p className="text-lg font-bold text-white">HEP Office</p>
+                  <p className="text-lg font-bold text-white">
+                    {venue.managedBy || "HEP Office"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -209,42 +300,35 @@ const VenueDetails = () => {
                   Live Updates
                 </span>
               </div>
+
               {/* Visual Timeline Strip */}
-              <div className="relative h-12 w-full bg-white/5 rounded-xl overflow-hidden flex items-center">
-                {/* Simulated Timeline Blocks */}
-                <div
-                  className="flex-1 h-full bg-emerald-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
-                  title="08:00 - 10:00 (Free)"
-                >
-                  08:00
-                </div>
-                <div
-                  className="flex-[2] h-full bg-rose-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-rose-400 cursor-not-allowed pattern-diagonal-lines"
-                  title="10:00 - 14:00 (Booked)"
-                >
-                  Booked
-                </div>
-                <div
-                  className="flex-1 h-full bg-emerald-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
-                  title="14:00 - 16:00 (Free)"
-                >
-                  14:00
-                </div>
-                <div
-                  className="flex-[1.5] h-full bg-rose-500/20 border-r border-white/5 flex items-center justify-center text-[10px] text-rose-400 cursor-not-allowed"
-                  title="16:00 - 19:00 (Booked)"
-                >
-                  Booked
-                </div>
-                <div
-                  className="flex-1 h-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
-                  title="19:00 - 21:00 (Free)"
-                >
-                  19:00
-                </div>
+              <div className="w-full bg-white/5 rounded-xl overflow-hidden flex flex-wrap lg:flex-nowrap border border-white/5">
+                {scheduleSlots.map((slot, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex-1 min-w-[3rem] h-12 flex items-center justify-center text-[10px] border-r border-white/5 last:border-r-0 transition-all 
+                        ${
+                          slot.status === "Booked"
+                            ? "bg-rose-500/20 text-rose-400 cursor-not-allowed pattern-diagonal-lines"
+                            : "bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
+                        }`}
+                    title={`${slot.time} - ${slot.status}`}
+                  >
+                    {slot.status === "Booked" ? "BUSY" : slot.time}
+                  </div>
+                ))}
               </div>
+
               <div className="flex justify-between mt-3 text-xs font-mono text-slate-500">
                 <span>08:00</span>
+                <span className="uppercase text-fuchsia-400/50">
+                  Today:{" "}
+                  {malaysianTime.toLocaleDateString("en-MY", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
                 <span>22:00</span>
               </div>
             </div>
@@ -303,34 +387,37 @@ const VenueDetails = () => {
           {/* RIGHT COLUMN (Sticky Sidebar) - Span 4 */}
           <div className="lg:col-span-4 space-y-8 h-full">
             <div className="sticky top-24 space-y-8 max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pr-1">
-              {/* 1. Booking Card (Moved to Top) */}
-              <div
-                className={`glass-panel p-8 rounded-[2.5rem] bg-gradient-to-br transition-all duration-500 ${
-                  venue.glowColor === "cyan"
-                    ? "from-cyan-900/40 to-indigo-900/40 border-cyan-500/20 shadow-cyan-500/10"
-                    : "from-purple-900/40 to-indigo-900/40 border-purple-500/20 shadow-purple-500/10"
-                } border shadow-xl relative overflow-hidden`}
-              >
-                {/* Decorative Blur */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 blur-[50px] rounded-full pointer-events-none" />
+              {/* 1. Booking Card (Restricted Access) */}
+              {user &&
+                (user.is_organizer_approved || user.role === "admin") && (
+                  <div
+                    className={`glass-panel p-8 rounded-[2.5rem] bg-gradient-to-br transition-all duration-500 ${
+                      venue.glowColor === "cyan"
+                        ? "from-cyan-900/40 to-indigo-900/40 border-cyan-500/20 shadow-cyan-500/10"
+                        : "from-purple-900/40 to-indigo-900/40 border-purple-500/20 shadow-purple-500/10"
+                    } border shadow-xl relative overflow-hidden`}
+                  >
+                    {/* Decorative Blur */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 blur-[50px] rounded-full pointer-events-none" />
 
-                <h3 className="text-2xl font-clash font-bold text-white mb-2">
-                  Ready to Organize?
-                </h3>
-                <p className="text-sm text-slate-300 mb-6 leading-relaxed opacity-90">
-                  Secure this venue for your club's next big event. Approval
-                  required from HEP.
-                </p>
-                <button
-                  onClick={() => navigate("/organizer/create-event")}
-                  className="w-full py-4 bg-white text-black rounded-2xl font-bold font-clash transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
-                >
-                  Book This Venue <ArrowRight className="w-4 h-4" />
-                </button>
-                <p className="text-[10px] text-center text-white/40 mt-3 font-mono">
-                  Instant availability check
-                </p>
-              </div>
+                    <h3 className="text-2xl font-clash font-bold text-white mb-2">
+                      Ready to Organize?
+                    </h3>
+                    <p className="text-sm text-slate-300 mb-6 leading-relaxed opacity-90">
+                      Secure this venue for your club's next big event. Approval
+                      required from HEP.
+                    </p>
+                    <button
+                      onClick={() => navigate("/organizer/create-event")}
+                      className="w-full py-4 bg-white text-black rounded-2xl font-bold font-clash transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
+                    >
+                      Book This Venue <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <p className="text-[10px] text-center text-white/40 mt-3 font-mono">
+                      Instant availability check
+                    </p>
+                  </div>
+                )}
 
               {/* 2. Live Events Stack */}
               <div>
@@ -350,13 +437,16 @@ const VenueDetails = () => {
                       className="group relative p-5 rounded-[2rem] bg-black/40 border border-white/10 hover:border-white/20 transition-all"
                     >
                       <div className="absolute top-4 right-4 text-[10px] text-slate-500 font-mono">
-                        {event.date}
+                        {new Date(event.date_time).toLocaleDateString()}
                       </div>
                       <h4 className="text-lg font-bold text-white font-clash mb-1 group-hover:text-fuchsia-400 transition-colors">
                         {event.title}
                       </h4>
                       <p className="text-sm text-slate-400 mb-4">
-                        {event.time}
+                        {new Date(event.date_time).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                       <button className="w-full py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider">
                         RSVP Now

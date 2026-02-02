@@ -11,6 +11,7 @@ const EditEvent = () => {
   const [venues, setVenues] = useState([]);
   const [speakers, setSpeakers] = useState([]);
   const [events, setEvents] = useState([]);
+  const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialData, setInitialData] = useState(null);
 
@@ -20,14 +21,16 @@ const EditEvent = () => {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [eventRes, venuesRes, speakersRes, eventsRes] = await Promise.all(
-          [
+        const [eventRes, venuesRes, speakersRes, eventsRes, communitiesRes] =
+          await Promise.all([
             fetch(`http://localhost:5000/api/events/${id}`, { headers }),
-            fetch("http://localhost:5000/api/admin/venues", { headers }),
-            fetch("http://localhost:5000/api/admin/speakers", { headers }),
+            fetch("http://localhost:5000/api/venues", { headers }),
+            fetch("http://localhost:5000/api/speakers", { headers }),
             fetch("http://localhost:5000/api/events", { headers }),
-          ],
-        );
+            fetch("http://localhost:5000/api/communities/my-communities", {
+              headers,
+            }),
+          ]);
 
         if (eventRes.ok) {
           const eventData = await eventRes.json();
@@ -48,13 +51,15 @@ const EditEvent = () => {
               : [],
             tags: eventData.tags ? eventData.tags.join(", ") : "",
             ticketPrice: eventData.ticket_price, // Schema uses ticketPrice, DB uses ticket_price
+            community_id: eventData.community_id?._id || eventData.community_id,
           };
           setInitialData(formattedData);
         }
 
         if (venuesRes.ok) {
           const data = await venuesRes.json();
-          setVenues(data.venues || []);
+          // Public endpoint returns array directly, admin returns {venues: []}
+          setVenues(Array.isArray(data) ? data : data.venues || []);
         }
         if (speakersRes.ok) {
           const data = await speakersRes.json();
@@ -63,6 +68,10 @@ const EditEvent = () => {
         if (eventsRes.ok) {
           const data = await eventsRes.json();
           setEvents(data.events || []);
+        }
+        if (communitiesRes.ok) {
+          const data = await communitiesRes.json();
+          setCommunities(data || []);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -80,6 +89,9 @@ const EditEvent = () => {
     const submitData = new FormData();
 
     // Append simple fields
+    // Reference fields that need ID extraction
+    const refFields = ["organizer_id", "venue_id", "community_id"];
+
     Object.keys(formData).forEach((key) => {
       if (key === "tags") {
         const tags =
@@ -92,9 +104,11 @@ const EditEvent = () => {
         tags.forEach((tag) => submitData.append("tags[]", tag));
       } else if (key === "speaker_ids") {
         if (Array.isArray(formData.speaker_ids)) {
-          formData.speaker_ids.forEach((sid) =>
-            submitData.append("speaker_ids[]", sid),
-          );
+          formData.speaker_ids.forEach((sid) => {
+            // Extract ID if it's an object
+            const idValue = typeof sid === "object" && sid?._id ? sid._id : sid;
+            submitData.append("speaker_ids[]", idValue);
+          });
         }
       } else if (key === "venue_id" && formData.venue_id === "other") {
         // Skip venue_id if other
@@ -109,7 +123,16 @@ const EditEvent = () => {
         // Only append if it's a new file (File object), not if it's a string URL
         submitData.append(key, formData[key]);
       } else if (key !== "image" && key !== "proposal") {
-        submitData.append(key, formData[key]);
+        let value = formData[key];
+        // Extract ID from populated reference objects
+        if (
+          refFields.includes(key) &&
+          typeof value === "object" &&
+          value?._id
+        ) {
+          value = value._id;
+        }
+        submitData.append(key, value);
       }
     });
 
@@ -138,6 +161,23 @@ const EditEvent = () => {
   const dynamicSchema = {
     ...eventSchema,
     steps: eventSchema.steps.map((step) => {
+      if (step.name === "basics") {
+        return {
+          ...step,
+          fields: step.fields.map((field) => {
+            if (field.name === "community_id") {
+              return {
+                ...field,
+                options: communities.map((c) => ({
+                  label: c.name,
+                  value: c._id,
+                })),
+              };
+            }
+            return field;
+          }),
+        };
+      }
       if (step.name === "schedule") {
         return {
           ...step,

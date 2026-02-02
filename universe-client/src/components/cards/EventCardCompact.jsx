@@ -64,6 +64,14 @@ const EventCardCompact = ({ event }) => {
       {/* Middle: Info Content */}
       <div className="p-5 flex-grow flex flex-col justify-between">
         <div>
+          {event.community_id && (
+            <div className="flex items-center gap-1.5 mb-1.5 opacity-80">
+              <Users size={10} className="text-fuchsia-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400">
+                {event.community_id.name || "Association"}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between items-start mb-2">
             <h3
               className="text-lg font-bold text-white group-hover:text-violet-200 transition-colors line-clamp-1"

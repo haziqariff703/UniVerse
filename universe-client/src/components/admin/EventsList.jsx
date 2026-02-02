@@ -570,6 +570,46 @@ const EventsList = () => {
                   </div>
                 </div>
 
+                {/* Documentation Section */}
+                <div>
+                  <h3 className="text-sm font-bold text-starlight/40 uppercase tracking-wider mb-2">
+                    Required Documentation
+                  </h3>
+                  {selectedEvent.proposal ? (
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                          <FileText size={24} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-400">
+                            Event Proposal.pdf
+                          </p>
+                          <p className="text-xs text-blue-300/60">
+                            Official documentation
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={`http://localhost:5000/${selectedEvent.proposal}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Eye size={16} />
+                        View Document
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center gap-3 text-starlight/40">
+                      <AlertCircle size={20} />
+                      <span className="font-medium">
+                        No documentation available.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Status */}
                 <div>
                   <h3 className="text-sm font-bold text-starlight/40 uppercase tracking-wider mb-2">

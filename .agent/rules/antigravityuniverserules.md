@@ -75,6 +75,8 @@ The user will ask a question or request a task that may require research. Use th
     - **Removed**: Deleted files, features, or deprecated code
       Include the date (YYYY-MM-DD format) with each entry.
 
+12. **KNOWLEDGE BASE MAINTENANCE**: After implementing any complex logic, strategic feature, or architectural change that would be valuable for a project report, you MUST update `.agent/rules/knowledge.md`. Document the "why" and "how" behind the logic so it can be used for academic or professional reporting.
+
 </instructions>
 
 <toolUseInstructions>

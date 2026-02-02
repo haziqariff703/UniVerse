@@ -1,19 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Users, Shield, LayoutGrid, CheckCircle } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  Shield,
+  LayoutGrid,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { EnhancedHoverEffect } from "@/components/ui/enhanced-card-hover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import ClubDetailModal from "@/components/common/ClubDetailModal";
-import { clubDatabase, getAllClubs } from "@/data/clubsData";
+
+const API_BASE = "http://localhost:5000";
 
 const Communities = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClub, setSelectedClub] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [communities, setCommunities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Real Auth Logic
   const [user, setUser] = useState(() => {
@@ -26,29 +36,44 @@ const Communities = () => {
     }
   });
 
-  // Mock Metadata Enrichment (Merit & Friends)
-  const enrichedClubs = useMemo(() => {
-    const all = getAllClubs();
-    return all.map((club, index) => ({
-      ...club,
-      // Use index for deterministic mock data
-      meritYield: index % 2 === 0 ? "High" : "Standard",
-      friends:
-        index === 1 // "casa" (index 1)
-          ? [
-              { id: 101, name: "Ali" },
-              { id: 102, name: "Sarah" },
-              { id: 103, name: "Ahmad" },
-              { id: 104, name: "Tan" },
-            ]
-          : index === 8 // "smf" (index 8 approx)
-            ? [
-                { id: 105, name: "Mei" },
-                { id: 106, name: "Raju" },
-              ]
-            : [],
-    }));
+  useEffect(() => {
+    fetchCommunities();
   }, []);
+
+  const fetchCommunities = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/communities`);
+      const data = await res.json();
+      if (res.ok) {
+        // Map backend model to frontend expected format
+        const mapped = data.map((c) => ({
+          id: c._id,
+          title: c.name,
+          fullName: c.name,
+          tagline: c.tagline,
+          description: c.description,
+          image:
+            c.banner ||
+            c.logo ||
+            "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop",
+          category: c.category,
+          tags: [c.category, "UiTM"],
+          members: c.stats.member_count,
+          founded: c.stats.founded_year,
+          social: {
+            instagram: c.social_links?.instagram || "@uitm",
+            email: c.advisor?.email || "info@uitm.edu.my",
+          },
+          meritYield: c.category === "Academic" ? "High" : "Standard",
+        }));
+        setCommunities(mapped);
+      }
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const placeholders = [
     "Search for 'IMSA' or 'SMF'...",
@@ -85,38 +110,38 @@ const Communities = () => {
     () =>
       user && user.role === "student" && user.memberClubIds
         ? filterClubs(
-            enrichedClubs.filter((c) => user.memberClubIds.includes(c.id)),
+            communities.filter((c) => user.memberClubIds.includes(c.id)),
           )
         : [],
-    [enrichedClubs, searchTerm, user],
+    [communities, searchTerm, user],
   );
 
   const allFiltered = useMemo(
-    () => filterClubs(enrichedClubs),
-    [enrichedClubs, searchTerm],
+    () => filterClubs(communities),
+    [communities, searchTerm],
   );
 
   // Categorized Data
   const filteredAcademic = useMemo(
-    () => filterClubs(enrichedClubs.filter((c) => c.category === "Academic")),
-    [enrichedClubs, searchTerm],
+    () => filterClubs(communities.filter((c) => c.category === "Academic")),
+    [communities, searchTerm],
   );
   const filteredLeadership = useMemo(
-    () => filterClubs(enrichedClubs.filter((c) => c.category === "Leadership")),
-    [enrichedClubs, searchTerm],
+    () => filterClubs(communities.filter((c) => c.category === "Leadership")),
+    [communities, searchTerm],
   );
   const filteredUniformed = useMemo(
-    () => filterClubs(enrichedClubs.filter((c) => c.category === "Uniformed")),
-    [enrichedClubs, searchTerm],
+    () => filterClubs(communities.filter((c) => c.category === "Uniformed")),
+    [communities, searchTerm],
   );
   const filteredJoined = useMemo(
     () =>
       user && user.role === "student" && user.memberClubIds
         ? filterClubs(
-            enrichedClubs.filter((c) => user.memberClubIds.includes(c.id)),
+            communities.filter((c) => user.memberClubIds.includes(c.id)),
           )
         : [],
-    [enrichedClubs, searchTerm, user],
+    [communities, searchTerm, user],
   );
 
   // DEFINED AFTER DATA IS READY

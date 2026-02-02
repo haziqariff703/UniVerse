@@ -128,7 +128,8 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        preferences: user.preferences
+        preferences: user.preferences,
+        is_organizer_approved: user.is_organizer_approved
       }
     });
   } catch (error) {

@@ -14,6 +14,7 @@ const auditRoutes = require("./routes/auditRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const venueRoutes = require("./routes/venueRoutes");
 const speakerRoutes = require("./routes/speakerRoutes");
+const communityRoutes = require("./routes/communityRoutes");
 
 // Middleware
 app.use(cors());
@@ -26,9 +27,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin/audit-logs", auditRoutes);
+app.use("/api/audit", auditRoutes); // Organizer access to activity logs
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/venues", venueRoutes);
 app.use("/api/speakers", speakerRoutes);
+app.use("/api/communities", communityRoutes);
 app.use("/api/crew", require("./routes/crewRoutes"));
 
 // Basic Route for Testing

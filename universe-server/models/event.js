@@ -7,6 +7,10 @@ const eventSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
+  community_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Community'
+  },
   venue_id: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Venue' 
@@ -43,6 +47,10 @@ const eventSchema = new mongoose.Schema({
     type: Number, 
     default: 0 
   },
+  ticket_price: {
+    type: Number,
+    default: 0
+  },
   status: { 
     type: String, 
     enum: ['pending', 'approved', 'rejected', 'Open', 'SoldOut', 'Cancelled'], 
@@ -54,7 +62,46 @@ const eventSchema = new mongoose.Schema({
   },
   proposal: {
     type: String
-  }
+  },
+  rejection_reason: {
+    type: String
+  },
+
+  // Public Display & Filtering
+  category: {
+    type: String,
+    enum: ['Academic', 'Creative', 'Lifestyle', 'Community', 'Leadership'],
+    default: 'Academic'
+  },
+  is_featured: {
+    type: Boolean,
+    default: false
+  },
+  merit_points: {
+    type: Number,
+    default: 0
+  },
+
+  // Targeting / Eligibility
+  target_audience: {
+    type: String,
+    enum: ['All Students', 'FPM Students', 'FiTA Students', 'FSKM Students', 'College Jasmine', 'Final Year Students'],
+    default: 'All Students'
+  },
+
+  // Interactive Management
+  schedule: [{
+    time: { type: String, required: true },
+    title: { type: String, required: true },
+    description: { type: String },
+    speaker_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Speaker' }
+  }],
+  tasks: [{
+    text: { type: String, required: true },
+    completed: { type: Boolean, default: false },
+    priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+    dueDate: { type: Date }
+  }]
 });
 
 module.exports = mongoose.model('Event', eventSchema);

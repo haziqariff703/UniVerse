@@ -103,7 +103,30 @@ const Layout = ({ children }) => {
         setUser(null);
       }
     };
+
     checkUser();
+
+    // Profile sync: fetch latest user data from server if logged in
+    const syncUserProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const latestUser = await res.json();
+          setUser(latestUser);
+          localStorage.setItem("user", JSON.stringify(latestUser));
+        }
+      } catch (err) {
+        console.error("Profile sync error:", err);
+      }
+    };
+
+    syncUserProfile();
+
     window.addEventListener("authChange", checkUser);
     window.addEventListener("storage", checkUser);
     return () => {

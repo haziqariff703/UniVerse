@@ -49,9 +49,10 @@ const VenueEvents = () => {
         const selectedVenue = venueData.venues?.find((v) => v._id === id);
         setVenue(selectedVenue);
 
-        // Fetch events for this venue
+        // Fetch events specific to this venue (including all statuses)
         const eventsRes = await fetch(
-          `http://localhost:5000/api/venues/${id}/events`,
+          `http://localhost:5000/api/venues/${id}/events?status=all`,
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const eventsData = await eventsRes.json();
         setEvents(eventsData || []);
@@ -116,24 +117,37 @@ const VenueEvents = () => {
           <div className="col-span-12 lg:col-span-12">
             <div className="flex flex-col gap-4 mb-8">
               <div className="flex items-center gap-4">
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white m-0">
-                  <DecryptedText
-                    text={venue.name}
-                    speed={80}
-                    sequential={true}
-                  />
-                </h1>
+                <Badge
+                  variant="outline"
+                  className="bg-violet-500/10 text-violet-300 border-violet-500/30 text-[10px] uppercase tracking-widest"
+                >
+                  {venue.type || "Other"}
+                </Badge>
+                {venue.occupancyStatus && (
+                  <Badge
+                    className={`text-[10px] uppercase tracking-widest ${
+                      venue.occupancyStatus === "Available"
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                        : venue.occupancyStatus === "Busy"
+                          ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                          : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    }`}
+                  >
+                    {venue.occupancyStatus}
+                  </Badge>
+                )}
               </div>
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white m-0">
+                <DecryptedText text={venue.name} speed={80} sequential={true} />
+              </h1>
               <p className="text-slate-400 text-lg max-w-2xl">
-                Operational registry and session management for location{" "}
-                <span className="text-white font-mono">
-                  {venue.location_code}
-                </span>
-                .
+                {venue.description ||
+                  `Operational registry and session management for location ${venue.location_code}.`}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 max-w-sm">
+            {/* Primary Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="flex flex-col gap-2 border-l border-white/10 pl-6">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                   Max Attendance
@@ -153,6 +167,89 @@ const VenueEvents = () => {
                   <Clock size={18} className="text-violet-500" />
                   <span className="font-bold text-2xl">{events.length}</span>
                 </div>
+              </div>
+              <div className="flex flex-col gap-2 border-l border-white/10 pl-6">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Access Hours
+                </span>
+                <div className="flex items-center gap-3">
+                  <Activity size={18} className="text-emerald-500" />
+                  <span className="font-bold text-lg">
+                    {venue.accessHours || "08:00 - 22:00"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 border-l border-white/10 pl-6">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Managed By
+                </span>
+                <div className="flex items-center gap-3">
+                  <Layers size={18} className="text-amber-500" />
+                  <span className="font-bold text-lg">
+                    {venue.managedBy || "HEP Office"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Facilities & Best For */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-white/5">
+              {venue.facilities && venue.facilities.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Facilities
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {venue.facilities.map((facility, i) => (
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className="bg-white/5 text-white text-xs border border-white/10 px-3 py-1"
+                      >
+                        {facility}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {venue.bestFor && venue.bestFor.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Best For
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {venue.bestFor.map((use, i) => (
+                      <Badge
+                        key={i}
+                        className="bg-violet-500/10 text-violet-300 text-xs border border-violet-500/20 px-3 py-1"
+                      >
+                        {use}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Access Info */}
+            <div className="flex items-center gap-6 pt-6 mt-6 border-t border-white/5 text-sm text-slate-400">
+              <div className="flex items-center gap-2">
+                <Monitor size={14} className="text-violet-500" />
+                <span>
+                  Access Level:{" "}
+                  <strong className="text-white">
+                    {venue.accessLevel || "Student ID"}
+                  </strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin size={14} className="text-violet-500" />
+                <span>
+                  Location Code:{" "}
+                  <strong className="text-white font-mono">
+                    {venue.location_code}
+                  </strong>
+                </span>
               </div>
             </div>
           </div>

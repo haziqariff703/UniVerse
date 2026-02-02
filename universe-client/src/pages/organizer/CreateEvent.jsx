@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import DynamicSteppedForm from "@/components/forms/DynamicSteppedForm";
 import { eventSchema } from "@/config/schemas/eventSchema";
 import EventRoadmap from "@/components/organizer/EventRoadmap";
@@ -10,6 +11,7 @@ const CreateEvent = () => {
   const [venues, setVenues] = useState([]);
   const [speakers, setSpeakers] = useState([]);
   const [events, setEvents] = useState([]);
+  const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,15 +20,19 @@ const CreateEvent = () => {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [venuesRes, speakersRes, eventsRes] = await Promise.all([
-          fetch("http://localhost:5000/api/admin/venues", { headers }), // Assuming admin venues are accessible
-          fetch("http://localhost:5000/api/admin/speakers", { headers }), // Or separate organizer endpoints
-          fetch("http://localhost:5000/api/events", { headers }), // All events for calendar
-        ]);
+        const [venuesRes, speakersRes, eventsRes, communitiesRes] =
+          await Promise.all([
+            fetch("http://localhost:5000/api/venues", { headers }),
+            fetch("http://localhost:5000/api/speakers", { headers }),
+            fetch("http://localhost:5000/api/events?status=all", { headers }),
+            fetch("http://localhost:5000/api/communities/my-communities", {
+              headers,
+            }),
+          ]);
 
         if (venuesRes.ok) {
           const data = await venuesRes.json();
-          setVenues(data.venues || []);
+          setVenues(data || []);
         }
         if (speakersRes.ok) {
           const data = await speakersRes.json();
@@ -34,7 +40,11 @@ const CreateEvent = () => {
         }
         if (eventsRes.ok) {
           const data = await eventsRes.json();
-          setEvents(data.events || []);
+          setEvents(data || []);
+        }
+        if (communitiesRes.ok) {
+          const data = await communitiesRes.json();
+          setCommunities(data || []);
         }
       } catch (error) {
         console.error("Error fetching creator data:", error);
@@ -47,6 +57,16 @@ const CreateEvent = () => {
   }, []);
 
   const handleCreateEvent = async (formData) => {
+    // Validation: Proposal is mandatory
+    if (!formData.proposal) {
+      toast.error("Proposal Document Required", {
+        description: "You must upload a proposal PDF to publish your event.",
+        duration: 4000,
+        icon: "📄",
+      });
+      throw new Error("Proposal document is required");
+    }
+
     const dateTime = new Date(`${formData.date}T${formData.time}`);
 
     const submitData = new FormData();
@@ -107,6 +127,23 @@ const CreateEvent = () => {
   const dynamicSchema = {
     ...eventSchema,
     steps: eventSchema.steps.map((step) => {
+      if (step.name === "basics") {
+        return {
+          ...step,
+          fields: step.fields.map((field) => {
+            if (field.name === "community_id") {
+              return {
+                ...field,
+                options: communities.map((c) => ({
+                  label: c.name,
+                  value: c._id,
+                })),
+              };
+            }
+            return field;
+          }),
+        };
+      }
       if (step.name === "schedule") {
         return {
           ...step,

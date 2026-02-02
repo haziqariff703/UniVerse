@@ -13,56 +13,97 @@ import { cn } from "@/lib/utils";
 
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [user, setUser] = useState(null);
+  const [signals, setSignals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    fetchNotifications();
   }, []);
 
-  const signalData = [
-    {
-      id: "s1",
-      title: "Registration Confirmed",
-      message:
-        "You have successfully registered for 'Nebula Music Festival'. Your QR code is ready.",
-      type: "success",
-      time: "2 hours ago",
-      group: "Today",
-      isRead: false,
-    },
-    {
-      id: "s2",
-      title: "Event Reminder",
-      message:
-        "The 'Quantum Physics Symposium' is starting in 30 minutes at Mars Campus.",
-      type: "info",
-      time: "30 mins ago",
-      group: "Today",
-      isRead: false,
-    },
-    {
-      id: "s3",
-      title: "Venue Change",
-      message:
-        "The venue for 'Astro-Culinary Workshop' has been changed to Saturn Ring Station.",
-      type: "alert",
-      time: "Yesterday",
-      group: "Yesterday",
-      isRead: true,
-    },
-    {
-      id: "s4",
-      title: "Merit Points Updated",
-      message: "You earned +20 Merit for attending 'Cyber Security Talk'.",
-      type: "success",
-      time: "3 days ago",
-      group: "Older",
-      isRead: true,
-    },
-  ];
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to fetch notifications");
+      const data = await response.json();
 
-  const [signals, setSignals] = useState(signalData);
+      // Process notifications to match UI group/time logic
+      const processed = (data.notifications || []).map((n) => {
+        const date = new Date(n.created_at);
+        const now = new Date();
+        const diffHours = (now - date) / (1000 * 60 * 60);
+
+        let timeLabel = "";
+        let groupLabel = "Older";
+
+        if (diffHours < 1) {
+          timeLabel = `${Math.floor(diffHours * 60)} mins ago`;
+          groupLabel = "Today";
+        } else if (diffHours < 24) {
+          timeLabel = `${Math.floor(diffHours)} hours ago`;
+          groupLabel = "Today";
+        } else if (diffHours < 48) {
+          timeLabel = "Yesterday";
+          groupLabel = "Yesterday";
+        } else {
+          timeLabel = date.toLocaleDateString();
+          groupLabel = "Older";
+        }
+
+        return {
+          id: n._id,
+          title:
+            n.type === "alert"
+              ? "Action Required"
+              : n.type === "success"
+                ? "Success Alert"
+                : "System Information",
+          message: n.message,
+          type: n.type,
+          time: timeLabel,
+          group: groupLabel,
+          isRead: n.read,
+        };
+      });
+
+      setSignals(processed);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch("http://localhost:5000/api/notifications/read-all", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSignals(signals.map((s) => ({ ...s, isRead: true })));
+    } catch (err) {
+      console.error("Failed to mark all read:", err);
+    }
+  };
+
+  const markRead = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSignals(
+        signals.map((s) => (s.id === id ? { ...s, isRead: true } : s)),
+      );
+    } catch (err) {
+      console.error("Failed to mark read:", err);
+    }
+  };
 
   const getIcon = (type) => {
     switch (type) {
@@ -101,10 +142,6 @@ const Notifications = () => {
     Older: filteredSignals.filter((s) => s.group === "Older"),
   };
 
-  const markAllRead = () => {
-    setSignals(signals.map((s) => ({ ...s, isRead: true })));
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -122,11 +159,9 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen pt-12 pb-20 px-6 md:px-12 bg-transparent relative">
-      {/* Background Glow for visibility */}
       <div className="fixed top-0 left-0 right-0 h-[40vh] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none z-0" />
 
       <div className="relative z-10 max-w-5xl mx-auto">
-        {/* HERO HUD */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div>
             <div className="flex items-center gap-4 mb-2">
@@ -146,7 +181,6 @@ const Notifications = () => {
             </h1>
           </div>
 
-          {/* UNIFIED HUD BAR */}
           <div className="flex items-center gap-1 bg-black/60 backdrop-blur-xl border border-white/20 p-1.5 rounded-full shadow-2xl">
             {["all", "unread"].map((tab) => (
               <button
@@ -176,104 +210,130 @@ const Notifications = () => {
           </div>
         </div>
 
-        {/* CHRONOLOGICAL FEED */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-8"
-        >
-          {Object.entries(groupedSignals).map(
-            ([group, groupSignals]) =>
-              groupSignals.length > 0 && (
-                <div key={group}>
-                  <h3 className="text-xs font-mono font-bold text-fuchsia-300/80 uppercase tracking-[0.3em] pl-1 mb-4 flex items-center gap-4">
-                    {group}
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-fuchsia-500/30 to-transparent" />
-                  </h3>
+        {loading ? (
+          <div className="py-24 text-center">
+            <RefreshCw className="w-12 h-12 text-fuchsia-500 mx-auto mb-4 animate-spin" />
+            <p className="text-slate-400 font-mono text-sm uppercase">
+              Syncing Signals...
+            </p>
+          </div>
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-8"
+          >
+            {Object.entries(groupedSignals).map(
+              ([group, groupSignals]) =>
+                groupSignals.length > 0 && (
+                  <div key={group}>
+                    <h3 className="text-xs font-mono font-bold text-fuchsia-300/80 uppercase tracking-[0.3em] pl-1 mb-4 flex items-center gap-4">
+                      {group}
+                      <div className="h-[1px] flex-1 bg-gradient-to-r from-fuchsia-500/30 to-transparent" />
+                    </h3>
 
-                  <div className="grid gap-4">
-                    {groupSignals.map((signal) => (
-                      <motion.div
-                        key={signal.id}
-                        variants={itemVariants}
-                        className={cn(
-                          "group relative flex items-center gap-6 p-5 md:p-6 rounded-[2.5rem] border transition-all duration-300",
-                          !signal.isRead
-                            ? "bg-white/[0.08] border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)] backdrop-blur-xl"
-                            : "bg-black/40 border-white/10 hover:border-white/30 backdrop-blur-md opacity-90 hover:opacity-100",
-                        )}
-                      >
-                        {/* Icon Halo */}
-                        <div className="shrink-0 relative">
-                          <div
-                            className={cn(
-                              "absolute inset-0 opacity-20 blur-xl rounded-full transition-opacity group-hover:opacity-40",
-                              signal.type === "success"
-                                ? "bg-emerald-500"
-                                : signal.type === "alert"
-                                  ? "bg-rose-500"
-                                  : "bg-blue-500",
-                            )}
-                          />
-                          <div className="relative w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
-                            {getIcon(signal.type)}
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                          <div className="flex items-center justify-between gap-4">
-                            <h4
+                    <div className="grid gap-4">
+                      {groupSignals.map((signal) => (
+                        <motion.div
+                          key={signal.id}
+                          variants={itemVariants}
+                          onClick={() => !signal.isRead && markRead(signal.id)}
+                          className={cn(
+                            "group relative flex items-center gap-6 p-5 md:p-6 rounded-[2.5rem] border transition-all duration-300",
+                            !signal.isRead
+                              ? "bg-white/[0.08] border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)] backdrop-blur-xl cursor-pointer"
+                              : "bg-black/40 border-white/10 hover:border-white/30 backdrop-blur-md opacity-90 hover:opacity-100",
+                          )}
+                        >
+                          <div className="shrink-0 relative">
+                            <div
                               className={cn(
-                                "text-lg font-clash font-bold tracking-wide truncate pr-4",
+                                "absolute inset-0 opacity-20 blur-xl rounded-full transition-opacity group-hover:opacity-40",
+                                signal.type === "success"
+                                  ? "bg-emerald-500"
+                                  : signal.type === "alert"
+                                    ? "bg-rose-500"
+                                    : "bg-blue-500",
+                              )}
+                            />
+                            <div className="relative w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
+                              {getIcon(signal.type)}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                            <div className="flex items-center justify-between gap-4">
+                              <h4
+                                className={cn(
+                                  "text-lg font-clash font-bold tracking-wide truncate pr-4",
+                                  !signal.isRead
+                                    ? "text-white drop-shadow-md"
+                                    : "text-slate-300",
+                                )}
+                              >
+                                {signal.title}
+                              </h4>
+                              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest whitespace-nowrap bg-black/30 px-2 py-1 rounded-lg border border-white/5">
+                                {signal.time}
+                              </span>
+                            </div>
+                            <p
+                              className={cn(
+                                "text-sm leading-relaxed truncate pr-8",
                                 !signal.isRead
-                                  ? "text-white drop-shadow-md"
-                                  : "text-slate-300",
+                                  ? "text-slate-200 font-medium"
+                                  : "text-slate-500",
                               )}
                             >
-                              {signal.title}
-                            </h4>
-                            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest whitespace-nowrap bg-black/30 px-2 py-1 rounded-lg border border-white/5">
-                              {signal.time}
-                            </span>
+                              {signal.message}
+                            </p>
                           </div>
-                          <p
-                            className={cn(
-                              "text-sm leading-relaxed truncate pr-8",
-                              !signal.isRead
-                                ? "text-slate-200 font-medium"
-                                : "text-slate-500",
+
+                          <div className="shrink-0 flex items-center justify-center">
+                            {!signal.isRead && (
+                              <div className="w-3 h-3 rounded-full bg-fuchsia-500 shadow-[0_0_15px_#d946ef] animate-pulse" />
                             )}
-                          >
-                            {signal.message}
-                          </p>
-                        </div>
-
-                        {/* Unread Indicator */}
-                        <div className="shrink-0 flex items-center justify-center">
-                          {!signal.isRead && (
-                            <div className="w-3 h-3 rounded-full bg-fuchsia-500 shadow-[0_0_15px_#d946ef] animate-pulse" />
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ),
-          )}
+                ),
+            )}
 
-          {filteredSignals.length === 0 && (
-            <div className="py-24 text-center border border-dashed border-white/20 rounded-[3rem] bg-white/[0.02] backdrop-blur-sm">
-              <Bell className="w-16 h-16 text-slate-700 mx-auto mb-6 opacity-50" />
-              <p className="text-slate-500 font-mono text-sm uppercase tracking-widest">
-                No signals detected in this sector
-              </p>
-            </div>
-          )}
-        </motion.div>
+            {filteredSignals.length === 0 && (
+              <div className="py-24 text-center border border-dashed border-white/20 rounded-[3rem] bg-white/[0.02] backdrop-blur-sm">
+                <Bell className="w-16 h-16 text-slate-700 mx-auto mb-6 opacity-50" />
+                <p className="text-slate-500 font-mono text-sm uppercase tracking-widest">
+                  No signals detected in this sector
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );
 };
+
+// Add helper for spin icon if used
+const RefreshCw = ({ className, size = 24 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+  </svg>
+);
 
 export default Notifications;

@@ -31,9 +31,13 @@ const itemVariants = {
 };
 
 const Venues = () => {
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeVibe, setActiveVibe] = useState(null);
   const [user, setUser] = useState(null);
+
+  const API_BASE = "http://localhost:5000";
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -44,9 +48,25 @@ const Venues = () => {
         console.error("Failed to parse user", e);
       }
     }
+
+    const fetchVenues = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/venues`);
+        if (res.ok) {
+          const data = await res.json();
+          setVenues(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch venues:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVenues();
   }, []);
 
-  const filteredVenues = MOCK_VENUES.filter((venue) => {
+  const filteredVenues = venues.filter((venue) => {
     // 1. Search Logic (Always applies)
     const matchesSearch =
       venue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,21 +172,34 @@ const Venues = () => {
           initial="hidden"
           animate="visible"
         >
-          <AnimatePresence>
-            {filteredVenues.map((venue, idx) => (
-              <motion.div
-                key={venue.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, delay: idx * 0.05 }}
-              >
-                <VenueLandscapeCard venue={venue} index={idx} user={user} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-40 border border-white/5 rounded-[3rem] bg-slate-900/20 backdrop-blur-sm">
+              <div className="w-16 h-16 border-4 border-fuchsia-500/20 border-t-fuchsia-500 rounded-full animate-spin mb-6" />
+              <p className="text-slate-400 font-clash text-lg animate-pulse">
+                Scanning campus frequencies...
+              </p>
+            </div>
+          ) : (
+            <AnimatePresence>
+              {filteredVenues.map((venue, idx) => (
+                <motion.div
+                  key={venue._id || `venue-${idx}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                >
+                  <VenueLandscapeCard
+                    venue={{ ...venue, id: venue._id }}
+                    index={idx}
+                    user={user}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
 
-          {filteredVenues.length === 0 && (
+          {!loading && filteredVenues.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

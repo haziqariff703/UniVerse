@@ -20,6 +20,13 @@ const EventRoadmap = ({ events }) => {
   const calendarEvents = events.map((event) => {
     const isPast = new Date(event.date_time) < new Date();
 
+    // Fix image URL mapping - ensure full path if it's a relative path from the server
+    const imageUrl = event.image
+      ? event.image.startsWith("http")
+        ? event.image
+        : `http://localhost:5000/${event.image}`
+      : null;
+
     return {
       id: event._id,
       title: event.title,
@@ -30,9 +37,13 @@ const EventRoadmap = ({ events }) => {
       extendedProps: {
         location: event.venue_id?.name || event.location || "TBA",
         attendees: event.current_attendees || 0,
-        revenue: (event.current_attendees || 0) * (event.ticketPrice || 0),
+        capacity: event.capacity || 0,
+        ticketPrice: event.ticket_price || 0,
+        category: event.category || "General",
+        meritPoints: event.merit_points || 0,
         status: isPast ? "Completed" : "Upcoming",
-        image: event.image,
+        image: imageUrl,
+        host: event.community_id?.name || "Independent",
       },
       backgroundColor: isPast
         ? "rgba(16, 185, 129, 0.2)"
@@ -43,6 +54,8 @@ const EventRoadmap = ({ events }) => {
   });
 
   const renderEventContent = (eventInfo) => {
+    const props = eventInfo.event.extendedProps;
+
     return (
       <TooltipProvider>
         <Tooltip delayDuration={100}>
@@ -50,7 +63,7 @@ const EventRoadmap = ({ events }) => {
             <div className="w-full h-full p-1 cursor-pointer overflow-hidden text-xs font-semibold truncate flex items-center gap-1">
               <div
                 className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  eventInfo.event.extendedProps.status === "Completed"
+                  props.status === "Completed"
                     ? "bg-emerald-400"
                     : "bg-violet-400"
                 }`}
@@ -59,13 +72,13 @@ const EventRoadmap = ({ events }) => {
             </div>
           </TooltipTrigger>
           <TooltipContent
-            className="bg-[#050505] border border-white/10 p-0 rounded-xl overflow-hidden shadow-2xl w-64"
+            className="bg-[#050505] border border-white/10 p-0 rounded-xl overflow-hidden shadow-2xl w-72"
             sideOffset={5}
           >
-            <div className="relative h-24 bg-white/5">
-              {eventInfo.event.extendedProps.image ? (
+            <div className="relative h-28 bg-white/5">
+              {props.image ? (
                 <img
-                  src={eventInfo.event.extendedProps.image}
+                  src={props.image}
                   alt="Event"
                   className="w-full h-full object-cover opacity-60"
                 />
@@ -74,39 +87,54 @@ const EventRoadmap = ({ events }) => {
                   <Calendar size={32} />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
+
+              <div className="absolute top-2 right-2">
+                <span className="px-2 py-0.5 bg-violet-500/20 border border-violet-500/30 rounded-full text-[9px] font-bold text-violet-300 uppercase tracking-wider backdrop-blur-md">
+                  {props.category}
+                </span>
+              </div>
+
               <div className="absolute bottom-2 left-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-0.5">
-                  {eventInfo.event.extendedProps.status}
+                  {props.status} • {props.host}
                 </p>
                 <h4 className="text-sm font-bold text-white line-clamp-1">
                   {eventInfo.event.title}
                 </h4>
               </div>
             </div>
-            <div className="p-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Clock size={12} className="text-violet-500" />
-                <span>
-                  {eventInfo.event.start.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <MapPin size={12} className="text-violet-500" />
-                <span className="truncate">
-                  {eventInfo.event.extendedProps.location}
-                </span>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-2">
-                <div className="flex items-center gap-1.5 text-xs text-gray-300 font-medium">
-                  <Users size={12} className="text-emerald-500" />
-                  {eventInfo.event.extendedProps.attendees} Guests
+
+            <div className="p-3 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                  <Clock size={12} className="text-violet-500" />
+                  <span>
+                    {eventInfo.event.start.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
-                <div className="text-xs font-bold text-white">
-                  RM {eventInfo.event.extendedProps.revenue.toLocaleString()}
+                <div className="flex items-center gap-2 text-[11px] text-gray-400 justify-end">
+                  <Users size={12} className="text-violet-500" />
+                  <span>
+                    {props.attendees} / {props.capacity} Guests
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                <MapPin size={12} className="text-violet-500" />
+                <span className="truncate">{props.location}</span>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold uppercase tracking-widest">
+                  {props.meritPoints > 0 && `+${props.meritPoints} Merit`}
+                </div>
+                <div className="text-xs font-bold text-white bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                  {props.ticketPrice === 0 ? "FREE" : `RM ${props.ticketPrice}`}
                 </div>
               </div>
             </div>

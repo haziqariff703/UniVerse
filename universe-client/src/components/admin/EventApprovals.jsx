@@ -28,6 +28,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-hot-toast";
 
 /**
  * EventApprovals "Command Center"
@@ -43,6 +52,15 @@ const EventApprovals = ({ onBack }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterCategory, setFilterCategory] = useState("all");
+
+  // Rejection Modal State
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectingEventId, setRejectingEventId] = useState(null);
+
+  // Details Modal State
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const fetchPendingEvents = useCallback(async () => {
     setLoading(true);
@@ -99,26 +117,42 @@ const EventApprovals = ({ onBack }) => {
     }
   };
 
-  const handleReject = async (id) => {
-    setProcessingId(id);
+  const handleReject = async () => {
+    if (!rejectingEventId) return;
+
+    setProcessingId(rejectingEventId);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/events/${id}/reject`,
+        `http://localhost:5000/api/admin/events/${rejectingEventId}/reject`,
         {
           method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reason: rejectionReason }),
         },
       );
 
       if (!response.ok) throw new Error("Failed to reject event");
 
-      setEvents(events.filter((e) => e._id !== id));
+      setEvents(events.filter((e) => e._id !== rejectingEventId));
+      setRejectionModalOpen(false);
+      setRejectionReason("");
+      setRejectingEventId(null);
+      toast.success("Event rejected successfully");
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const openRejectionModal = (id) => {
+    setRejectingEventId(id);
+    setRejectionModalOpen(true);
   };
 
   const formatDate = (date) => {
@@ -494,6 +528,24 @@ const EventApprovals = ({ onBack }) => {
                               </DropdownMenuLabel>
                               <DropdownMenuSeparator className="bg-white/5" />
 
+                              {/* View Details Action */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedEvent(event);
+                                  setDetailsModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 group-hover:bg-violet-500 group-hover:text-white transition-all">
+                                  <Eye size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  View Details
+                                </span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator className="bg-white/5" />
+
                               {/* Proposal Action */}
                               <DropdownMenuItem
                                 disabled={!event.proposal}
@@ -543,7 +595,7 @@ const EventApprovals = ({ onBack }) => {
 
                               {/* Rejection Action */}
                               <DropdownMenuItem
-                                onClick={() => handleReject(event._id)}
+                                onClick={() => openRejectionModal(event._id)}
                                 disabled={processingId === event._id}
                                 className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-500/10 cursor-pointer rounded-lg transition-colors group"
                               >
@@ -563,6 +615,224 @@ const EventApprovals = ({ onBack }) => {
                 </tbody>
               </table>
             </div>
+
+            {/* Event Details Modal */}
+            <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
+              <DialogContent className="glass-panel border-white/10 text-starlight max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold flex flex-col gap-2">
+                    <span className="text-sm font-medium text-starlight/60 uppercase tracking-widest">
+                      Event Proposal Review
+                    </span>
+                    {selectedEvent?.title}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {selectedEvent && (
+                  <div className="space-y-6 py-4">
+                    {/* Media Cover */}
+                    {selectedEvent.image && (
+                      <div className="w-full h-48 rounded-xl overflow-hidden border border-white/10">
+                        <img
+                          src={`http://localhost:5000/${selectedEvent.image}`}
+                          alt="Event Cover"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {/* Meta Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                        <span className="text-xs text-starlight/40 uppercase tracking-wider font-bold">
+                          Organizer
+                        </span>
+                        <p className="font-bold text-lg">
+                          {selectedEvent.organizer_id?.name}
+                        </p>
+                        <p className="text-xs text-starlight/60">
+                          {selectedEvent.organizer_id?.email}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                        <span className="text-xs text-starlight/40 uppercase tracking-wider font-bold">
+                          Logistics
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Calendar size={14} className="text-violet-400" />
+                          <span className="font-medium">
+                            {formatDate(selectedEvent.date_time)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock size={14} className="text-amber-400" />
+                          <span className="font-medium">
+                            {formatTime(selectedEvent.date_time)} (
+                            {selectedEvent.duration_minutes}m)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Info */}
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-starlight/60 uppercase tracking-wider mb-2">
+                          Venue & Capacity
+                        </h4>
+                        <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                          <MapPin className="text-cyan-400" size={24} />
+                          <div>
+                            <p className="font-bold text-white">
+                              {selectedEvent.venue_id?.name || "No Venue"}
+                            </p>
+                            <p className="text-xs text-starlight/60">
+                              {selectedEvent.location || "Manual Location"}
+                            </p>
+                          </div>
+                          <div className="ml-auto text-right">
+                            <p className="text-2xl font-bold text-starlight">
+                              {selectedEvent.capacity}
+                            </p>
+                            <p className="text-xs text-starlight/40 uppercase tracking-wider">
+                              Pax
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-bold text-starlight/60 uppercase tracking-wider mb-2">
+                          Description
+                        </h4>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-sm text-starlight/80 leading-relaxed whitespace-pre-wrap">
+                          {selectedEvent.description}
+                        </div>
+                      </div>
+
+                      {/* Documentation Section */}
+                      <div>
+                        <h4 className="text-sm font-bold text-starlight/60 uppercase tracking-wider mb-2">
+                          Required Documentation
+                        </h4>
+                        {selectedEvent.proposal ? (
+                          <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                                <FileText size={24} />
+                              </div>
+                              <div>
+                                <p className="font-bold text-blue-400">
+                                  Event Proposal.pdf
+                                </p>
+                                <p className="text-xs text-blue-300/60">
+                                  Review this document before approval
+                                </p>
+                              </div>
+                            </div>
+                            <a
+                              href={`http://localhost:5000/${selectedEvent.proposal}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                            >
+                              <Eye size={16} />
+                              View Document
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-400">
+                            <AlertTriangle size={20} />
+                            <span className="font-medium">
+                              No documentation uploaded.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <DialogFooter className="gap-2">
+                  <button
+                    onClick={() => setDetailsModalOpen(false)}
+                    className="px-6 py-2 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Close
+                  </button>
+                  {selectedEvent && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          openRejectionModal(selectedEvent._id);
+                          setDetailsModalOpen(false);
+                        }}
+                        className="px-6 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white text-sm font-bold transition-all"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleApprove(selectedEvent._id);
+                          setDetailsModalOpen(false);
+                        }}
+                        className="px-6 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Rejection Modal */}
+            <Dialog
+              open={rejectionModalOpen}
+              onOpenChange={setRejectionModalOpen}
+            >
+              <DialogContent className="glass-panel border-white/10 text-starlight max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                    <AlertTriangle className="text-rose-400" size={20} />
+                    Event Rejection Feedback
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                  <p className="text-sm text-starlight/60 leading-relaxed">
+                    Please provide a reason for rejecting this event proposal.
+                    This feedback will be sent as a notification to the
+                    organizer.
+                  </p>
+                  <Textarea
+                    placeholder="e.g., Missing security plan, venue conflict, etc."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="bg-black/40 border-white/5 min-h-[120px] focus:border-rose-500/50"
+                  />
+                </div>
+                <DialogFooter className="gap-3">
+                  <button
+                    onClick={() => setRejectionModalOpen(false)}
+                    className="px-6 py-2 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 transition-all"
+                  >
+                    Wait, Cancel
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={!rejectionReason.trim() || processingId}
+                    className="px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold transition-all shadow-lg hover:shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {processingId ? (
+                      <RefreshCw size={14} className="animate-spin" />
+                    ) : (
+                      <X size={14} />
+                    )}
+                    Confirm Rejection
+                  </button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Pagination */}
             <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">

@@ -26,6 +26,15 @@ const EventDashboard = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Get current user for permission checks
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })();
+
   // Stats for the "Pills"
   const totalRegistered = registrations.length;
   // Calculate mock revenue for demo: $50 per person if price undefined
@@ -65,6 +74,49 @@ const EventDashboard = () => {
     fetchDashboardData();
   }, [id]);
 
+  const updateSchedule = async (newSchedule) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/events/${id}/schedule`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ schedule: newSchedule }),
+        },
+      );
+      if (res.ok) {
+        const updatedSchedule = await res.json();
+        setEvent((prev) => ({ ...prev, schedule: updatedSchedule }));
+      }
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+    }
+  };
+
+  const updateTasks = async (newTasks) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/events/${id}/tasks`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tasks: newTasks }),
+      });
+      if (res.ok) {
+        const updatedTasks = await res.json();
+        setEvent((prev) => ({ ...prev, tasks: updatedTasks }));
+      }
+    } catch (error) {
+      console.error("Error updating tasks:", error);
+    }
+  };
+
   const recentRegistrations = registrations.slice(0, 10); // Only show top 10
 
   if (loading) {
@@ -82,12 +134,16 @@ const EventDashboard = () => {
       {/* Top Bar / Breadcrumb */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <Link
-            to={`/organizer/activity-log?eventId=${id}`}
-            className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-          >
-            <Clock size={16} /> Audit Log
-          </Link>
+          {/* Only show Audit Log to Owner or Admin */}
+          {(user?._id === event?.organizer_id?._id ||
+            user?.role === "admin") && (
+            <Link
+              to={`/organizer/activity-log?eventId=${id}`}
+              className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <Clock size={16} /> Audit Log
+            </Link>
+          )}
           <Link
             to={`/organizer/event/${id}/scan`}
             className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-violet-50 transition-colors"
@@ -319,14 +375,17 @@ const EventDashboard = () => {
 
         {/* Right Col - Widgets (1/3 width) */}
         <div className="space-y-6">
-          <InsightsPanel />
+          <InsightsPanel eventId={id} event={event} user={user} />
         </div>
       </div>
 
       {/* Bottom Tools Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-        <EventTimeline />
-        <EventTodoList />
+        <EventTimeline
+          schedule={event.schedule || []}
+          onUpdate={updateSchedule}
+        />
+        <EventTodoList tasks={event.tasks || []} onUpdate={updateTasks} />
       </div>
     </div>
   );

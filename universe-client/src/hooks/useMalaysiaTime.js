@@ -5,17 +5,7 @@ const useMalaysiaTime = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      // Create a date object for the current time
-      const now = new Date();
-      
-      // Get UTC time in ms
-      const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
-      
-      // Malaysia is GMT +8
-      const malaysiaOffset = 8 * 60 * 60 * 1000;
-      const malaysiaTime = new Date(utcTime + malaysiaOffset);
-      
-      setTime(malaysiaTime);
+      setTime(new Date());
     }, 1000);
 
     return () => clearInterval(timer);

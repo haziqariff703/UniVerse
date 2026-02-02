@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -5,13 +6,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Instagram, Mail, Calendar, Users } from "lucide-react";
+import {
+  X,
+  Instagram,
+  Mail,
+  Calendar,
+  Users,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { getTagColor } from "@/data/clubsData";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = "http://localhost:5000";
+
 const ClubDetailModal = ({ club, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const [applying, setApplying] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   if (!club) return null;
 
@@ -23,6 +36,31 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
   const handleContactAdmin = () => {
     // TODO: Implement contact admin functionality
     window.location.href = `mailto:${club.social.email}?subject=Inquiry about ${club.title}`;
+  };
+
+  const handleApply = async () => {
+    setApplying(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/communities/${club.id}/apply`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setApplied(true);
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to apply.");
+      }
+    } catch (err) {
+      console.error("Apply error:", err);
+      alert("Server error. Please try again later.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -135,33 +173,56 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col gap-3 pt-4">
             <button
-              onClick={handleContactAdmin}
-              className="flex-1 py-3 px-4
-                bg-white/5 hover:bg-white/10
-                border border-white/10 hover:border-white/20
-                rounded-lg
-                text-sm font-medium
-                text-foreground hover:text-white
-                transition-all duration-300"
+              onClick={handleApply}
+              disabled={applying || applied}
+              className={cn(
+                "w-full py-3 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2",
+                applied
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "bg-fuchsia-600 hover:bg-fuchsia-700 text-white shadow-[0_0_20px_rgba(192,38,211,0.3)]",
+              )}
             >
-              Contact Admin
+              {applying ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : applied ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Application Submitted
+                </>
+              ) : (
+                "Apply for Committee (Workforce) →"
+              )}
             </button>
-            <button
-              onClick={handleExploreEvents}
-              className="flex-1 py-3 px-4
-                bg-gradient-to-r from-purple-600 to-cyan-600
-                hover:from-purple-700 hover:to-cyan-700
-                rounded-lg
-                text-sm font-medium
-                text-white
-                transition-all duration-300
-                shadow-[0_0_20px_rgba(168,85,247,0.3)]
-                hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]"
-            >
-              Explore Events →
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleContactAdmin}
+                className="flex-1 py-3 px-4
+                  bg-white/5 hover:bg-white/10
+                  border border-white/10 hover:border-white/20
+                  rounded-lg
+                  text-sm font-medium
+                  text-foreground hover:text-white
+                  transition-all duration-300"
+              >
+                Contact Admin
+              </button>
+              <button
+                onClick={handleExploreEvents}
+                className="flex-1 py-3 px-4
+                  bg-gradient-to-r from-purple-600 to-cyan-600
+                  hover:from-purple-700 hover:to-cyan-700
+                  rounded-lg
+                  text-sm font-medium
+                  text-white
+                  transition-all duration-300
+                  shadow-[0_0_20px_rgba(168,85,247,0.3)]
+                  hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]"
+              >
+                Explore Events →
+              </button>
+            </div>
           </div>
         </div>
       </DialogContent>

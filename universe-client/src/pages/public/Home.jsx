@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Hero from "@/components/home/Hero";
 import Stats from "@/components/home/Stats";
@@ -9,21 +9,38 @@ import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
 import Footer from "@/components/common/Footer";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
-import { FEATURED_EVENTS } from "@/data/mockEvents";
 import StudentDashboard from "@/pages/student/StudentDashboard";
+
+const API_BASE = "http://localhost:5000";
+
+const mapEventToCardProps = (event) => ({
+  id: event._id,
+  title: event.title,
+  description: event.description,
+  image: event.image ? `${API_BASE}/${event.image}` : "/placeholder-event.jpg",
+  date: new Date(event.date_time).toLocaleDateString("en-MY", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }),
+  time: new Date(event.date_time).toLocaleTimeString("en-MY", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }),
+  venue: {
+    name: event.venue_id?.name || event.location || "TBA",
+  },
+  theme:
+    event.category === "Academic" || event.category === "Leadership"
+      ? "purple"
+      : "cyan",
+  target: event.target_audience,
+  benefit: event.merit_points > 0 ? `+${event.merit_points} Merit` : null,
+});
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial loading for premium feel
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Check for logged in user to show Dashboard instead
+  const [featuredEvents, setFeaturedEvents] = useState([]);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -37,8 +54,28 @@ const Home = () => {
     }
   }, []);
 
+  const fetchFeatured = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/events?is_featured=true&upcoming=true`,
+      );
+      const data = await res.json();
+      setFeaturedEvents(
+        Array.isArray(data) ? data.map(mapEventToCardProps) : [],
+      );
+    } catch (err) {
+      console.error("Fetch error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFeatured();
+  }, [fetchFeatured]);
+
   // If user is logged in AND is a student (or undefined role), show the Student Dashboard
-  // Organizers and Admins should see the standard landing page (or their own dashboards)
   if (user && (!user.role || user.role === "student")) {
     return <StudentDashboard user={user} />;
   }
@@ -77,9 +114,15 @@ const Home = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
           </div>
-        ) : (
+        ) : featuredEvents.length > 0 ? (
           <div className="w-full">
-            <FeaturedEventSlider events={FEATURED_EVENTS} isSmall={true} />
+            <FeaturedEventSlider events={featuredEvents} isSmall={true} />
+          </div>
+        ) : (
+          <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
+            <p className="text-slate-500 font-clash">
+              No featured experiences live yet.
+            </p>
           </div>
         )}
       </main>

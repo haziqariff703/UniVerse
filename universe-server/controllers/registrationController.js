@@ -9,17 +9,24 @@ const User = require('../models/user');
  */
 exports.registerForEvent = async (req, res) => {
   try {
-    const { event_id } = req.body;
+    const { event_id, eventId } = req.body;
+    const actualEventId = event_id || eventId;
     const user_id = req.user.id;
 
+    if (!actualEventId) {
+      return res.status(400).json({ message: "Event ID is required." });
+    }
+
     // Check if event exists
-    const event = await Event.findById(event_id).populate('venue_id', 'name');
+    const event = await Event.findById(actualEventId).populate('venue_id', 'name');
     if (!event) {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    // Check if event is open
-    if (event.status !== 'Open') {
+    // Check if event is open for registration
+    // Both 'approved' and 'Open' should allow registration
+    const allowedStatuses = ['approved', 'Open'];
+    if (!allowedStatuses.includes(event.status)) {
       return res.status(400).json({ message: `Event is ${event.status}. Registration not available.` });
     }
 
@@ -29,7 +36,7 @@ exports.registerForEvent = async (req, res) => {
     }
 
     // Check if user already registered
-    const existingRegistration = await Registration.findOne({ event_id, user_id });
+    const existingRegistration = await Registration.findOne({ event_id: actualEventId, user_id });
     if (existingRegistration) {
       return res.status(400).json({ message: "You are already registered for this event." });
     }
@@ -39,11 +46,11 @@ exports.registerForEvent = async (req, res) => {
 
     // Create registration with snapshots (NoSQL denormalization pattern)
     const registration = new Registration({
-      event_id,
+      event_id: actualEventId,
       user_id,
       status: 'Confirmed',
       booking_time: new Date(),
-      qr_code_string: `UNIV-${event_id.slice(-4)}-${user_id.slice(-4)}-${Date.now()}`,
+      qr_code_string: `UNIV-${actualEventId.toString().slice(-4)}-${user_id.toString().slice(-4)}-${Date.now()}`,
       event_snapshot: {
         title: event.title,
         date_time: event.date_time,
@@ -58,7 +65,7 @@ exports.registerForEvent = async (req, res) => {
     await registration.save();
 
     // Update event attendee count atomically
-    await Event.findByIdAndUpdate(event_id, { $inc: { current_attendees: 1 } });
+    await Event.findByIdAndUpdate(actualEventId, { $inc: { current_attendees: 1 } });
 
     // Update event status if full
     if (event.current_attendees + 1 >= event.capacity) {
@@ -95,7 +102,22 @@ exports.getEventRegistrations = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
     
-    if (event.organizer_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Authorization: Owner, Admin, or approved member of the hosting community
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    
+    let isCommunityMember = false;
+    if (event.community_id) {
+      const CommunityMember = require('../models/communityMember');
+      const membership = await CommunityMember.findOne({
+        community_id: event.community_id,
+        user_id: req.user.id,
+        status: 'Approved'
+      });
+      if (membership) isCommunityMember = true;
+    }
+
+    if (!isOwner && !isAdmin && !isCommunityMember) {
       return res.status(403).json({ message: "Not authorized to view these registrations." });
     }
 
@@ -116,7 +138,14 @@ exports.getEventRegistrations = async (req, res) => {
 exports.getMyBookings = async (req, res) => {
   try {
     const registrations = await Registration.find({ user_id: req.user.id })
-      .populate('event_id', 'title date_time status')
+      .populate({
+        path: 'event_id',
+        select: 'title date_time status ticket_price category image',
+        populate: {
+          path: 'venue_id',
+          select: 'name location_code'
+        }
+      })
       .sort({ booking_time: -1 });
 
     res.status(200).json(registrations);
@@ -189,9 +218,47 @@ exports.checkIn = async (req, res) => {
     registration.status = 'CheckedIn';
     await registration.save();
 
+    // Award merit points
+    const event = await Event.findById(registration.event_id);
+    if (event && event.merit_points > 0) {
+      await User.findByIdAndUpdate(registration.user_id, {
+        $inc: { current_merit: event.merit_points }
+      });
+    }
+
     res.status(200).json({
       message: "Check-in successful!",
-      user: registration.user_snapshot
+      user: registration.user_snapshot,
+      meritAwarded: event ? event.merit_points : 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get public registration info for social proof
+ * @route   GET /api/registrations/event/:id/public
+ * @access  Public
+ */
+exports.getPublicEventRegistrations = async (req, res) => {
+  try {
+    const event_id = req.params.id;
+
+    // Get total count
+    const totalCount = await Registration.countDocuments({ event_id, status: { $ne: 'Cancelled' } });
+
+    // Get a few recent names for facepile/social proof
+    const recentRegistrations = await Registration.find({ event_id, status: { $ne: 'Cancelled' } })
+      .select('user_snapshot.name')
+      .sort({ booking_time: -1 })
+      .limit(5);
+
+    const names = recentRegistrations.map(r => r.user_snapshot.name);
+
+    res.status(200).json({
+      totalCount,
+      recentNames: names
     });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });

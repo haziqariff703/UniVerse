@@ -146,8 +146,15 @@ const OrganizerVenues = () => {
               <div className="w-full md:w-72 h-48 md:h-auto flex-shrink-0 relative overflow-hidden">
                 <img
                   src={
-                    venue.images?.[0] ||
-                    "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800"
+                    venue.image
+                      ? venue.image.startsWith("http")
+                        ? venue.image
+                        : `http://localhost:5000/${venue.image}`
+                      : venue.images?.[0]
+                        ? venue.images[0].startsWith("http")
+                          ? venue.images[0]
+                          : `http://localhost:5000/${venue.images[0]}`
+                        : "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800"
                   }
                   alt={venue.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

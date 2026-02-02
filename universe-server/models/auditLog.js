@@ -10,6 +10,7 @@ const auditLogSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      // Admin actions
       'APPROVE_EVENT', 
       'REJECT_EVENT', 
       'DELETE_EVENT',
@@ -19,7 +20,13 @@ const auditLogSchema = new mongoose.Schema({
       'UPDATE_VENUE', 
       'DELETE_VENUE',
       'DELETE_USER',
-      'UPDATE_USER_ROLE'
+      'UPDATE_USER_ROLE',
+      // Organizer actions
+      'CREATE_EVENT',
+      'UPDATE_EVENT',
+      'CHECKIN_ATTENDEE',
+      'CANCEL_REGISTRATION',
+      'UPDATE_REGISTRATION'
     ]
   },
   target_type: {

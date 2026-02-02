@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   Calendar,
@@ -15,14 +16,12 @@ import {
   Heart,
   Menu,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_VENUES } from "@/data/mockVenues";
 // import StudentSidebar from "@/components/layout/StudentSidebar"; // REMOVED
 import MissionHistoryCard from "@/components/student/MissionHistoryCard";
 import ReviewModal from "@/components/common/ReviewModal";
 import { PAST_EVENTS } from "@/data/mockEvents";
 
-const StudentDashboard = ({ user, onLogout }) => {
+const StudentDashboard = ({ user }) => {
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -30,7 +29,7 @@ const StudentDashboard = ({ user, onLogout }) => {
     day: "numeric",
   });
 
-  const [favorites, setFavorites] = useState(() => {
+  const [favorites] = useState(() => {
     return JSON.parse(localStorage.getItem("user_favorites") || "[]");
   });
 
@@ -38,67 +37,123 @@ const StudentDashboard = ({ user, onLogout }) => {
   const [selectedHistoryEvent, setSelectedHistoryEvent] = useState(null);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
-  const favoriteVenues = MOCK_VENUES.filter((v) => favorites.includes(v.id));
+  // Real Data States
+  const [profile, setProfile] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [clubs, setClubs] = useState([]);
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock Data
-  const meritPoints = 750;
-  const nextRank = 1000;
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [profileRes, bookingsRes, clubsRes, venuesRes] =
+          await Promise.all([
+            fetch("http://localhost:5000/api/users/profile", { headers }).then(
+              (r) => r.json(),
+            ),
+            fetch("http://localhost:5000/api/registrations/my-bookings", {
+              headers,
+            }).then((r) => r.json()),
+            fetch("http://localhost:5000/api/communities/my-communities", {
+              headers,
+            }).then((r) => r.json()),
+            fetch("http://localhost:5000/api/venues").then((r) => r.json()),
+          ]);
+
+        setProfile(profileRes);
+        setBookings(Array.isArray(bookingsRes) ? bookingsRes : []);
+        setClubs(Array.isArray(clubsRes) ? clubsRes : []);
+        setVenues(Array.isArray(venuesRes) ? venuesRes : []);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+          <p className="text-cyan-500 font-mono animate-pulse">
+            Synchronizing Dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const favoriteVenues = venues.filter((v) => favorites.includes(v._id));
+
+  // Merit Data
+  const meritPoints = profile?.current_merit || 0;
+  const nextRank = profile?.merit_goal || 500;
   const meritProgress = (meritPoints / nextRank) * 100;
   const circleRadius = 36;
   const circleCircumference = 2 * Math.PI * circleRadius;
 
-  const upcomingEvents = [
-    {
-      id: 1,
-      name: "AI in Healthcare Symposium",
-      date: "Tomorrow, 10:00 AM",
-      venue: "Grand Hall A",
-      category: "Academic",
-      canCheckIn: true,
-      color: "bg-blue-500",
-    },
-    {
-      id: 2,
-      name: "Robotics Club Workshop",
-      date: "Feb 4, 2:00 PM",
-      venue: "Lab 304",
-      category: "Tech",
-      canCheckIn: false,
-      color: "bg-purple-500",
-    },
-  ];
+  // Filter Upcoming vs Past
+  const today = new Date();
+  const upcomingEvents = bookings
+    .filter((reg) => new Date(reg.event_id?.date_time) >= today)
+    .map((reg) => ({
+      id: reg._id,
+      name: reg.event_id?.title || "Unknown Event",
+      date: reg.event_id?.date_time
+        ? new Date(reg.event_id.date_time).toLocaleString("en-MY", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "Date TBA",
+      venue:
+        reg.event_id?.venue_id?.name ||
+        reg.event_snapshot?.venue ||
+        "Venue TBA",
+      category: reg.event_id?.category || "General",
+      canCheckIn: reg.status === "confirmed" && !reg.attended,
+      color:
+        reg.event_id?.category === "Academic" ? "bg-blue-500" : "bg-purple-500",
+      rawDate: reg.event_id?.date_time,
+    }))
+    .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
 
-  // Updated Data
-  const missionHistory = PAST_EVENTS.map((event) => ({
-    ...event,
-    overallScore: (Math.random() * (9.8 - 7.5) + 7.5).toFixed(1), // Random mock score
-    ratings: {
-      value: Math.floor(Math.random() * 4) + 6,
-      energy: Math.floor(Math.random() * 4) + 6,
-      welfare: Math.floor(Math.random() * 4) + 6,
-    },
-    comment:
-      "This was an incredible experience! The speakers were top-notch and I learned so much about the industry standards. Definitely coming back next year.",
-  }));
+  const missionHistory = bookings
+    .filter((reg) => reg.attended || new Date(reg.event_id?.date_time) < today)
+    .map((reg) => ({
+      ...reg.event_id,
+      id: reg._id,
+      overallScore: reg.attended
+        ? (Math.random() * (9.8 - 7.5) + 7.5).toFixed(1)
+        : "N/A",
+      attended: reg.attended,
+      category: reg.event_id?.category,
+    }));
 
-  const newsHighlights = [
-    {
-      id: 1,
-      title: "Campus Library",
-      summary: "Quiet Study Zone is currently 80% full.",
+  // Live Pulse from Venues
+  const newsHighlights = venues
+    .filter(
+      (v) => v.occupancyStatus === "Busy" || v.occupancyStatus === "Moderate",
+    )
+    .slice(0, 2)
+    .map((v) => ({
+      id: v._id,
+      title: v.name,
+      summary: `${v.name} is currently ${v.liveOccupancy}% full.`,
       tag: "Live Occupancy",
       isLive: true,
-      occupancy: "High",
-    },
-    {
-      id: 2,
-      title: "Guest Speaker Series: Dr. Alistair",
-      summary:
-        "Join us for a talk on Quantum Computing this Friday at the Main Auditorium.",
-      tag: "Event",
-      isLive: false,
-    },
-  ];
+      occupancy: v.occupancyStatus,
+    }));
 
   const interestedFriends = [
     "https://i.pravatar.cc/150?u=a042581f4e29026024d",
@@ -186,7 +241,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             </div>
           </div>
           <p className="text-3xl font-bold font-clash text-white mb-2">
-            3 Active
+            {upcomingEvents.length} Active
           </p>
           <Link
             to="/venues"
@@ -211,7 +266,9 @@ const StudentDashboard = ({ user, onLogout }) => {
               <Zap className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-bold font-clash text-white">2 Clubs</p>
+          <p className="text-3xl font-bold font-clash text-white">
+            {clubs.length} Clubs
+          </p>
         </motion.div>
 
         {/* Events Card */}
@@ -225,10 +282,12 @@ const StudentDashboard = ({ user, onLogout }) => {
               Saved
             </span>
             <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-              <BookOpen className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-bold font-clash text-white">5 Events</p>
+          <p className="text-3xl font-bold font-clash text-white">
+            {missionHistory.length} Attended
+          </p>
         </motion.div>
 
         {/* Merit Status Card */}
@@ -313,58 +372,75 @@ const StudentDashboard = ({ user, onLogout }) => {
           </div>
 
           <div className="space-y-4">
-            {upcomingEvents.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
-                className="flex flex-col md:flex-row md:items-center gap-5 p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:bg-white/[0.03] hover:border-white/20 transition-all group relative overflow-hidden"
-              >
-                {/* Date Badge */}
-                <div
-                  className={`w-16 h-16 rounded-2xl ${event.color} bg-opacity-10 flex flex-col items-center justify-center border border-white/5 shrink-0 group-hover:scale-105 transition-transform`}
+            {upcomingEvents.length > 0 ? (
+              upcomingEvents.map((event, i) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                  className="flex flex-col md:flex-row md:items-center gap-5 p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:bg-white/[0.03] hover:border-white/20 transition-all group relative overflow-hidden"
                 >
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-wider ${event.category === "Academic" ? "text-blue-400" : "text-purple-400"}`}
+                  {/* Date Badge */}
+                  <div
+                    className={`w-16 h-16 rounded-2xl ${event.color} bg-opacity-10 flex flex-col items-center justify-center border border-white/5 shrink-0 group-hover:scale-105 transition-transform`}
                   >
-                    {event.date.split(" ")[0].substring(0, 3)}
-                  </span>
-                  <span className="text-xl font-bold text-white font-clash">
-                    {event.date.split(" ")[1]?.replace(",", "") || "04"}
-                  </span>
-                </div>
-
-                <div className="flex-1 min-w-0 z-10">
-                  <h3 className="text-lg font-bold font-clash text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                    {event.name}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400">
-                    <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
-                      <Clock className="w-3 h-3 text-cyan-400" /> {event.date}
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider ${event.category === "Academic" ? "text-blue-400" : "text-purple-400"}`}
+                    >
+                      {event.date.split(" ")[0]}
                     </span>
-                    <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
-                      <MapPin className="w-3 h-3 text-purple-400" />{" "}
-                      {event.venue}
+                    <span className="text-xl font-bold text-white font-clash">
+                      {event.date.split(" ")[1]?.replace(",", "")}
                     </span>
                   </div>
-                </div>
 
-                {/* Smart Action Button */}
-                <div className="mt-2 md:mt-0 z-10 w-full md:w-auto">
-                  {event.canCheckIn ? (
-                    <button className="w-full md:w-auto px-6 py-3 bg-emerald-500 text-black font-bold font-clash rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 animate-pulse hover:animate-none">
-                      <CheckCircle className="w-4 h-4" />
-                      Check In
-                    </button>
-                  ) : (
-                    <span className="inline-block w-full text-center md:w-auto px-4 py-2 rounded-full text-xs font-bold font-mono bg-white/5 text-slate-400 border border-white/10">
-                      T - 48 HRS
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  <div className="flex-1 min-w-0 z-10">
+                    <h3 className="text-lg font-bold font-clash text-white mb-2 group-hover:text-cyan-400 transition-colors">
+                      {event.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400">
+                      <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
+                        <Clock className="w-3 h-3 text-cyan-400" /> {event.date}
+                      </span>
+                      <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
+                        <MapPin className="w-3 h-3 text-purple-400" />{" "}
+                        {event.venue}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Smart Action Button */}
+                  <div className="mt-2 md:mt-0 z-10 w-full md:w-auto">
+                    {event.canCheckIn ? (
+                      <Link
+                        to={`/events/${event.id}`}
+                        className="w-full md:w-auto px-6 py-3 bg-emerald-500 text-black font-bold font-clash rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 animate-pulse hover:animate-none"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Check In
+                      </Link>
+                    ) : (
+                      <span className="inline-block w-full text-center md:w-auto px-4 py-2 rounded-full text-xs font-bold font-mono bg-white/5 text-slate-400 border border-white/10">
+                        {new Date(event.rawDate) > today ? "UPCOMING" : "ENDED"}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="p-12 rounded-[2.5rem] border border-dashed border-white/10 text-center">
+                <p className="text-slate-500 font-mono text-sm mb-4">
+                  No upcoming events found.
+                </p>
+                <Link
+                  to="/events"
+                  className="text-cyan-400 font-bold hover:underline"
+                >
+                  Browse Events Hub
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Quick Find */}
@@ -423,20 +499,30 @@ const StudentDashboard = ({ user, onLogout }) => {
 
           <div className="space-y-4">
             {/* History Feed */}
-            {missionHistory.slice(0, 3).map((event) => (
-              <MissionHistoryCard
-                key={event.id}
-                event={event}
-                onClick={handleHistoryClick}
-              />
-            ))}
+            {missionHistory.length > 0 ? (
+              missionHistory
+                .slice(0, 3)
+                .map((event) => (
+                  <MissionHistoryCard
+                    key={event.id}
+                    event={event}
+                    onClick={handleHistoryClick}
+                  />
+                ))
+            ) : (
+              <div className="p-8 rounded-[1.5rem] bg-black/40 border border-white/5 text-center">
+                <p className="text-[10px] font-mono text-slate-600 uppercase">
+                  No prior activity
+                </p>
+              </div>
+            )}
 
             {/* View All Button */}
             <Link
               to="/events"
               className="block w-full py-4 text-center rounded-[2.5rem] border border-dashed border-white/10 text-xs font-mono text-slate-500 hover:text-white hover:border-white/20 transition-all uppercase tracking-widest"
             >
-              View Complete Archive
+              Explore More Events
             </Link>
           </div>
 
@@ -493,9 +579,9 @@ const StudentDashboard = ({ user, onLogout }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {favoriteVenues.slice(0, 3).map((venue, i) => (
+              {favoriteVenues.slice(0, 3).map((venue) => (
                 <motion.div
-                  key={venue.id}
+                  key={venue._id}
                   whileHover={{ y: -5 }}
                   className="group relative h-48 rounded-[2.5rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-3xl"
                 >
