@@ -68,13 +68,25 @@ exports.getOrganizerActivityLogs = async (req, res) => {
     const organizerId = req.user.id;
     const { eventId, search, limit = 20, page = 1, dateRange } = req.query;
 
-    // Get organizer's events
-    const eventQuery = { organizer_id: organizerId };
+    const { getAccessibleEventIds } = require('../utils/accessControl');
+    const eventIds = await getAccessibleEventIds(organizerId);
+
+    // If filtering by specific event, ensure it's within accessible ones
+    let finalEventIds = eventIds;
     if (eventId && mongoose.isValidObjectId(eventId)) {
-      eventQuery._id = eventId;
+      if (eventIds.some(id => id.toString() === eventId)) {
+        finalEventIds = [new mongoose.Types.ObjectId(eventId)];
+      } else {
+        // Not authorized for this specific event
+        return res.json({
+          logs: [],
+          stats: { totalLogs: 0, eventActions: 0, registrations: 0, updates: 0 },
+          pagination: { currentPage: 1, totalPages: 0, totalLogs: 0 }
+        });
+      }
     }
-    const organizerEvents = await Event.find(eventQuery).select('_id title');
-    const eventIds = organizerEvents.map(e => e._id);
+
+    const organizerEvents = await Event.find({ _id: { $in: finalEventIds } }).select('_id title');
 
     if (eventIds.length === 0) {
       return res.json({
@@ -103,7 +115,7 @@ exports.getOrganizerActivityLogs = async (req, res) => {
     // Get audit logs for these events
     const auditQuery = {
       target_type: 'Event',
-      target_id: { $in: eventIds }
+      target_id: { $in: finalEventIds }
     };
     if (Object.keys(dateFilter).length > 0) {
       auditQuery.created_at = dateFilter;
@@ -120,7 +132,7 @@ exports.getOrganizerActivityLogs = async (req, res) => {
       .sort({ created_at: -1 });
 
     // Get registrations for these events
-    const regQuery = { event_id: { $in: eventIds } };
+    const regQuery = { event_id: { $in: finalEventIds } };
     if (Object.keys(dateFilter).length > 0) {
       regQuery.booking_time = dateFilter;
     }

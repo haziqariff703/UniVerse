@@ -82,28 +82,29 @@ export const eventSchema = {
       description: "When and where",
       fields: [
         {
-          name: "date",
-          label: "Event Date",
-          type: "date",
+          name: "startDateTime",
+          label: "Event Start",
+          type: "datetime-picker",
           required: true,
           width: "half",
           icon: Calendar
         },
         {
-          name: "time",
-          label: "Start Time",
-          type: "time",
+          name: "endDateTime",
+          label: "Event End",
+          type: "datetime-picker",
           required: true,
           width: "half",
           icon: Clock
         },
         {
-          name: "duration_minutes",
-          label: "Duration (Minutes)",
-          type: "number",
-          placeholder: "60",
+          name: "duration_display",
+          label: "Event Duration",
+          type: "text",
+          placeholder: "Select dates to calculate...",
           width: "half",
-          icon: Activity
+          icon: Activity,
+          disabled: true // Read-only
         },
         {
           name: "venue_id",

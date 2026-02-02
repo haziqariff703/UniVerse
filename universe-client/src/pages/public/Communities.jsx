@@ -23,6 +23,7 @@ const Communities = () => {
   const [selectedClub, setSelectedClub] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [communities, setCommunities] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Real Auth Logic
@@ -37,43 +38,50 @@ const Communities = () => {
   });
 
   useEffect(() => {
-    fetchCommunities();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [commRes, catRes] = await Promise.all([
+          fetch(`${API_BASE}/api/communities`),
+          fetch(`${API_BASE}/api/categories`),
+        ]);
 
-  const fetchCommunities = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/communities`);
-      const data = await res.json();
-      if (res.ok) {
-        // Map backend model to frontend expected format
-        const mapped = data.map((c) => ({
-          id: c._id,
-          title: c.name,
-          fullName: c.name,
-          tagline: c.tagline,
-          description: c.description,
-          image:
-            c.banner ||
-            c.logo ||
-            "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop",
-          category: c.category,
-          tags: [c.category, "UiTM"],
-          members: c.stats.member_count,
-          founded: c.stats.founded_year,
-          social: {
-            instagram: c.social_links?.instagram || "@uitm",
-            email: c.advisor?.email || "info@uitm.edu.my",
-          },
-          meritYield: c.category === "Academic" ? "High" : "Standard",
-        }));
-        setCommunities(mapped);
+        if (commRes.ok) {
+          const data = await commRes.json();
+          const mapped = data.map((c) => ({
+            id: c._id,
+            title: c.name,
+            fullName: c.name,
+            tagline: c.tagline,
+            description: c.description,
+            image:
+              c.banner ||
+              c.logo ||
+              "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop",
+            category: c.category,
+            tags: [c.category, "UiTM"],
+            members: c.stats?.member_count || 0,
+            founded: c.stats?.founded_year || "2024",
+            social: {
+              instagram: c.social_links?.instagram || "@uitm",
+              email: c.advisor?.email || "info@uitm.edu.my",
+            },
+            meritYield: c.category === "Academic" ? "High" : "Standard",
+          }));
+          setCommunities(mapped);
+        }
+
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          setCategories(catData);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching communities:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchData();
+  }, []);
 
   const placeholders = [
     "Search for 'IMSA' or 'SMF'...",
@@ -90,13 +98,13 @@ const Communities = () => {
 
     const search = searchTerm.toLowerCase();
     return clubs.filter((club) => {
-      const matchesTitle = club.title.toLowerCase().includes(search);
-      const matchesTagline = club.tagline.toLowerCase().includes(search);
-      const matchesTags = club.tags.some((tag) =>
+      const matchesTitle = club?.title?.toLowerCase().includes(search);
+      const matchesTagline = club?.tagline?.toLowerCase().includes(search);
+      const matchesTags = club?.tags?.some((tag) =>
         tag.toLowerCase().includes(search),
       );
-      const matchesDescription = club.description
-        .toLowerCase()
+      const matchesDescription = club?.description
+        ?.toLowerCase()
         .includes(search);
 
       return (
@@ -116,78 +124,37 @@ const Communities = () => {
     [communities, searchTerm, user],
   );
 
-  const allFiltered = useMemo(
-    () => filterClubs(communities),
-    [communities, searchTerm],
-  );
+  // Dynamic Tabs Generation
+  const tabItems = useMemo(() => {
+    const baseTabs = [
+      {
+        value: "joined",
+        label: "Joined",
+        icon: CheckCircle,
+        activeColor: "text-cyan-300",
+        bg: "bg-cyan-500/20",
+        hidden: !user || user.role !== "student",
+      },
+      {
+        value: "all",
+        label: `All (${communities.length})`,
+        icon: LayoutGrid,
+        activeColor: "text-purple-300",
+        bg: "bg-purple-500/20",
+      },
+    ];
 
-  // Categorized Data
-  const filteredAcademic = useMemo(
-    () => filterClubs(communities.filter((c) => c.category === "Academic")),
-    [communities, searchTerm],
-  );
-  const filteredLeadership = useMemo(
-    () => filterClubs(communities.filter((c) => c.category === "Leadership")),
-    [communities, searchTerm],
-  );
-  const filteredUniformed = useMemo(
-    () => filterClubs(communities.filter((c) => c.category === "Uniformed")),
-    [communities, searchTerm],
-  );
-  const filteredJoined = useMemo(
-    () =>
-      user && user.role === "student" && user.memberClubIds
-        ? filterClubs(
-            communities.filter((c) => user.memberClubIds.includes(c.id)),
-          )
-        : [],
-    [communities, searchTerm, user],
-  );
+    const dynamicTabs = categories.map((cat) => ({
+      value: cat.name,
+      label: cat.name, // e.g. "Academic", "FYP"
+      icon: BookOpen, // Default icon
+      activeColor: "text-purple-300",
+      bg: "bg-purple-500/20",
+      isDynamic: true,
+    }));
 
-  // DEFINED AFTER DATA IS READY
-  const tabItems = [
-    {
-      value: "joined",
-      label: `Joined (${filteredJoined.length})`,
-      icon: CheckCircle,
-      activeColor: "text-cyan-300",
-      bg: "bg-cyan-500/20",
-    },
-    {
-      value: "all",
-      label: `All (${allFiltered.length})`,
-      icon: LayoutGrid,
-      activeColor: "text-purple-300",
-      bg: "bg-purple-500/20",
-    },
-    {
-      value: "academic",
-      label: `Academic (${filteredAcademic.length})`,
-      icon: BookOpen,
-      activeColor: "text-purple-300",
-      bg: "bg-purple-500/20",
-    },
-    {
-      value: "leadership",
-      label: `Leadership (${filteredLeadership.length})`,
-      icon: Users,
-      activeColor: "text-purple-300",
-      bg: "bg-purple-500/20",
-    },
-    {
-      value: "uniformed",
-      label: `Uniformed (${filteredUniformed.length})`,
-      icon: Shield,
-      activeColor: "text-purple-300",
-      bg: "bg-purple-500/20",
-    },
-  ].filter((tab) => {
-    // Hide 'Joined' tab for non-students (public users)
-    if (tab.value === "joined") {
-      return user && user.role === "student";
-    }
-    return true;
-  });
+    return [...baseTabs, ...dynamicTabs].filter((t) => !t.hidden);
+  }, [categories, communities, user]);
 
   const navigate = useNavigate();
 
@@ -275,7 +242,7 @@ const Communities = () => {
         {/* Tabs Section */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList
-            className={`grid w-full grid-cols-2 mb-8 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1 rounded-xl h-auto relative ${tabItems.length === 4 ? "md:grid-cols-4" : "md:grid-cols-5"}`}
+            className={`grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-5 mb-8 bg-slate-950/40 backdrop-blur-xl border border-white/5 p-1 rounded-xl h-auto relative`}
           >
             {tabItems.map((tab) => (
               <TabsTrigger
@@ -300,88 +267,38 @@ const Communities = () => {
             ))}
           </TabsList>
 
-          {/* Joined Content */}
-          <TabsContent
-            value="joined"
-            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-          >
-            {filteredJoined.length > 0 ? (
-              <EnhancedHoverEffect
-                items={filteredJoined}
-                onCardClick={handleCardClick}
-                user={user}
-              />
-            ) : (
-              <EmptyState
-                searchTerm={searchTerm}
-                message="You haven't joined any communities yet."
-              />
-            )}
-          </TabsContent>
+          {tabItems.map((tab) => {
+            // Determine content for this tab
+            let content = [];
+            if (tab.value === "joined") {
+              content = myCommunities;
+            } else if (tab.value === "all") {
+              content = filterClubs(communities);
+            } else {
+              // Filter by category name matching the tab value
+              content = filterClubs(
+                communities.filter((c) => c.category === tab.value),
+              );
+            }
 
-          {/* All Organizations */}
-          <TabsContent
-            value="all"
-            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-          >
-            {allFiltered.length > 0 ? (
-              <EnhancedHoverEffect
-                items={allFiltered}
-                onCardClick={handleCardClick}
-                user={user}
-              />
-            ) : (
-              <EmptyState searchTerm={searchTerm} />
-            )}
-          </TabsContent>
-
-          {/* Academic Organizations */}
-          <TabsContent
-            value="academic"
-            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-          >
-            {filteredAcademic.length > 0 ? (
-              <EnhancedHoverEffect
-                items={filteredAcademic}
-                onCardClick={handleCardClick}
-                user={user}
-              />
-            ) : (
-              <EmptyState searchTerm={searchTerm} />
-            )}
-          </TabsContent>
-
-          {/* Leadership Organizations */}
-          <TabsContent
-            value="leadership"
-            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-          >
-            {filteredLeadership.length > 0 ? (
-              <EnhancedHoverEffect
-                items={filteredLeadership}
-                onCardClick={handleCardClick}
-                user={user}
-              />
-            ) : (
-              <EmptyState searchTerm={searchTerm} />
-            )}
-          </TabsContent>
-
-          {/* Uniformed Organizations */}
-          <TabsContent
-            value="uniformed"
-            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-          >
-            {filteredUniformed.length > 0 ? (
-              <EnhancedHoverEffect
-                items={filteredUniformed}
-                onCardClick={handleCardClick}
-                user={user}
-              />
-            ) : (
-              <EmptyState searchTerm={searchTerm} />
-            )}
-          </TabsContent>
+            return (
+              <TabsContent
+                key={tab.value}
+                value={tab.value}
+                className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+              >
+                {content.length > 0 ? (
+                  <EnhancedHoverEffect
+                    items={content}
+                    onCardClick={handleCardClick}
+                    user={user}
+                  />
+                ) : (
+                  <EmptyState searchTerm={searchTerm} />
+                )}
+              </TabsContent>
+            );
+          })}
         </Tabs>
       </div>
 

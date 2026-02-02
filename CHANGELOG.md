@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-02-02]
+
+- **Added**: Full Organizer/Club Proposal system.
+- **Added**: `ClubProposal` model and controller for student club requests.
+- **Added**: Backend API endpoints `POST /api/proposals` and `GET /api/proposals/my-proposals`.
+- **Added**: Integrated Club Proposal review modal in Admin `OrganizerApprovals` UI.
+- **Changed**: Automated community creation upon organizer approval. Approved students are now automatically assigned as 'President' and owner of their new organization.
+- **Changed**: Enhanced Admin `getPendingOrganizers` to populate associated proposals for better moderation.
+- **Changed**: Improved role-based sidebar logic in `App.jsx`. Organizers and Association roles now correctly retain the premium glassy sidebar (`StudentSidebar`) instead of falling back to legacy layouts.
+- **Fixed**: Real-time session synchronization. Role and approval updates are now proactively pushed to the UI on navigation and window focus, granting students immediate access to the Organizer Suite.
+- **Changed**: Refined `StudentSidebar` icons to match the design system (e.g., Analytics now uses `TrendingUp`).
+- **Fixed**: Multi-role synchronization issue where role updates were not immediately reflected in the frontend session.
+- **Fixed**: UI bug in `OrganizerApprovals` where the table would sometimes break on empty proposal metadata.
+
 ## [2026-01-31]
 
 - **Professional Overhaul (v10)**: Re-standardized student workspace for premium corporate aesthetic.
@@ -22,6 +36,24 @@ All notable changes to this project will be documented in this file.
   - **Signal Cards**: Implemented `rounded-[2.5rem]` glass cards with color-coded **Halo Glows** (Green/Blue/Rose) for instant status recognition.
   - **Chronological Logic**: Grouped alerts by "Today", "Yesterday", and "Older" for better cognitive load management.
   - **Hero HUD**: Added a minimalist glass tab switcher for "All" vs "Unread" filtering.
+
+## [2026-02-03]
+
+### Fixed
+
+- **System Synchronization & Stabilization**: Resolved widespread 500 Internal Server Errors on organizer analytics and audit log endpoints.
+  - **Centralized Access Control**: Moved `getAccessibleEventIds` to a core utility `accessControl.js` to eliminate circular dependency crashes and standardize event visibility.
+  - **Authorization Resilience**: Added `try-catch` safety nets to the backend `authorize` middleware, ensuring all permission errors return descriptive JSON instead of server crashes.
+- **Changed**: Refactored RBAC to use `roles` array as Single Source of Truth [2026-02-03].
+  - Migrated database roles with `migrate_rbac.js`.
+  - Standardized authorization across all backend controllers (`event`, `registration`, `community`).
+  - Simplified multi-role view switching in Frontend Navbar.
+  - Enforced strict role-based route protection in `ProtectedRoute.jsx`.
+- **Fixed**: Optimized `Three.js` instances and resolved `motion` ReferenceError.
+- **Added**: Society Command Center for manual community management.
+  - **Backend**: Implemented `getAllCommunities`, `createCommunity`, `updateCommunity`, and `deleteCommunity` in `adminController.js`.
+  - **Frontend**: Created `CommunityManager.jsx` and `CommunitiesPage.jsx` with high-density KPI tracking and society registry.
+  - **Navigation**: Registered `/admin/communities` route and added entry to the Admin Sidebar.
 
 ## [2026-02-02]
 
@@ -60,6 +92,12 @@ All notable changes to this project will be documented in this file.
 
 - **Backend Event Filtering**: Updated the `getAllEvents` controller to support `status=all`, allowing organizers to see all scheduled events (including pending ones) on the roadmap.
 - **Frontend Fetch Strategy**: Switched to the public `/api/venues` endpoint for better consistency across roles.
+
+### Fixed
+
+- **Event Editing & Audit Permissions (Restored)**: Reverted the 'President-only' restriction based on user feedback. All approved community members (including AJK and general members like Pali) who are recognized as organizers can now edit community events, access full dashboard management features, and **view comprehensive audit/activity logs**. Fixed a backend bug in `auditController.js` that previously restricted activity logs to only the event owner.
+- **Improved Edit Feature Stability**: Fixed a 400 Bad Request error occurring during event updates by ensuring numeric fields (`capacity`, `ticket_price`, `merit_points`) are correctly parsed and preventing `NaN` values from being sent to the backend. Resolved a `CastError` on nested `tasks` and `schedule` fields by implementing JSON serialization on the frontend and parsing on the backend.
+- **Frontend Crash Prevention**: Resolved a `ReferenceError: canEdit is not defined` within the `InsightsPanel` and fixed several Recharts-related DOM property warnings.
 
 ## [2026-02-01]
 
@@ -259,8 +297,17 @@ All notable changes to this project will be documented in this file.
 - **Fixed**: Replaced "Network Origin" with a "Forensic Risk Profile" and "Audit Identity Stamp" (Log ID) in audit logs.
 - **Fixed**: Improved contrast for IDs and data snapshots in Audit Logs for better legibility.
 - **Fixed**: Repaired syntax and resolved lint warnings in `VenueManager.jsx`.
-- **Fixed**: Improved contrast for IDs and metadata in Audit Logs for better legibility.
-- **Fixed**: Resolved `ReferenceError` in `EventApprovals.jsx` caused by `useEffect` dependency hoisting.
+
+### [2026-02-02]
+
+- **Added**: Workforce Management feature (Event Crew Management).
+  - New backend `eligibleMembers` endpoint and membership validation in `crewController.js`.
+  - New frontend `CrewRosterCard` and `CrewRosterModal` components.
+  - Integrated workforce management into the Event Dashboard.
+- **Changed**: Improved `getMyEvents` and `getAccessibleEventIds` in `eventController.js` to strictly enforce leadership-based and crew-based visibility.
+- **Fixed**: Resolved `CastError` when updating events by implementing JSON serialization for `tasks` and `schedule` fields.
+- **Fixed**: Fixed `ReferenceError` in `InsightsPanel.jsx` by properly destructuring props.
+- **Fixed**: Restored Audit Log access for authorized organization leaders.
 - **Fixed**: Repaired syntax errors and resolved lint warnings in `VenueManager.jsx` and `AuditLogList.jsx`.
 - **Added**: Audit Logs Forensics Command Center with KPI cards and snapshot viewer.
 - **Added**: Venue Image Uploads with real-time preview and Multer backend support.

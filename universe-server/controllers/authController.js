@@ -55,7 +55,9 @@ exports.register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: assignedRole,
+      role: 'student', // Always start as student until approved
+      roles: ['student'], // Always start as student
+      organizerRequest: role === 'organizer', // Capture intent
       preferences: preferences || [],
       ic_number: sanitizedIcNumber,
       gender,
@@ -66,7 +68,7 @@ exports.register = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role, name: user.name },
+      { id: user._id, role: user.role, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -80,6 +82,7 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        roles: user.roles,
         preferences: user.preferences,
         ic_number: user.ic_number,
         gender: user.gender
@@ -112,9 +115,17 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
 
+    // Generate roles array from DB source of truth
+    let roles = user.roles || ['student'];
+    
+    // Safety check: Ensure student role exists
+    if (!roles.includes('student')) {
+      roles.push('student');
+    }
+
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role, name: user.name },
+      { id: user._id, role: user.role, roles: roles, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -128,6 +139,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        roles: roles,
         preferences: user.preferences,
         is_organizer_approved: user.is_organizer_approved
       }

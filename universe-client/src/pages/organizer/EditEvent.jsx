@@ -26,7 +26,7 @@ const EditEvent = () => {
             fetch(`http://localhost:5000/api/events/${id}`, { headers }),
             fetch("http://localhost:5000/api/venues", { headers }),
             fetch("http://localhost:5000/api/speakers", { headers }),
-            fetch("http://localhost:5000/api/events", { headers }),
+            fetch("http://localhost:5000/api/events?status=all", { headers }),
             fetch("http://localhost:5000/api/communities/my-communities", {
               headers,
             }),
@@ -36,21 +36,20 @@ const EditEvent = () => {
           const eventData = await eventRes.json();
 
           // Format Data for Form
-          const dt = new Date(eventData.date_time);
           const formattedData = {
             ...eventData,
-            date: dt.toISOString().split("T")[0],
-            time: dt.toLocaleTimeString("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            startDateTime: eventData.date_time
+              ? new Date(eventData.date_time)
+              : null,
+            endDateTime: eventData.end_time
+              ? new Date(eventData.end_time)
+              : null,
             venue_id: eventData.venue_id?._id || eventData.venue_id,
-            // Ensure array fields are handled
             speaker_ids: eventData.speaker_ids
               ? eventData.speaker_ids.map((s) => s._id || s)
               : [],
             tags: eventData.tags ? eventData.tags.join(", ") : "",
-            ticketPrice: eventData.ticket_price, // Schema uses ticketPrice, DB uses ticket_price
+            ticketPrice: eventData.ticket_price,
             community_id: eventData.community_id?._id || eventData.community_id,
           };
           setInitialData(formattedData);
@@ -58,7 +57,6 @@ const EditEvent = () => {
 
         if (venuesRes.ok) {
           const data = await venuesRes.json();
-          // Public endpoint returns array directly, admin returns {venues: []}
           setVenues(Array.isArray(data) ? data : data.venues || []);
         }
         if (speakersRes.ok) {
@@ -67,7 +65,7 @@ const EditEvent = () => {
         }
         if (eventsRes.ok) {
           const data = await eventsRes.json();
-          setEvents(data.events || []);
+          setEvents(Array.isArray(data) ? data : data.events || []);
         }
         if (communitiesRes.ok) {
           const data = await communitiesRes.json();
@@ -84,61 +82,113 @@ const EditEvent = () => {
   }, [id]);
 
   const handleUpdateEvent = async (formData) => {
-    const dateTime = new Date(`${formData.date}T${formData.time}`);
-
     const submitData = new FormData();
 
-    // Append simple fields
-    // Reference fields that need ID extraction
-    const refFields = ["organizer_id", "venue_id", "community_id"];
+    // Fields to handle specifically or skip
+    const specialFields = [
+      "tags",
+      "speaker_ids",
+      "image",
+      "proposal",
+      "startDateTime",
+      "endDateTime",
+      "duration_display",
+      "ticketPrice",
+      "venue_id",
+      "location_manual",
+      "capacity",
+      "merit_points",
+      "tasks",
+      "schedule",
+    ];
 
+    // Append standard fields
     Object.keys(formData).forEach((key) => {
-      if (key === "tags") {
-        const tags =
-          typeof formData.tags === "string"
-            ? formData.tags
-                .split(",")
-                .map((t) => t.trim())
-                .filter((t) => t)
-            : [formData.category];
-        tags.forEach((tag) => submitData.append("tags[]", tag));
-      } else if (key === "speaker_ids") {
-        if (Array.isArray(formData.speaker_ids)) {
-          formData.speaker_ids.forEach((sid) => {
-            // Extract ID if it's an object
-            const idValue = typeof sid === "object" && sid?._id ? sid._id : sid;
-            submitData.append("speaker_ids[]", idValue);
-          });
-        }
-      } else if (key === "venue_id" && formData.venue_id === "other") {
-        // Skip venue_id if other
-      } else if (key === "location_manual" || key === "location") {
-        if (formData.venue_id === "other") {
-          submitData.append("location", formData.location_manual);
-        }
-      } else if (
-        (key === "image" || key === "proposal") &&
-        formData[key] instanceof File
+      if (specialFields.includes(key)) return;
+
+      let value = formData[key];
+      if (
+        (key === "organizer_id" || key === "community_id") &&
+        typeof value === "object" &&
+        value?._id
       ) {
-        // Only append if it's a new file (File object), not if it's a string URL
-        submitData.append(key, formData[key]);
-      } else if (key !== "image" && key !== "proposal") {
-        let value = formData[key];
-        // Extract ID from populated reference objects
-        if (
-          refFields.includes(key) &&
-          typeof value === "object" &&
-          value?._id
-        ) {
-          value = value._id;
-        }
+        value = value._id;
+      }
+
+      if (value !== undefined && value !== null && value !== "") {
         submitData.append(key, value);
       }
     });
 
-    submitData.set("date_time", dateTime.toISOString());
-    submitData.set("capacity", parseInt(formData.capacity));
-    submitData.set("ticket_price", parseFloat(formData.ticketPrice));
+    // 1. Tags
+    const tags =
+      typeof formData.tags === "string"
+        ? formData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : Array.isArray(formData.tags)
+          ? formData.tags
+          : [];
+    tags.forEach((tag) => submitData.append("tags[]", tag));
+
+    // 2. Speakers
+    if (Array.isArray(formData.speaker_ids)) {
+      formData.speaker_ids.forEach((sid) => {
+        const idValue = typeof sid === "object" && sid?._id ? sid._id : sid;
+        if (idValue) submitData.append("speaker_ids[]", idValue);
+      });
+    }
+
+    // 2b. Tasks & Schedule
+    if (formData.tasks) {
+      submitData.append("tasks", JSON.stringify(formData.tasks));
+    }
+    if (formData.schedule) {
+      submitData.append("schedule", JSON.stringify(formData.schedule));
+    }
+
+    // 3. Venue & Location
+    if (formData.venue_id === "other") {
+      submitData.append("location", formData.location_manual || "");
+    } else if (formData.venue_id) {
+      const vId =
+        typeof formData.venue_id === "object"
+          ? formData.venue_id._id
+          : formData.venue_id;
+      if (vId) submitData.append("venue_id", vId);
+    }
+
+    // 4. Numeric Fields
+    submitData.set("capacity", parseInt(formData.capacity) || 0);
+    submitData.set("ticket_price", parseFloat(formData.ticketPrice) || 0);
+    submitData.set("merit_points", parseInt(formData.merit_points) || 0);
+
+    // 5. Date/Time & Duration
+    if (formData.startDateTime) {
+      submitData.set(
+        "date_time",
+        new Date(formData.startDateTime).toISOString(),
+      );
+    }
+    if (formData.endDateTime) {
+      submitData.set("end_time", new Date(formData.endDateTime).toISOString());
+    }
+    if (formData.startDateTime && formData.endDateTime) {
+      const dur = Math.round(
+        (new Date(formData.endDateTime) - new Date(formData.startDateTime)) /
+          60000,
+      );
+      submitData.set("duration_minutes", dur);
+    }
+
+    // 6. Files
+    if (formData.image instanceof File) {
+      submitData.append("image", formData.image);
+    }
+    if (formData.proposal instanceof File) {
+      submitData.append("proposal", formData.proposal);
+    }
 
     const token = localStorage.getItem("token");
     const response = await fetch(`http://localhost:5000/api/events/${id}`, {
@@ -158,62 +208,106 @@ const EditEvent = () => {
   };
 
   // Inject dynamic options into schema
-  const dynamicSchema = {
-    ...eventSchema,
-    steps: eventSchema.steps.map((step) => {
-      if (step.name === "basics") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "community_id") {
-              return {
-                ...field,
-                options: communities.map((c) => ({
-                  label: c.name,
-                  value: c._id,
-                })),
-              };
-            }
-            return field;
-          }),
-        };
+  const dynamicSchema = (formData) => {
+    // Calculate duration for display
+    let durationDisplay = "Select dates to calculate...";
+    if (formData.startDateTime && formData.endDateTime) {
+      const diffMs =
+        new Date(formData.endDateTime) - new Date(formData.startDateTime);
+      if (diffMs > 0) {
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffMins = Math.round((diffMs % 3600000) / 60000);
+        durationDisplay = `${diffHrs}h ${diffMins}m`;
+      } else if (diffMs <= 0) {
+        durationDisplay = "End must be after Start";
       }
-      if (step.name === "schedule") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "venue_id") {
-              return {
-                ...field,
-                options: [
-                  ...venues.map((v) => ({
-                    label: `${v.name} (${v.location_code})`,
-                    value: v._id,
+    }
+
+    // Get booked dates for current venue (excluding THIS event)
+    const selectedVenueEvents =
+      formData.venue_id && formData.venue_id !== "other"
+        ? events.filter(
+            (e) =>
+              (e.venue_id?._id === formData.venue_id ||
+                e.venue_id === formData.venue_id) &&
+              e._id !== id,
+          )
+        : [];
+
+    const disabledDates = selectedVenueEvents.map((e) => ({
+      from: new Date(e.date_time),
+      to: new Date(e.end_time),
+    }));
+
+    return {
+      ...eventSchema,
+      steps: eventSchema.steps.map((step) => {
+        if (step.name === "basics") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "community_id") {
+                return {
+                  ...field,
+                  options: communities.map((c) => ({
+                    label: c.name,
+                    value: c._id,
                   })),
-                  { label: "Other / Manual Entry", value: "other" },
-                ],
-              };
-            }
-            return field;
-          }),
-        };
-      }
-      if (step.name === "talent") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "speaker_ids") {
-              return {
-                ...field,
-                options: speakers.map((s) => ({ label: s.name, value: s._id })),
-              };
-            }
-            return field;
-          }),
-        };
-      }
-      return step;
-    }),
+                };
+              }
+              return field;
+            }),
+          };
+        }
+        if (step.name === "schedule") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "venue_id") {
+                return {
+                  ...field,
+                  options: [
+                    ...venues.map((v) => ({
+                      label: `${v.name} (${v.location_code})`,
+                      value: v._id,
+                    })),
+                    { label: "Other / Manual Entry", value: "other" },
+                  ],
+                };
+              }
+              if (field.name === "duration_display") {
+                return { ...field, placeholder: durationDisplay };
+              }
+              if (
+                field.name === "startDateTime" ||
+                field.name === "endDateTime"
+              ) {
+                return { ...field, disabledDates };
+              }
+              return field;
+            }),
+          };
+        }
+        if (step.name === "talent") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "speaker_ids") {
+                return {
+                  ...field,
+                  options: speakers.map((s) => ({
+                    label: s.name,
+                    value: s._id,
+                  })),
+                };
+              }
+              return field;
+            }),
+          };
+        }
+        return step;
+      }),
+    };
   };
 
   if (loading || !initialData) {

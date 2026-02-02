@@ -1,14 +1,60 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { QrCode, CheckCircle, XCircle, Search } from "lucide-react";
+import { QrCode, CheckCircle, XCircle, Search, Camera } from "lucide-react";
 import SpotlightCard from "@/components/ui/SpotlightCard";
+import { Scanner } from "@yudiel/react-qr-scanner";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ScanQR = () => {
-  const { id } = useParams();
   const [manualCode, setManualCode] = useState("");
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [useCamera, setUseCamera] = useState(false);
+
+  const handleScan = async (result) => {
+    if (!result || !result[0]?.rawValue) return;
+
+    const code = result[0].rawValue;
+    setLoading(true);
+    setScanResult(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/registrations/checkin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ qr_code: code }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setScanResult({
+          success: true,
+          message: data.message,
+          user: data.user,
+        });
+        // Briefly disable camera to show result
+        setUseCamera(false);
+      } else {
+        setScanResult({
+          success: false,
+          message: data.message,
+        });
+      }
+    } catch (err) {
+      console.error("Check-in error:", err);
+      setError("Network error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleManualCheckIn = async (e) => {
     e.preventDefault();
@@ -66,12 +112,86 @@ const ScanQR = () => {
         </p>
       </div>
 
+      {error && (
+        <div className="w-full mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-3">
+          <XCircle size={18} />
+          {error}
+        </div>
+      )}
+
       <SpotlightCard className="w-full p-8 rounded-[2rem] border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-xl">
-        <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-white/10 rounded-2xl bg-white/5 mb-8">
-          <QrCode size={64} className="text-gray-500 mb-4 opacity-50" />
-          <p className="text-gray-400 text-sm">
-            Camera scanning not available on this device.
-          </p>
+        <div className="flex flex-col items-center justify-center min-h-[300px] border-2 border-dashed border-white/10 rounded-2xl bg-white/5 mb-8 overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {useCamera ? (
+              <motion.div
+                key="scanner"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full h-full absolute inset-0"
+              >
+                <Scanner
+                  onScan={handleScan}
+                  onError={(err) => {
+                    console.error(err);
+                    setError(
+                      "Could not access camera. Please check permissions.",
+                    );
+                    setUseCamera(false);
+                  }}
+                  styles={{
+                    container: { width: "100%", height: "100%" },
+                    video: {
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    },
+                  }}
+                />
+                <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none">
+                  <div className="w-full h-full border-2 border-violet-500/50 rounded-xl relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-violet-500 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-violet-500 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-violet-500 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-violet-500 rounded-br-lg" />
+                    <motion.div
+                      initial={{ top: "10%" }}
+                      animate={{ top: "90%" }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="absolute left-0 right-0 h-0.5 bg-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.8)]"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center p-8"
+              >
+                <div className="p-6 bg-violet-500/10 rounded-full mb-6 text-violet-400">
+                  <Camera size={48} />
+                </div>
+                <p className="text-white font-bold mb-2">Live Scanner Ready</p>
+                <p className="text-gray-500 text-sm text-center max-w-[250px] mb-8">
+                  Point your camera at a student's digital pass to check them in
+                  automatically.
+                </p>
+                <button
+                  onClick={() => setUseCamera(true)}
+                  className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-violet-600/20"
+                >
+                  Launch Camera
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <form onSubmit={handleManualCheckIn} className="space-y-4">

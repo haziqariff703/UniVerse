@@ -199,6 +199,13 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           onClick={() => navigate("/admin/users")}
           collapsed={collapsed}
         />
+        <SidebarItem
+          icon={Users}
+          label="Communities"
+          active={currentPath.includes("/admin/communities")}
+          onClick={() => navigate("/admin/communities")}
+          collapsed={collapsed}
+        />
 
         {/* Events Dropdown */}
         <SidebarGroup

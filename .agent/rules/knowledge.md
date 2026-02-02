@@ -55,6 +55,30 @@ The dashboard implements a real-time coordination layer for event staff.
 The system implements a tiered authorization structure to balance security with operational efficiency.
 
 - **Identity-Based Ownership**: Events are strictly tied to a `organizer_id`. General users and even other "Approved Organizers" are restricted from modifying events they do not own to maintain data integrity.
-- **Crew Delegation (Viewer Role)**: To support team coordination, designated crew members in the `EventCrew` collection are granted **Read-Only** access to the "Organizer Suite". They can view operational cards (Schedule/Tasks) and analytics but **cannot edit** the event structure, preserving the Organizer's control.
-- **Shared "Organizer Suite" Visibility**: The dashboard uses a "Broadened Data Collection" pattern. Aggregator endpoints (Finance, Analytics, Reviews) are programmed to query both owned events and crew assignments. This ensures that collaborators see the events they manage in their own "My Events" suite and can contribute to global performance tracking.
+- **Community Leadership Permissions**: For events hosted by a specific club or organization, a **Community-Led Association Model** is applied. Authorized leaders (President, AJK, Committee, Secretary, Treasurer) are granted full **CRUD/Edit** access to community events.
+- **Team Collaboration Model (Member/AJK/President)**: The system implements a shared-management approach for community events. All **Approved** members of a community (regardless of role tier) are granted **Edit** permissions on events hosted by their club. This allows collaborative efforts in managing schedules, tasks, and historical logs.
+- **Dynamic Permission UI (canEdit Flag)**: The backend dynamically injects a `canEdit` boolean flag into event responses based on membership status: (Admin OR System Organizer OR Owner OR Approved Community Member). This flag controls the visibility of all management interfaces.
+- **Unified Activity Log Access**: Access to "View All History" is granted to anyone with `canEdit` permissions, ensuring that the entire event team has visibility into the audit trail while restricting it for visitors.
 - **Administrative Override**: Global Admins retain full CRUD capabilities across all events for mediation and oversight purposes.
+
+## 7. Robust Data Ingestion & Sanitization (Stability)
+
+The system implements strict defensive coding patterns to ensure state persistence across heterogeneous device environments.
+
+- **Dynamic Type Parsing**: The frontend `EditEvent` flow performs explicit type casting (e.g., `parseInt(capacity) || 0`) for all numeric fields. This prevents "Cast Error" 400 Bad Request failures caused by `NaN` or empty strings reaching the MongoDB layer.
+- **Reference Integrity**: Reference IDs (e.g., `venue_id`, `community_id`) are conditionally stripped of "placeholder" values (like "other") before submission, maintaining referential integrity in the database.
+- **Cross-Component Prop Propagation**: The system uses a "Destructured Prop Safety" pattern in dashboard widgets (`InsightsPanel`, `EventTimeline`) to ensure that critical authorization flags like `canEdit` are consistently scoped, preventing ReferenceErrors during fragmented component updates.
+- **Responsive Container Constraints**: Recharts components are wrapped in `ResponsiveContainer` units with explicit `min-height` and `min-width` fallback styles to prevent rendering failures and console warnings during initial layout calculations.
+
+## 8. Organizer/Club Creation Ecosystem (Onboarding & Automation)
+
+The system implements a seamless "Student-to-Leader" transition flow, automating the technical overhead of organization management.
+
+- **Integrated Proposal Pipeline**: Students initiate organizer requests through a structured **Club Proposal** system. This captures legal and operational metadata (Mission, Advisor, Faculty) at the point of entry, ensuring all required organizational data is ready for platform instantiation.
+- **Atomic Approval-to-Activation Logic**: The Admin approval process triggers an atomic backend operation that simultaneously:
+  1. Promotes the user to the `organizer` role.
+  2. Instantiates a new **Community** record based on proposal metadata.
+  3. Assigns the user as the permanent **Owner/President** and first member of that community.
+  4. Marks the proposal as officially **Approved** for audit purposes.
+- **Metadata-Driven UI Hydration**: The Admin moderation interface (`OrganizerApprovals`) uses a **Populated Review Pattern**, dynamically fetching associated proposal documents only when needed. This ensures high performance for long approval queues while providing deep contextual data for moderation decisions.
+- **Multi-Role Session Sync**: The system implements an **Optimistic Role Refresh** strategy. Upon login or profile sync, the backend computes the user's effective permissions based on their primary `role` and their `roles` array, ensuring that newly approved organizers gain immediate access to the "Organizer Suite" without requiring a re-login.

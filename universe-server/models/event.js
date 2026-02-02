@@ -35,6 +35,10 @@ const eventSchema = new mongoose.Schema({
     type: Date, 
     required: true 
   },
+  end_time: {
+    type: Date,
+    required: false
+  },
   duration_minutes: { 
     type: Number, 
     default: 60 
@@ -70,7 +74,6 @@ const eventSchema = new mongoose.Schema({
   // Public Display & Filtering
   category: {
     type: String,
-    enum: ['Academic', 'Creative', 'Lifestyle', 'Community', 'Leadership'],
     default: 'Academic'
   },
   is_featured: {

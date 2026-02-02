@@ -57,6 +57,7 @@ const ReviewsPage = lazy(() => import("./pages/admin/ReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/admin/NotificationsPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 const CategoriesPage = lazy(() => import("./pages/admin/CategoriesPage"));
+const CommunitiesPage = lazy(() => import("./pages/admin/CommunitiesPage"));
 
 // Organizer Pages
 import CreateEvent from "./pages/organizer/CreateEvent";
@@ -127,17 +128,62 @@ const Layout = ({ children }) => {
 
     syncUserProfile();
 
+    // Also sync on visibility change (when user comes back to tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") syncUserProfile();
+    };
+
     window.addEventListener("authChange", checkUser);
     window.addEventListener("storage", checkUser);
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       window.removeEventListener("authChange", checkUser);
       window.removeEventListener("storage", checkUser);
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
+
+  // Re-sync on major path changes to catch role updates
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Small delay to ensure state isn't jumping
+      const timer = setTimeout(() => {
+        const syncUserProfile = async () => {
+          try {
+            const res = await fetch("http://localhost:5000/api/users/profile", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const latestUser = await res.json();
+              // Only update if the user object has effectively changed
+              const stored = JSON.parse(localStorage.getItem("user") || "{}");
+              if (JSON.stringify(latestUser) !== JSON.stringify(stored)) {
+                console.log("Syncing user profile...", latestUser);
+                setUser(latestUser);
+                localStorage.setItem("user", JSON.stringify(latestUser));
+                window.dispatchEvent(new Event("authChange"));
+              }
+            }
+          } catch {
+            // Silently fail sync
+          }
+        };
+        syncUserProfile();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname]);
 
   if (location.pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
+
+  // Determine if we should use the Glasy StudentSidebar
+  // We use it for Students, Organizers, and Associations as it contains the Organizer Suite
+  const useStudentSidebar =
+    user && ["student", "organizer", "association"].includes(user.role);
 
   return (
     <div className="flex min-h-screen bg-black text-foreground transition-colors duration-300 relative">
@@ -154,7 +200,7 @@ const Layout = ({ children }) => {
         />
       </div>
 
-      {user && user.role === "student" ? (
+      {useStudentSidebar ? (
         <StudentSidebar
           user={user}
           isOpen={!sidebarCollapsed}
@@ -431,6 +477,18 @@ function App() {
                       }
                     >
                       <CategoriesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="communities"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-foreground">Loading...</div>
+                      }
+                    >
+                      <CommunitiesPage />
                     </Suspense>
                   }
                 />

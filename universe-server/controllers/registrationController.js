@@ -104,7 +104,7 @@ exports.getEventRegistrations = async (req, res) => {
     
     // Authorization: Owner, Admin, or approved member of the hosting community
     const isOwner = event.organizer_id.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.roles.includes('admin');
     
     let isCommunityMember = false;
     if (event.community_id) {
@@ -168,7 +168,7 @@ exports.cancelRegistration = async (req, res) => {
     }
 
     // Check ownership
-    if (registration.user_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (registration.user_id.toString() !== req.user.id && !req.user.roles.includes('admin')) {
       return res.status(403).json({ message: "Not authorized to cancel this registration." });
     }
 
@@ -226,9 +226,21 @@ exports.checkIn = async (req, res) => {
       });
     }
 
+    // Robust user data fetching (Fallback if snapshot is missing)
+    let userData = registration.user_snapshot;
+    if (!userData || !userData.name) {
+       const user = await User.findById(registration.user_id);
+       if (user) {
+         userData = { name: user.name, student_id: user.student_id };
+         // Self-healing: update the snapshot for next time
+         registration.user_snapshot = userData;
+         await registration.save();
+       }
+    }
+
     res.status(200).json({
       message: "Check-in successful!",
-      user: registration.user_snapshot,
+      user: userData,
       meritAwarded: event ? event.merit_points : 0
     });
   } catch (error) {
@@ -261,6 +273,71 @@ exports.getPublicEventRegistrations = async (req, res) => {
       recentNames: names
     });
   } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Update registration status manually (Organizer View)
+ * @route   PATCH /api/registrations/:id/status
+ * @access  Private (Organizer/Admin/Staff)
+ */
+exports.updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const registrationId = req.params.id;
+
+    if (!['Confirmed', 'CheckedIn', 'Cancelled'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status." });
+    }
+
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ message: "Registration not found." });
+    }
+
+    // Verify ownership/access
+    const event = await Event.findById(registration.event_id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    const isAdmin = req.user.roles.includes('admin');
+    const isStaff = req.user.roles.includes('staff');
+
+    if (!isOwner && !isAdmin && !isStaff) {
+      return res.status(403).json({ message: "Not authorized to update this registration." });
+    }
+
+    const oldStatus = registration.status;
+    registration.status = status;
+    await registration.save();
+
+    // Side effects for Cancelled status
+    if (oldStatus !== 'Cancelled' && status === 'Cancelled') {
+      // Decrement attendee count
+      await Event.findByIdAndUpdate(registration.event_id, { $inc: { current_attendees: -1 } });
+    } else if (oldStatus === 'Cancelled' && status !== 'Cancelled') {
+      // Re-increment attendee count if un-cancelling
+      await Event.findByIdAndUpdate(registration.event_id, { $inc: { current_attendees: 1 } });
+    }
+
+    // Award merit points if checked in
+    if (oldStatus !== 'CheckedIn' && status === 'CheckedIn') {
+      if (event.merit_points > 0) {
+        await User.findByIdAndUpdate(registration.user_id, {
+          $inc: { current_merit: event.merit_points }
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: `Status updated to ${status}`,
+      registration
+    });
+  } catch (error) {
+    console.error('Update Status Error:', error);
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };

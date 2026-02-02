@@ -31,27 +31,28 @@ const auth = (req, res, next) => {
  */
 const authorize = (...roles) => {
   return async (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required.' });
-    }
-    
-    // Direct role match
-    if (roles.includes(req.user.role)) {
-      return next();
-    }
-
-    // Special case: if 'organizer' is in allowed roles, also allow users with is_organizer_approved
-    if (roles.includes('organizer')) {
-      const User = require('../models/user');
-      const user = await User.findById(req.user.id);
-      if (user && user.is_organizer_approved) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required.' });
+      }
+      
+      // Check against new roles array if it exists in the token
+      if (req.user.roles && req.user.roles.some(r => roles.includes(r))) {
         return next();
       }
+
+      // Fallback to legacy single role field (Keep for now, but roles array is primary)
+      if (roles.includes(req.user.role)) {
+        return next();
+      }
+      
+      return res.status(403).json({ 
+        message: `Access denied. Required role: ${roles.join(' or ')}.` 
+      });
+    } catch (error) {
+      console.error('Authorization Error:', error);
+      res.status(500).json({ message: 'Server error during authorization', error: error.message });
     }
-    
-    return res.status(403).json({ 
-      message: `Access denied. Required role: ${roles.join(' or ')}.` 
-    });
   };
 };
 

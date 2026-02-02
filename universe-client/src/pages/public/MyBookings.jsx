@@ -17,6 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import TrueFocus from "@/components/ui/TrueFocus";
 import { cn } from "@/lib/utils";
+import QRCode from "react-qr-code";
 
 const API_BASE = "http://localhost:5000";
 
@@ -24,6 +25,8 @@ const MyBookings = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   // Fetch bookings on mount - read token directly from localStorage
   useEffect(() => {
@@ -88,6 +91,7 @@ const MyBookings = () => {
               image: reg.event_id?.image
                 ? `${API_BASE}/${reg.event_id.image}`
                 : "/placeholder-event.jpg",
+              qr_code: reg.qr_code_string,
             }))
           : [];
 
@@ -315,6 +319,20 @@ const MyBookings = () => {
                       <div className="flex flex-col items-center lg:items-end gap-6 w-full mt-auto">
                         {getStatusBadge(pass.status)}
 
+                        {pass.status !== "Canceled" && (
+                          <button
+                            onClick={() => {
+                              setSelectedBooking(pass);
+                              setShowQRModal(true);
+                            }}
+                            className="w-full relative group/btn px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:bg-white/10 active:scale-95 mb-3"
+                          >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                              Show Entry Pass <Ticket className="w-4 h-4" />
+                            </span>
+                          </button>
+                        )}
+
                         <Link
                           to={`/events/${pass.eventId}`}
                           className="w-full relative group/btn px-8 py-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-2xl text-white font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 hover:shadow-[0_0_25px_rgba(217,70,239,0.5)] overflow-hidden text-center"
@@ -359,6 +377,72 @@ const MyBookings = () => {
           )}
         </motion.div>
       </div>
+
+      {/* QR MODAL */}
+      <AnimatePresence>
+        {showQRModal && selectedBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowQRModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+            >
+              <div className="p-8 flex flex-col items-center">
+                <div className="w-16 h-1 bg-white/10 rounded-full mb-8" />
+
+                <h3 className="text-xl font-bold text-white mb-2 text-center font-clash">
+                  Your Digital Pass
+                </h3>
+                <p className="text-slate-500 text-xs mb-8 text-center uppercase tracking-widest font-mono">
+                  {selectedBooking.title}
+                </p>
+
+                <div className="p-6 bg-white rounded-3xl mb-8">
+                  <QRCode
+                    value={selectedBooking.qr_code || "INVALID"}
+                    size={200}
+                    level="H"
+                  />
+                </div>
+
+                <div className="w-full space-y-4">
+                  <div className="flex justify-between items-center py-3 border-t border-white/5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                      Pass ID
+                    </span>
+                    <span className="text-xs font-mono text-white">
+                      {selectedBooking.id.slice(-8).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t border-white/5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                      Status
+                    </span>
+                    <span className="text-xs font-mono text-emerald-400">
+                      Verified Access
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="w-full mt-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-white text-xs font-bold uppercase tracking-widest transition-all"
+                >
+                  Close Pass
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Global CSS for shimmer animation */}
       <style>{`

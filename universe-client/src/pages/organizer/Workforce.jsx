@@ -42,7 +42,9 @@ const Workforce = () => {
   const isOwner =
     !!currentUserId &&
     !!ownerId &&
-    (ownerId === currentUserId || user.role === "admin");
+    (ownerId === currentUserId ||
+      user.role === "admin" ||
+      user.roles?.includes("admin"));
 
   const fetchMyCommunities = useCallback(async () => {
     try {
@@ -52,6 +54,7 @@ const Workforce = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
+      console.log("Communities:", data);
       if (res.ok) {
         setCommunities(data || []);
         if (data.length > 0 && !selectedCommunity) {
@@ -64,6 +67,12 @@ const Workforce = () => {
       setLoading(false);
     }
   }, [selectedCommunity]);
+
+  // Debugging
+  console.log("User:", user);
+  console.log("Communities State:", communities);
+  console.log("Selected Community:", selectedCommunity);
+  console.log("Assessment:", { isOwner, ownerId, currentUserId });
 
   const fetchApplicants = useCallback(async () => {
     if (!selectedCommunity) return;
@@ -131,6 +140,59 @@ const Workforce = () => {
     }
   };
 
+  const handleInvite = async (studentId) => {
+    if (!selectedCommunity) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE}/api/communities/${selectedCommunity}/members`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ student_id: studentId }),
+        },
+      );
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Crew member added successfully!");
+        fetchApplicants();
+      } else {
+        alert(data.message || "Failed to add member");
+      }
+    } catch (err) {
+      console.error("Invite error:", err);
+      alert("Server error");
+    }
+  };
+
+  // Early return if no communities (moved here to avoid hook errors)
+  if (!loading && communities.length === 0) {
+    return (
+      <div className="min-h-screen pt-24 pb-20 px-4 flex flex-col items-center justify-center text-center">
+        <Info className="w-16 h-16 text-white/20 mb-6" />
+        <h2 className="text-2xl font-bold text-white mb-2">
+          No Community Found
+        </h2>
+        <p className="text-white/40 max-w-md mb-8">
+          You have the Organizer role, but no community is linked to your
+          account. If you recently submitted a proposal, please wait for admin
+          approval. If you were manually promoted, you may need to create a
+          community first.
+        </p>
+        <Link
+          to="/start-club"
+          className="px-6 py-3 bg-violet-600 rounded-xl text-white font-bold hover:bg-violet-700 transition-all"
+        >
+          Start a Club Proposal
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
       {/* View-Only Warning for Authorized Organizers who aren't Owners */}
@@ -153,14 +215,24 @@ const Workforce = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
-              Workforce Center
-            </h1>
             <p className="text-white/40 text-sm">
               Manage your Talent & Team (AJKs)
             </p>
           </div>
         </div>
+
+        {/* Invite Button */}
+        {isOwner && (
+          <button
+            onClick={() => {
+              const studentId = prompt("Enter Student ID to invite:");
+              if (studentId) handleInvite(studentId);
+            }}
+            className="px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-full text-sm font-bold transition-all shadow-lg shadow-fuchsia-900/20 flex items-center gap-2"
+          >
+            <Users className="w-4 h-4" />+ Direct Add
+          </button>
+        )}
 
         <div className="flex bg-[#050505] border border-white/10 rounded-full p-1 shadow-lg overflow-x-auto no-scrollbar whitespace-nowrap">
           {[

@@ -5,9 +5,11 @@ const { auth: verifyToken } = require('../middleware/auth');
 
 // Public or Protected routes
 router.get('/:eventId', crewController.getCrewByEvent);
+router.get('/eligible/:eventId', verifyToken, crewController.getEligibleMembers);
 
 // Protected Routes
 router.post('/', verifyToken, crewController.addCrewMember);
+router.put('/:id', verifyToken, crewController.updateCrewMember); // Update role/dept
 router.delete('/:id', verifyToken, crewController.removeCrewMember);
 
 module.exports = router;

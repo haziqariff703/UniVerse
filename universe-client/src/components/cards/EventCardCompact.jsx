@@ -11,6 +11,8 @@ import {
   Ticket,
 } from "lucide-react";
 
+const API_BASE = "http://localhost:5000";
+
 const EventCardCompact = ({ event }) => {
   const date = new Date(event.date_time);
   const isPast = date < new Date();
@@ -27,7 +29,11 @@ const EventCardCompact = ({ event }) => {
       <div className="relative h-40 w-full bg-white/5 border-b border-white/5 shrink-0 overflow-hidden">
         {event.image ? (
           <img
-            src={event.image}
+            src={
+              event.image.startsWith("http")
+                ? event.image
+                : `${API_BASE}/${event.image}`
+            }
             alt={event.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -108,12 +114,14 @@ const EventCardCompact = ({ event }) => {
           >
             <BarChart2 size={14} /> Dashboard
           </Link>
-          <Link
-            to={`/organizer/event/${event._id}/edit`}
-            className="px-3 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-all"
-          >
-            <Edit size={14} />
-          </Link>
+          {event.canEdit && (
+            <Link
+              to={`/organizer/event/${event._id}/edit`}
+              className="px-3 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-all"
+            >
+              <Edit size={14} />
+            </Link>
+          )}
         </div>
       </div>
 

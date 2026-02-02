@@ -8,6 +8,7 @@ router.get('/my-communities', auth, communityController.getMyCommunities);
 router.post('/', auth, communityController.createCommunity);
 router.post('/:id/apply', auth, communityController.applyToCommunity);
 router.get('/:id/applicants', auth, communityController.getCommunityApplicants);
+router.post('/:id/members', auth, communityController.addMember); // Direct Add
 router.put('/members/:memberId', auth, communityController.updateMemberStatus);
 
 // Public Routes (Parameterized routes last)

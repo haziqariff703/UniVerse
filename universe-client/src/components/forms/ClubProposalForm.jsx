@@ -1,13 +1,5 @@
-import { useState } from "react";
-import {
-  School,
-  UserCheck,
-  FileUp,
-  CheckCircle,
-  Upload,
-  Info,
-  Check,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { School, UserCheck, FileUp, CheckCircle, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import Stepper, { Step } from "@/components/Stepper";
 
@@ -23,6 +15,7 @@ const STEPS_INFO = [
 const ClubProposalForm = () => {
   const [currentStep, setCurrentStep] = useState(1); // Track step for Info Panel
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     clubName: "",
     category: "",
@@ -33,13 +26,48 @@ const ClubProposalForm = () => {
     consentLetter: null,
   });
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFinalStepCompleted = () => {
-    setTimeout(() => setIsSubmitted(true), 500);
+  const handleFinalStepCompleted = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/proposals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        setIsSubmitted(true);
+      } else {
+        const error = await res.json();
+        alert(error.message || "Failed to submit proposal");
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Network error. Please try again.");
+    }
   };
 
   // Success State
@@ -131,11 +159,11 @@ const ClubProposalForm = () => {
                       className="w-full bg-background border border-input rounded-lg px-4 py-3 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all appearance-none"
                     >
                       <option value="">Select Category</option>
-                      <option value="sports">Sports</option>
-                      <option value="arts">Arts</option>
-                      <option value="tech">Technology</option>
-                      <option value="education">Education</option>
-                      <option value="religion">Religion</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat.name}>
+                          {cat.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

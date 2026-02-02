@@ -87,6 +87,10 @@ const OrganizerApprovals = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Proposal Details Modal State
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+
   // Rejection Modal State
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -124,6 +128,11 @@ const OrganizerApprovals = () => {
   useEffect(() => {
     fetchPendingOrganizers();
   }, [fetchPendingOrganizers]);
+
+  const viewProposal = (proposal) => {
+    setSelectedProposal(proposal);
+    setProposalModalOpen(true);
+  };
 
   const handleApprove = async (id) => {
     if (!confirm("Are you sure you want to approve this organizer request?"))
@@ -220,11 +229,14 @@ const OrganizerApprovals = () => {
         />
         <KpiCard
           title="Proposals to Review"
-          value={organizers.filter((o) => o.confirmation_letter_url).length}
+          value={
+            organizers.filter((o) => o.proposal || o.confirmation_letter_url)
+              .length
+          }
           icon={FileText}
           color="text-cyan-400"
           subValue="Policy compliance check"
-          description="Applications that have submitted official documentation for forensic verification."
+          description="Applications that have submitted official documentation or club proposals for verification."
         />
       </div>
 
@@ -313,7 +325,9 @@ const OrganizerApprovals = () => {
                               {org.name}
                             </p>
                             <span className="text-xs text-starlight/40">
-                              Requesting Organizer Access
+                              {org.proposal
+                                ? `Proposed "${org.proposal.clubName}"`
+                                : "Requesting Organizer Access"}
                             </span>
                           </div>
                         </div>
@@ -331,15 +345,25 @@ const OrganizerApprovals = () => {
                         </div>
                       </td>
                       <td className="p-4 align-top">
-                        {org.confirmation_letter_url || org.id_card_url ? (
+                        {org.proposal ||
+                        org.confirmation_letter_url ||
+                        org.id_card_url ? (
                           <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/60 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 w-fit">
-                              Files Attached
-                            </span>
+                            {org.proposal && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-violet-400/60 bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10 w-fit">
+                                Club Proposal
+                              </span>
+                            )}
+                            {(org.confirmation_letter_url ||
+                              org.id_card_url) && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/60 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 w-fit">
+                                Files Attached
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-[10px] font-black uppercase tracking-widest text-starlight/20 bg-white/5 px-2 py-0.5 rounded border border-white/5 w-fit">
-                            No Files
+                            No Data
                           </span>
                         )}
                       </td>
@@ -361,10 +385,26 @@ const OrganizerApprovals = () => {
                               <DropdownMenuSeparator className="bg-white/5" />
 
                               <DropdownMenuItem
-                                disabled={!org.confirmation_letter_url}
+                                onClick={() =>
+                                  org.proposal
+                                    ? viewProposal(org.proposal)
+                                    : null
+                                }
+                                disabled={
+                                  !org.proposal && !org.confirmation_letter_url
+                                }
                                 className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
                               >
-                                {org.confirmation_letter_url ? (
+                                {org.proposal ? (
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 group-hover:bg-violet-500 group-hover:text-white transition-all">
+                                      <FileText size={16} />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-violet-400">
+                                      Review Proposal
+                                    </span>
+                                  </div>
+                                ) : org.confirmation_letter_url ? (
                                   <a
                                     href={
                                       org.confirmation_letter_url.startsWith(
@@ -381,7 +421,7 @@ const OrganizerApprovals = () => {
                                       <FileText size={16} />
                                     </div>
                                     <span className="font-bold text-xs uppercase tracking-widest text-violet-400">
-                                      Verify Proposal
+                                      View Document
                                     </span>
                                   </a>
                                 ) : (
@@ -492,6 +532,80 @@ const OrganizerApprovals = () => {
           </>
         )}
       </div>
+
+      {/* Proposal Details Dialog */}
+      <Dialog open={proposalModalOpen} onOpenChange={setProposalModalOpen}>
+        <DialogContent className="glass-panel border-white/10 text-starlight max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-violet-500/20 text-violet-400">
+                <FileText size={20} />
+              </div>
+              Club Proposal Details
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedProposal && (
+            <div className="py-6 space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-starlight/40 mb-2 block">
+                    Club Name
+                  </label>
+                  <p className="text-lg font-bold text-starlight">
+                    {selectedProposal.clubName}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-starlight/40 mb-2 block">
+                    Category
+                  </label>
+                  <p className="text-starlight font-medium capitalize px-3 py-1 bg-white/5 rounded-lg border border-white/10 w-fit">
+                    {selectedProposal.category}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-starlight/40 mb-2 block">
+                  Mission Statement
+                </label>
+                <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-starlight/80 text-sm leading-relaxed italic">
+                  "{selectedProposal.mission}"
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 bg-white/5 p-4 rounded-2xl border border-white/10">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-starlight/40 mb-1 block">
+                    Faculty Advisor
+                  </label>
+                  <p className="text-sm font-bold text-starlight">
+                    {selectedProposal.advisorName}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-starlight/40 mb-1 block">
+                    Committee Size
+                  </label>
+                  <p className="text-sm font-bold text-starlight">
+                    {selectedProposal.committeeSize} Members
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <button
+              onClick={() => setProposalModalOpen(false)}
+              className="w-full px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-all shadow-lg shadow-violet-500/20"
+            >
+              Close Review
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={rejectionModalOpen} onOpenChange={setRejectionModalOpen}>
         <DialogContent className="glass-panel border-white/10 text-starlight max-w-md">

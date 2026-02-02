@@ -7,6 +7,9 @@ import {
   Save,
   ChevronDown,
 } from "lucide-react";
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/flatpickr.css";
+import "flatpickr/dist/themes/dark.css";
 
 const DynamicSteppedForm = ({
   schema,
@@ -17,7 +20,11 @@ const DynamicSteppedForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(initialData);
-  const [activeSection, setActiveSection] = useState(schema.steps[0]?.id || 1);
+  const computedSchema =
+    typeof schema === "function" ? schema(formData) : schema;
+  const [activeSection, setActiveSection] = useState(
+    computedSchema.steps[0]?.id || 1,
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -182,6 +189,30 @@ const DynamicSteppedForm = ({
           </div>
         )}
 
+        {field.type === "datetime-picker" && (
+          <div className="relative group">
+            {field.icon && (
+              <field.icon
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-violet-400 transition-colors z-10"
+                size={18}
+              />
+            )}
+            <Flatpickr
+              value={formData[field.name]}
+              onChange={([date]) => handleSelectChange(field.name, date)}
+              options={{
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                minDate: "today",
+                disable: field.disabledDates || [],
+                ...(field.flatpickrOptions || {}),
+              }}
+              className={`${commonClasses} ${field.icon ? "pl-11" : ""} cursor-pointer`}
+              placeholder={field.placeholder || "Select Date & Time"}
+            />
+          </div>
+        )}
+
         {field.type === "multi-select" && (
           <div className="flex flex-wrap gap-2">
             {field.options &&
@@ -327,7 +358,7 @@ const DynamicSteppedForm = ({
         )}
 
         <div className="divide-y divide-zinc-900">
-          {schema.steps.map((section, index) => {
+          {computedSchema.steps.map((section, index) => {
             // Skip review step or steps with no fields
             if (
               section.type === "review" ||

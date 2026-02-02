@@ -32,7 +32,9 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/venues", venueRoutes);
 app.use("/api/speakers", speakerRoutes);
 app.use("/api/communities", communityRoutes);
+app.use("/api/proposals", require("./routes/clubProposalRoutes"));
 app.use("/api/crew", require("./routes/crewRoutes"));
+app.use("/api/categories", require("./routes/categoryRoutes"));
 
 // Basic Route for Testing
 app.get("/", (req, res) => {

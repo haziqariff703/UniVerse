@@ -91,7 +91,8 @@ const Navbar = ({ user, onToggleSidebar }) => {
           {/* CENTER: Nav Links with Sliding Pill */}
           {/* CENTER: Nav Links with Sliding Pill - HIDDEN FOR STUDENTS */}
           <nav className="hidden md:flex items-center gap-1">
-            {(!user || user.role !== "student") &&
+            {(!user ||
+              (user.role !== "student" && !user.roles?.includes("student"))) &&
               NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -207,6 +208,33 @@ const Navbar = ({ user, onToggleSidebar }) => {
                       </Link>
 
                       <div className="h-px bg-white/10 my-1" />
+
+                      {/* Mode Switching for Multi-Role Users (Excluding Associations) */}
+                      {user.roles?.includes("organizer") &&
+                        user.role !== "association" && (
+                          <>
+                            {location.pathname.startsWith("/organizer") ? (
+                              <Link
+                                to="/"
+                                onClick={() => setDropdownOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-violet-400 hover:bg-violet-500/10 transition-colors"
+                              >
+                                <Rocket className="w-4 h-4" />
+                                Switch to Student View
+                              </Link>
+                            ) : (
+                              <Link
+                                to="/organizer/my-events"
+                                onClick={() => setDropdownOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-purple-400 hover:bg-purple-500/10 transition-colors"
+                              >
+                                <Settings className="w-4 h-4" />
+                                Switch to Organizer View
+                              </Link>
+                            )}
+                            <div className="h-px bg-white/10 my-1" />
+                          </>
+                        )}
 
                       <button
                         onClick={handleLogout}

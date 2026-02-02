@@ -16,18 +16,30 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Associations are restricted to organizer/admin views only
+  if (!allowedRoles && user.role === "association") {
+    return <Navigate to="/organizer/my-events" replace />;
+  }
+
   // Logged in, check role-based access
   if (allowedRoles) {
-    const hasAllowedRole = allowedRoles.includes(user.role);
+    // Check against new roles array (Source of Truth) or primary role
+    // Special: associations are automatically allowed to organizer and admin routes
+    const isAssociation = user.role === "association";
+    const hasRole =
+      (isAssociation &&
+        (allowedRoles.includes("organizer") ||
+          allowedRoles.includes("admin"))) ||
+      (user.roles && user.roles.some((r) => allowedRoles.includes(r))) ||
+      allowedRoles.includes(user.role);
 
-    // Special case: users with is_organizer_approved can access "organizer" routes
-    const isApprovedOrganizer =
-      allowedRoles.includes("organizer") && user.is_organizer_approved;
-
-    if (!hasAllowedRole && !isApprovedOrganizer) {
+    if (!hasRole) {
       // Redirect to a sensible default based on their actual role
-      if (user.role === "admin") {
-        return <Navigate to="/admin/dashboard" replace />;
+      if (
+        user.role === "admin" ||
+        (user.roles && user.roles.includes("admin"))
+      ) {
+        return <Navigate to="/admin" replace />;
       }
       return <Navigate to="/" replace />;
     }
