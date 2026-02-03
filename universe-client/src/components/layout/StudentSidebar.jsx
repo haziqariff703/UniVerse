@@ -18,6 +18,7 @@ import {
   Newspaper,
   Ticket,
   ArrowLeftRight,
+  Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
     { label: "Events", path: "/events", icon: Calendar },
     { label: "Venues", path: "/venues", icon: MapPin },
     { label: "Communities", path: "/communities", icon: Users },
+    { label: "Speakers", path: "/speakers", icon: Mic },
     { label: "My Bookings", path: "/my-bookings", icon: Ticket },
   ];
 
