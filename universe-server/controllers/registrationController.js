@@ -137,6 +137,7 @@ exports.getEventRegistrations = async (req, res) => {
  */
 exports.getMyBookings = async (req, res) => {
   try {
+    const Review = require('../models/review');
     const registrations = await Registration.find({ user_id: req.user.id })
       .populate({
         path: 'event_id',
@@ -148,7 +149,24 @@ exports.getMyBookings = async (req, res) => {
       })
       .sort({ booking_time: -1 });
 
-    res.status(200).json(registrations);
+    // Fetch all reviews by this user to attach to registrations
+    const reviews = await Review.find({ user_id: req.user.id });
+
+    // Map reviews by event_id for easy lookup
+    const reviewMap = {};
+    reviews.forEach(r => {
+      reviewMap[r.event_id.toString()] = r;
+    });
+
+    // Attach review to each registration
+    const registrationsWithReviews = registrations.map(reg => {
+      const regObj = reg.toObject();
+      const eventId = reg.event_id?._id?.toString() || reg.event_snapshot?._id?.toString();
+      regObj.review = reviewMap[eventId] || null;
+      return regObj;
+    });
+
+    res.status(200).json(registrationsWithReviews);
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
   }

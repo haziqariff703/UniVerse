@@ -135,7 +135,31 @@ const StudentSidebar = ({ isOpen, user, onLogout }) => {
                     Organizer Suite
                   </p>
                 </div>
-                {ORGANIZER_ITEMS.map((item) => {
+                {ORGANIZER_ITEMS.filter((item) => {
+                  // If Admin or Association, show everything
+                  if (user?.role === "admin" || user?.role === "association")
+                    return true;
+
+                  // If President, show everything
+                  if (user?.isPresident) return true;
+
+                  // If AJK/Organizer but not President, only show Workforce (and maybe My Events to see context)
+                  const restrictedItems = [
+                    "Workforce",
+                    "My Events",
+                    "Activity Log",
+                  ];
+
+                  // Unlock Finance for Treasurer
+                  if (
+                    user?.communityRoles?.includes("Treasurer") &&
+                    item.label === "Finance"
+                  ) {
+                    return true;
+                  }
+
+                  return restrictedItems.includes(item.label);
+                }).map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
                     <Link

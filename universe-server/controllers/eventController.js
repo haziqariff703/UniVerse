@@ -877,6 +877,71 @@ exports.getEventAnalytics = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Create a review for an event
+ * @route   POST /api/events/:id/reviews
+ * @access  Private
+ */
+exports.createReview = async (req, res) => {
+  try {
+    const { rating, value, energy, welfare, comment } = req.body;
+    const eventId = req.params.id;
+    const userId = req.user.id;
+
+    // 1. Verify Event Exists
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // 2. Verify User Attended (Registration Status = CheckedIn)
+    const registration = await Registration.findOne({
+      event_id: eventId,
+      user_id: userId,
+      status: 'CheckedIn'
+    });
+
+    if (!registration) {
+      return res.status(403).json({ 
+        message: "You can only review events you have attended and checked in to." 
+      });
+    }
+
+    // 3. Verify No Existing Review
+    const existingReview = await Review.findOne({ event_id: eventId, user_id: userId });
+    if (existingReview) {
+      return res.status(400).json({ message: "You have already reviewed this event." });
+    }
+
+    // 4. Handle Photos
+    let photos = [];
+    if (req.files && req.files.length > 0) {
+      photos = req.files.map(file => file.path.replace(/\\/g, "/"));
+    }
+
+    // 5. Create Review
+    const newReview = new Review({
+      event_id: eventId,
+      user_id: userId,
+      rating,
+      value: value || 5,   // Default mid-score if missing
+      energy: energy || 5, // Default mid-score if missing
+      welfare: welfare || 5, // Default mid-score if missing
+      comment,
+      photos
+    });
+
+    await newReview.save();
+
+    res.status(201).json({ 
+      message: "Review submitted successfully!", 
+      review: newReview 
+    });
+
+  } catch (err) {
+    console.error("Create Review Error:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
 // Helper function to format audit log messages
 function formatAuditMessage(action, details) {
   const actionMessages = {

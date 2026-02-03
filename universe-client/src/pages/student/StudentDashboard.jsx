@@ -134,11 +134,14 @@ const StudentDashboard = ({ user }) => {
     .map((reg) => ({
       ...reg.event_id,
       id: reg._id,
-      overallScore: reg.attended
-        ? (Math.random() * (9.8 - 7.5) + 7.5).toFixed(1)
-        : "N/A",
+      overallScore: reg.review
+        ? reg.review.rating * 2
+        : reg.attended
+          ? "Pending Review"
+          : "N/A",
       attended: reg.attended,
       category: reg.event_id?.category,
+      review: reg.review,
     }));
 
   // Live Pulse from Venues

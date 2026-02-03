@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReviewModal from "@/components/common/ReviewModal";
 import {
   Calendar,
   MapPin,
@@ -27,6 +28,78 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
+
+  // Review System State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewEvent, setReviewEvent] = useState(null);
+
+  const handleOpenReview = (booking) => {
+    // Only allow reviewing checked-in events
+    if (booking.status === "CheckedIn") {
+      setReviewEvent({
+        id: booking.eventId, // Ensure this maps correctly from your data
+        title: booking.title,
+      });
+      setShowReviewModal(true);
+    }
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    if (!reviewEvent?.id) {
+      alert("Error: Missing Event ID. Data: " + JSON.stringify(reviewEvent));
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      console.log(
+        "Submitting to:",
+        `${API_BASE}/api/events/${reviewEvent.id}/reviews`,
+      );
+
+      const formData = new FormData();
+      formData.append("rating", reviewData.rating);
+      formData.append("value", reviewData.value);
+      formData.append("energy", reviewData.energy);
+      formData.append("welfare", reviewData.welfare);
+      formData.append("comment", reviewData.comment);
+
+      if (reviewData.photos && reviewData.photos.length > 0) {
+        reviewData.photos.forEach((file) => {
+          formData.append("photos", file);
+        });
+      }
+
+      const res = await fetch(
+        `${API_BASE}/api/events/${reviewEvent.id}/reviews`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        },
+      );
+
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await res.json();
+      } else {
+        data = { message: await res.text() };
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to submit review");
+      }
+
+      console.log("Review submitted successfully:", data);
+    } catch (err) {
+      console.error("Review submission error:", err);
+      alert("Booking Page Error: " + err.message);
+      throw err; // Re-throw so ReviewModal knows it failed
+    }
+  };
 
   // Fetch bookings on mount - read token directly from localStorage
   useEffect(() => {
@@ -122,21 +195,21 @@ const MyBookings = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "Scheduled":
+      case "Confirmed":
         return (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider">
             <CheckCircle2 className="w-3 h-3" />
             Confirmed
           </div>
         );
-      case "Completed":
+      case "CheckedIn":
         return (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 border border-white/5 text-slate-400 text-[10px] font-bold font-mono uppercase tracking-wider">
             <Clock4 className="w-3 h-3" />
-            Finalized
+            Verified Access
           </div>
         );
-      case "Canceled":
+      case "Cancelled":
         return (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold font-mono uppercase tracking-wider">
             <XCircle className="w-3 h-3" />
@@ -147,6 +220,9 @@ const MyBookings = () => {
         return null;
     }
   };
+
+  // Helper to check if reviewable
+  const canReview = (status) => status === "CheckedIn";
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -251,7 +327,6 @@ const MyBookings = () => {
                     exit="exit"
                     className="group relative flex flex-col lg:flex-row items-stretch rounded-[2.5rem] bg-black/40 backdrop-blur-3xl border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 shadow-2xl"
                   >
-                    {/* ... (existing content) */}
                     {/* MAIN SECTION (70%) */}
                     <div className="flex-1 p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center min-w-0">
                       {/* Event Thumbnail */}
@@ -318,6 +393,18 @@ const MyBookings = () => {
 
                       <div className="flex flex-col items-center lg:items-end gap-6 w-full mt-auto">
                         {getStatusBadge(pass.status)}
+
+                        {/* Review Button for Completed Events */}
+                        {canReview(pass.status) && (
+                          <button
+                            onClick={() => handleOpenReview(pass)}
+                            className="w-full relative group/btn px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:bg-fuchsia-500/10 hover:border-fuchsia-500/30 mb-3"
+                          >
+                            <span className="relative z-10 flex items-center justify-center gap-2 group-hover:text-fuchsia-400 transition-colors">
+                              Rate Event <Ticket className="w-4 h-4" />
+                            </span>
+                          </button>
+                        )}
 
                         {pass.status !== "Canceled" && (
                           <button
@@ -443,6 +530,14 @@ const MyBookings = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* REVIEW MODAL */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        event={reviewEvent}
+        onSubmit={handleSubmitReview}
+      />
 
       {/* Global CSS for shimmer animation */}
       <style>{`

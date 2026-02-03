@@ -514,7 +514,10 @@ function App() {
               <Route
                 path="/organizer/event/:id/edit"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <EditEvent />
                   </ProtectedRoute>
                 }
@@ -538,7 +541,10 @@ function App() {
               <Route
                 path="/organizer/create-event"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <CreateEvent />
                   </ProtectedRoute>
                 }
@@ -546,7 +552,10 @@ function App() {
               <Route
                 path="/organizer/venues"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <OrganizerVenues />
                   </ProtectedRoute>
                 }
@@ -562,7 +571,10 @@ function App() {
               <Route
                 path="/organizer/analytics"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <Analytics />
                   </ProtectedRoute>
                 }
@@ -578,7 +590,10 @@ function App() {
               <Route
                 path="/organizer/finance"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <Finance />
                   </ProtectedRoute>
                 }
@@ -594,7 +609,10 @@ function App() {
               <Route
                 path="/organizer/speakers"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <OrganizerSpeakers />
                   </ProtectedRoute>
                 }
@@ -602,7 +620,10 @@ function App() {
               <Route
                 path="/organizer/broadcast"
                 element={
-                  <ProtectedRoute allowedRoles={["organizer", "admin"]}>
+                  <ProtectedRoute
+                    allowedRoles={["organizer", "admin"]}
+                    requirePresident={true}
+                  >
                     <Broadcast />
                   </ProtectedRoute>
                 }

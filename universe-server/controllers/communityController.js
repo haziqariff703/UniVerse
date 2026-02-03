@@ -146,8 +146,16 @@ exports.updateMemberStatus = async (req, res) => {
     if (status === 'Approved' && !member.joined_at) {
       member.joined_at = new Date();
       
-      // If approved as AJK or higher, approve their organizer status globally
-      await User.findByIdAndUpdate(member.user_id, { is_organizer_approved: true });
+      // If approved as AJK or higher (any role other than Member), grant organizer access
+      const organizerRoles = ['President', 'Secretary', 'Treasurer', 'Committee', 'AJK'];
+      if (organizerRoles.includes(member.role)) {
+        await User.findByIdAndUpdate(member.user_id, { 
+          is_organizer_approved: true,
+          $addToSet: { roles: 'organizer' }
+        });
+      } else {
+        await User.findByIdAndUpdate(member.user_id, { is_organizer_approved: true });
+      }
     }
 
     await member.save();
@@ -253,11 +261,17 @@ exports.addMember = async (req, res) => {
       community_id,
       user_id: user._id,
       status: 'Approved', // Auto-approve direct adds
-      role: 'Crew',
+      role: 'AJK', // Standardized from 'Crew' to match Model Enum
       joined_at: new Date()
     });
 
     await newMember.save();
+
+    // 5. Grant Organizer Access (Same as updateMemberStatus logic)
+    await User.findByIdAndUpdate(user._id, { 
+      is_organizer_approved: true,
+      $addToSet: { roles: 'organizer' }
+    });
 
     res.status(201).json({ message: 'Member added successfully', member: newMember, user });
 
