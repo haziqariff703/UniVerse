@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CheckCircle2, Circle, Trash2, Plus } from "lucide-react";
 
-const EventTodoList = ({ tasks, onUpdate }) => {
+const EventTodoList = ({ tasks, onUpdate, canEdit }) => {
   const [newTask, setNewTask] = useState("");
 
   const toggleTask = (index) => {
@@ -38,11 +38,11 @@ const EventTodoList = ({ tasks, onUpdate }) => {
           tasks.map((task, index) => (
             <div
               key={index}
-              className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5 transition-all cursor-pointer"
+              className={`group flex items-start gap-3 p-2.5 rounded-xl transition-all ${canEdit ? "hover:bg-white/[0.03] border border-transparent hover:border-white/5 cursor-pointer" : "cursor-default opacity-80"}`}
             >
               <div
-                onClick={() => toggleTask(index)}
-                className={`mt-0.5 ${task.completed ? "text-emerald-400" : "text-gray-600 group-hover:text-violet-400"} transition-colors`}
+                onClick={() => canEdit && toggleTask(index)}
+                className={`mt-0.5 ${task.completed ? "text-emerald-400" : `text-gray-600 ${canEdit ? "group-hover:text-violet-400" : ""}`} transition-colors`}
               >
                 {task.completed ? (
                   <CheckCircle2 size={16} />
@@ -50,7 +50,10 @@ const EventTodoList = ({ tasks, onUpdate }) => {
                   <Circle size={16} />
                 )}
               </div>
-              <div className="flex-1" onClick={() => toggleTask(index)}>
+              <div
+                className="flex-1"
+                onClick={() => canEdit && toggleTask(index)}
+              >
                 <p
                   className={`text-sm font-medium transition-all ${task.completed ? "text-gray-500 line-through decoration-violet-500/50" : "text-gray-200"}`}
                 >
@@ -62,15 +65,17 @@ const EventTodoList = ({ tasks, onUpdate }) => {
                   </p>
                 )}
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteTask(index);
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-500/10 text-gray-700 hover:text-red-400 transition-all"
-              >
-                <Trash2 size={12} />
-              </button>
+              {canEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteTask(index);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-500/10 text-gray-700 hover:text-red-400 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
           ))
         ) : (
@@ -83,21 +88,23 @@ const EventTodoList = ({ tasks, onUpdate }) => {
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-white/5">
-        <div className="relative group">
-          <input
-            type="text"
-            placeholder="+ Add a new task..."
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            onKeyDown={addTask}
-            className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-xs font-medium text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.04] transition-all"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-700 group-focus-within:text-violet-500 transition-colors uppercase">
-            Hit Enter
+      {canEdit && (
+        <div className="mt-4 pt-4 border-t border-white/5">
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder="+ Add a new task..."
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={addTask}
+              className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-xs font-medium text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.04] transition-all"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-700 group-focus-within:text-violet-500 transition-colors uppercase">
+              Hit Enter
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -6,46 +6,13 @@ const AuditLog = require('../models/auditLog');
 const EventCrew = require('../models/eventCrew');
 const CommunityMember = require('../models/communityMember');
 
-// Leadership roles that grant event visibility
-const LEADERSHIP_ROLES = ['President', 'Secretary', 'Treasurer', 'Committee', 'AJK'];
+const { getAccessibleEventIds, LEADERSHIP_ROLES } = require('../utils/accessControl');
 
 /**
- * Helper function to get all event IDs a user has access to.
- * Access is granted if the user is:
- * 1. The organizer (owner) of the event.
- * 2. An accepted crew member of the event.
- * 3. A leader (AJK, President, etc.) of the community that hosts the event.
+ * @desc    Get all event IDs a user has access to.
+ * Just keeping the export reference for any other controller that might import it from here.
  */
-const getAccessibleEventIds = async (userId) => {
-  // 1. Get events owned by the user
-  const ownedEvents = await Event.find({ organizer_id: userId }).select('_id');
-  const ownedEventIds = ownedEvents.map(e => e._id);
-
-  // 2. Get events where user is an accepted crew member
-  const crewAssignments = await EventCrew.find({ user_id: userId, status: 'accepted' });
-  const crewEventIds = crewAssignments.map(c => c.event_id);
-
-  // 3. Get communities where user is a leader
-  const leaderMemberships = await CommunityMember.find({
-    user_id: userId,
-    role: { $in: LEADERSHIP_ROLES },
-    status: 'Approved'
-  });
-  const leaderCommunityIds = leaderMemberships.map(m => m.community_id);
-
-  // Get events belonging to those communities
-  const communityEvents = await Event.find({ community_id: { $in: leaderCommunityIds } }).select('_id');
-  const communityEventIds = communityEvents.map(e => e._id);
-
-  // Combine and deduplicate
-  const allEventIds = [...new Set([
-    ...ownedEventIds.map(id => id.toString()),
-    ...crewEventIds.map(id => id.toString()),
-    ...communityEventIds.map(id => id.toString())
-  ])];
-
-  return allEventIds;
-};
+exports.getAccessibleEventIds = getAccessibleEventIds;
 
 /**
  * @desc    Get all events (with optional filters)
@@ -116,23 +83,31 @@ exports.getMyEvents = async (req, res) => {
       user_id: req.user.id, 
       status: 'Approved' 
     });
+    const User = require('../models/user');
+    const user = await User.findById(req.user.id);
+    const isOrganizerApproved = user && user.is_organizer_approved;
     
     const communityIds = memberships.map(m => m.community_id);
+    const leaderCommunityIds = memberships
+      .filter(m => LEADERSHIP_ROLES.includes(m.role) || isOrganizerApproved)
+      .map(m => m.community_id.toString());
     
     // Find events where user is an accepted crew member
     const crewAssignments = await EventCrew.find({ 
       user_id: req.user.id, 
       status: 'accepted' 
     });
-    const crewEventIds = crewAssignments.map(c => c.event_id);
+    const crewEventIds = crewAssignments.map(c => c.event_id.toString());
     
-    console.log("Fetching events for user's communities:", communityIds);
+    console.log("Fetching events for user's communities (Leader/Approved):", leaderCommunityIds);
     console.log("Fetching events for user's crew assignments:", crewEventIds);
     
-    // Find events that belong to these communities OR were created by this user directly OR user is crew member
+    // Find events that belong to communities where user is a leader/approved organizer
+    // OR were created by this user directly 
+    // OR user is explicitly assigned as a crew member
     const events = await Event.find({ 
       $or: [
-        { community_id: { $in: communityIds } },
+        { community_id: { $in: leaderCommunityIds } },
         { organizer_id: req.user.id },
         { _id: { $in: crewEventIds } }
       ]
@@ -141,7 +116,28 @@ exports.getMyEvents = async (req, res) => {
       .populate('community_id', 'name slug')
       .sort({ date_time: -1 });
 
-    res.status(200).json(events);
+    const isAdmin = req.user.roles.includes('admin');
+    const isSystemOrganizer = req.user.roles.includes('organizer');
+
+    // Map to plain objects and add canEdit flag
+    const formattedEvents = events.map(event => {
+      const eventObj = event.toObject();
+      
+      const isOwner = event.organizer_id.toString() === req.user.id;
+      
+      // Check if user is an approved member of the community
+      const userMembership = event.community_id 
+        ? memberships.find(m => m.community_id.toString() === event.community_id._id.toString())
+        : null;
+      
+      const isApprovedMember = userMembership && userMembership.status === 'Approved';
+      
+      // Reverted strictness: Admin, System Organizer, Owner, OR any Approved Club Member
+      eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember;
+      return eventObj;
+    });
+
+    res.status(200).json(formattedEvents);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -195,7 +191,49 @@ exports.getEventById = async (req, res) => {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    res.status(200).json(event);
+    const eventObj = event.toObject();
+    eventObj.canEdit = false;
+
+    // Check permissions if user is authenticated
+    if (req.headers.authorization) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const isAdmin = (decoded.roles || []).includes('admin');
+        const isSystemOrganizer = (decoded.roles || []).includes('organizer');
+        const isOwner = event.organizer_id._id 
+          ? event.organizer_id._id.toString() === decoded.id 
+          : event.organizer_id.toString() === decoded.id;
+        
+        let isApprovedMember = false;
+        if (event.community_id) {
+          const CommunityMember = require('../models/communityMember');
+          const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: decoded.id,
+            status: 'Approved'
+          });
+          if (membership) isApprovedMember = true;
+        }
+
+        // Check if user is a crew member
+        const EventCrew = require('../models/eventCrew');
+        const crewMember = await EventCrew.findOne({
+          event_id: event._id,
+          user_id: decoded.id,
+          status: 'accepted'
+        });
+        const isCrew = !!crewMember;
+
+        eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+      } catch (err) {
+        // Token invalid or expired, ignore canEdit
+      }
+    }
+
+    res.status(200).json(eventObj);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -223,6 +261,46 @@ exports.createEvent = async (req, res) => {
         eventData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
       }
     }
+
+    // Overlap Check for Venue
+    if (eventData.venue_id && eventData.venue_id !== 'other') {
+      const start = new Date(eventData.date_time);
+      const end = new Date(eventData.end_time);
+
+      if (end <= start) {
+        return res.status(400).json({ message: "End time must be after start time." });
+      }
+
+      const overlappingEvent = await Event.findOne({
+        venue_id: eventData.venue_id,
+        status: { $ne: 'rejected' }, // Assume rejected events don't block
+        $or: [
+          { date_time: { $lt: end }, end_time: { $gt: start } }
+        ]
+      });
+
+      if (overlappingEvent) {
+        return res.status(400).json({ 
+          message: "Conflict: This venue is already booked for the selected time range.",
+          conflict: {
+            title: overlappingEvent.title,
+            start: overlappingEvent.date_time,
+            end: overlappingEvent.end_time
+          }
+        });
+      }
+    }
+
+    // JSON Parse complex fields if sent via FormData (as strings)
+    ['tasks', 'schedule'].forEach(field => {
+      if (typeof eventData[field] === 'string') {
+        try {
+          eventData[field] = JSON.parse(eventData[field]);
+        } catch (e) {
+          console.error(`Error parsing ${field}:`, e.message);
+        }
+      }
+    });
 
     console.log("Creating event for user:", req.user.id);
     console.log("Event Data:", eventData);
@@ -252,26 +330,43 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    // Authorization: Owner, Admin, or approved member of the hosting community
+    // Authorization: Admin, System Organizer, Owner, or any Approved Community Member
+    const isAdmin = req.user.roles.includes('admin');
+    const isSystemOrganizer = req.user.roles.includes('organizer');
     const isOwner = event.organizer_id.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
     
-    let isCommunityMember = false;
+    let isApprovedMember = false;
     if (event.community_id) {
       const CommunityMember = require('../models/communityMember');
+      
       const membership = await CommunityMember.findOne({
         community_id: event.community_id,
         user_id: req.user.id,
         status: 'Approved'
       });
-      if (membership) isCommunityMember = true;
+      
+      if (membership) isApprovedMember = true;
     }
 
-    if (!isOwner && !isAdmin && !isCommunityMember) {
+    // Check if user is a crew member
+    const EventCrew = require('../models/eventCrew');
+    const crewMember = await EventCrew.findOne({
+      event_id: event._id,
+      user_id: req.user.id,
+      status: 'accepted'
+    });
+    const isCrew = !!crewMember;
+
+    // Authorization: Allow if Admin, Organizer, Owner, Approved Member, OR Crew
+    const canUpdate = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+
+    if (!canUpdate) {
       return res.status(403).json({ message: "Not authorized to update this event." });
     }
 
+    // Proceed with update logic directly
     const updateData = { ...req.body };
+    console.log("Updating Event with Data:", updateData);
 
     // Sanitize reference fields: extract ObjectId from populated objects
     const refFields = ['organizer_id', 'venue_id', 'community_id'];
@@ -298,16 +393,79 @@ exports.updateEvent = async (req, res) => {
       }
     }
 
-    const updatedEvent = await Event.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
+    // Overlap Check for Venue on Update
+    const newVenueId = updateData.venue_id || event.venue_id;
+    const newStart = updateData.date_time ? new Date(updateData.date_time) : event.date_time;
+    const newEnd = updateData.end_time ? new Date(updateData.end_time) : event.end_time;
 
-    res.status(200).json({
-      message: "Event updated successfully!",
-      event: updatedEvent
+    if (newVenueId && newVenueId.toString() !== 'other') {
+      if (newEnd <= newStart) {
+        return res.status(400).json({ message: "End time must be after start time." });
+      }
+
+      const overlappingEvent = await Event.findOne({
+        _id: { $ne: req.params.id },
+        venue_id: newVenueId,
+        status: { $ne: 'rejected' },
+        $or: [
+          { date_time: { $lt: newEnd }, end_time: { $gt: newStart } }
+        ]
+      });
+
+      if (overlappingEvent) {
+        return res.status(400).json({ 
+          message: "Conflict: This venue is already booked for the selected time range.",
+          conflict: {
+            title: overlappingEvent.title,
+            start: overlappingEvent.date_time,
+            end: overlappingEvent.end_time
+          }
+        });
+      }
+    }
+
+    // JSON Parse complex fields if sent via FormData (as strings)
+    ['tasks', 'schedule'].forEach(field => {
+      if (typeof updateData[field] === 'string') {
+        try {
+          updateData[field] = JSON.parse(updateData[field]);
+        } catch (e) {
+          console.error(`Error parsing ${field}:`, e.message);
+        }
+      }
     });
+
+      const updatedEvent = await Event.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      );
+
+      console.log("Event updated successfully in DB:", updatedEvent.title, {
+        date_time: updatedEvent.date_time,
+        end_time: updatedEvent.end_time
+      });
+
+      // Log the update - Fail gracefully if AuditLog creation fails
+      try {
+        await AuditLog.create({
+          admin_id: req.user.id,
+          target_id: updatedEvent._id,
+          target_type: 'Event',
+          action: 'UPDATE_EVENT',
+          details: { 
+            message: `Full update for event "${updatedEvent.title}"`,
+            changedFields: Object.keys(updateData)
+          }
+        });
+      } catch (auditErr) {
+        console.error("AuditLog Error (Update):", auditErr.message);
+      }
+
+      res.status(200).json({
+        message: "Event updated successfully!",
+        event: updatedEvent
+      });
   } catch (err) {
     console.error("Event Update Error:", err);
     res.status(400).json({ message: "Update Error", error: err.message });
@@ -612,7 +770,7 @@ exports.getEventAnalytics = async (req, res) => {
     // Ensure we compare strings
     const hasAccess = accessibleEventIds.some(id => id.toString() === eventId.toString());
 
-    if (!hasAccess && req.user.role !== 'admin') {
+    if (!hasAccess && !req.user.roles.includes('admin')) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -715,6 +873,71 @@ exports.getEventAnalytics = async (req, res) => {
       recentActivity
     });
   } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+/**
+ * @desc    Create a review for an event
+ * @route   POST /api/events/:id/reviews
+ * @access  Private
+ */
+exports.createReview = async (req, res) => {
+  try {
+    const { rating, value, energy, welfare, comment } = req.body;
+    const eventId = req.params.id;
+    const userId = req.user.id;
+
+    // 1. Verify Event Exists
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // 2. Verify User Attended (Registration Status = CheckedIn)
+    const registration = await Registration.findOne({
+      event_id: eventId,
+      user_id: userId,
+      status: 'CheckedIn'
+    });
+
+    if (!registration) {
+      return res.status(403).json({ 
+        message: "You can only review events you have attended and checked in to." 
+      });
+    }
+
+    // 3. Verify No Existing Review
+    const existingReview = await Review.findOne({ event_id: eventId, user_id: userId });
+    if (existingReview) {
+      return res.status(400).json({ message: "You have already reviewed this event." });
+    }
+
+    // 4. Handle Photos
+    let photos = [];
+    if (req.files && req.files.length > 0) {
+      photos = req.files.map(file => file.path.replace(/\\/g, "/"));
+    }
+
+    // 5. Create Review
+    const newReview = new Review({
+      event_id: eventId,
+      user_id: userId,
+      rating,
+      value: value || 5,   // Default mid-score if missing
+      energy: energy || 5, // Default mid-score if missing
+      welfare: welfare || 5, // Default mid-score if missing
+      comment,
+      photos
+    });
+
+    await newReview.save();
+
+    res.status(201).json({ 
+      message: "Review submitted successfully!", 
+      review: newReview 
+    });
+
+  } catch (err) {
+    console.error("Create Review Error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -914,6 +1137,11 @@ exports.getCategoryIntelligence = async (req, res) => {
  * @route   PUT /api/events/:id/schedule
  * @access  Private (Organizer/Admin)
  */
+/**
+ * @desc    Update event schedule
+ * @route   PUT /api/events/:id/schedule
+ * @access  Private (Owner/Crew/Leader)
+ */
 exports.updateEventSchedule = async (req, res) => {
   try {
     const { schedule } = req.body;
@@ -922,32 +1150,45 @@ exports.updateEventSchedule = async (req, res) => {
 
     if (!event) return res.status(404).json({ message: "Event not found" });
 
-    // Verify ownership
-    if (event.organizer_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check access using robust helper
+    const accessibleEventIds = await getAccessibleEventIds(req.user.id);
+    const hasAccess = accessibleEventIds.some(id => id.toString() === eventId.toString());
+
+    if (!hasAccess && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     event.schedule = schedule;
     await event.save();
 
-    // Log the update
-    await AuditLog.create({
-      organizer_id: req.user.id,
-      event_id: event._id,
-      action: 'UPDATE_EVENT',
-      details: `Updated event schedule for "${event.title}"`
-    });
+    // Log the update - Fail gracefully if AuditLog creation fails
+    try {
+      await AuditLog.create({
+        admin_id: req.user.id,
+        target_id: event._id,
+        target_type: 'Event',
+        action: 'UPDATE_EVENT',
+        details: { message: `Updated event schedule for "${event.title}"` }
+      });
+    } catch (auditErr) {
+      console.error("AuditLog Error (Schedule):", auditErr.message);
+    }
 
     res.status(200).json(event.schedule);
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    console.error("Update Schedule Error:", err);
+    res.status(500).json({ 
+      message: "Server Error during schedule update", 
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 };
 
 /**
  * @desc    Update event tasks
  * @route   PUT /api/events/:id/tasks
- * @access  Private (Organizer/Admin)
+ * @access  Private (Owner/Crew/Leader)
  */
 exports.updateEventTasks = async (req, res) => {
   try {
@@ -957,8 +1198,11 @@ exports.updateEventTasks = async (req, res) => {
 
     if (!event) return res.status(404).json({ message: "Event not found" });
 
-    // Verify ownership
-    if (event.organizer_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check access using robust helper
+    const accessibleEventIds = await getAccessibleEventIds(req.user.id);
+    const hasAccess = accessibleEventIds.some(id => id.toString() === eventId.toString());
+
+    if (!hasAccess && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -967,6 +1211,11 @@ exports.updateEventTasks = async (req, res) => {
 
     res.status(200).json(event.tasks);
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    console.error("Update Tasks Error:", err);
+    res.status(500).json({ 
+      message: "Server Error during tasks update", 
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 };

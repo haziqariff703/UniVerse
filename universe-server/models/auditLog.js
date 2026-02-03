@@ -21,6 +21,13 @@ const auditLogSchema = new mongoose.Schema({
       'DELETE_VENUE',
       'DELETE_USER',
       'UPDATE_USER_ROLE',
+      'CREATE_USER_MANUAL',
+      'CREATE_CATEGORY',
+      'UPDATE_CATEGORY',
+      'DELETE_CATEGORY',
+      'DELETE_REVIEW',
+      'CREATE_COMMUNITY_MANUAL',
+      'BROADCAST_NOTIFICATION',
       // Organizer actions
       'CREATE_EVENT',
       'UPDATE_EVENT',
@@ -32,7 +39,7 @@ const auditLogSchema = new mongoose.Schema({
   target_type: {
     type: String,
     required: true,
-    enum: ['Event', 'User', 'Venue', 'Registration']
+    enum: ['Event', 'User', 'Venue', 'Registration', 'Category', 'Review', 'Community', 'System']
   },
   target_id: {
     type: mongoose.Schema.Types.ObjectId,

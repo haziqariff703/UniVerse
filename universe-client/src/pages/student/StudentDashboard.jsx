@@ -15,6 +15,7 @@ import {
   Award,
   Heart,
   Menu,
+  Rocket,
 } from "lucide-react";
 // import StudentSidebar from "@/components/layout/StudentSidebar"; // REMOVED
 import MissionHistoryCard from "@/components/student/MissionHistoryCard";
@@ -133,11 +134,14 @@ const StudentDashboard = ({ user }) => {
     .map((reg) => ({
       ...reg.event_id,
       id: reg._id,
-      overallScore: reg.attended
-        ? (Math.random() * (9.8 - 7.5) + 7.5).toFixed(1)
-        : "N/A",
+      overallScore: reg.review
+        ? reg.review.rating * 2
+        : reg.attended
+          ? "Pending Review"
+          : "N/A",
       attended: reg.attended,
       category: reg.event_id?.category,
+      review: reg.review,
     }));
 
   // Live Pulse from Venues
@@ -188,7 +192,7 @@ const StudentDashboard = ({ user }) => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="max-w-7xl mx-auto px-6 py-8 space-y-8 min-h-screen"
+      className="max-w-7xl mx-auto px-6 py-8 space-y-8 min-h-screen relative"
     >
       {/* 1. Header & Stats */}
       <motion.div
@@ -215,6 +219,23 @@ const StudentDashboard = ({ user }) => {
           >
             Find Events
           </Link>
+          {user?.is_organizer_approved || user?.roles?.includes("organizer") ? (
+            <Link
+              to="/organizer/my-events"
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-violet-500/30 text-violet-400 text-sm font-bold font-clash rounded-[2.5rem] transition-all backdrop-blur-sm flex items-center gap-2 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Manage Events
+            </Link>
+          ) : (
+            <Link
+              to="/start-club"
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-fuchsia-500/30 text-fuchsia-400 text-sm font-bold font-clash rounded-[2.5rem] transition-all backdrop-blur-sm flex items-center gap-2 hover:shadow-[0_0_15px_rgba(232,121,249,0.3)]"
+            >
+              <Rocket className="w-4 h-4" />
+              Start a Club
+            </Link>
+          )}
           <Link
             to="/communities"
             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 rounded-[2.5rem] text-white text-sm font-bold font-clash transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)]"

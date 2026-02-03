@@ -20,8 +20,9 @@ router.delete('/:id', auth, authorize('admin'), eventController.deleteEvent);
 // Public routes
 router.get('/', eventController.getAllEvents);
 router.get('/:id/analytics', auth, authorize('admin', 'organizer'), eventController.getEventAnalytics);
-router.put('/:id/schedule', auth, authorize('admin', 'organizer'), eventController.updateEventSchedule);
-router.put('/:id/tasks', auth, authorize('admin', 'organizer'), eventController.updateEventTasks);
+router.put('/:id/schedule', auth, eventController.updateEventSchedule);
+router.put('/:id/tasks', auth, eventController.updateEventTasks);
+router.post('/:id/reviews', auth, upload.array('photos', 3), eventController.createReview);
 router.get('/:id', eventController.getEventById);
 
 module.exports = router;

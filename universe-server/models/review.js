@@ -20,9 +20,15 @@ const reviewSchema = new mongoose.Schema({
     min: 1, 
     max: 5 
   },
+  // Detailed Atmos Metrics
+  value: { type: Number, min: 1, max: 10, default: 5 },   // Merit/Career Value
+  energy: { type: Number, min: 1, max: 10, default: 5 },  // Vibe/Hype
+  welfare: { type: Number, min: 1, max: 10, default: 5 }, // Food/Facilities
+  
   comment: { 
     type: String 
   },
+  photos: [String],
   created_at: { 
     type: Date, 
     default: Date.now 

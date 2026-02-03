@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Search, Linkedin, Twitter, Globe, Sparkles } from "lucide-react";
-import { Tilt } from "react-tilt";
 import Typewriter from "typewriter-effect";
 import { cn } from "@/lib/utils";
 import BlurText from "@/components/ui/BlurText";
@@ -113,25 +112,38 @@ const Speakers = () => {
   );
 };
 
-// II. VISUAL POLISH: Texture & Scanner Borders
+// II. VISUAL POLISH: Spotlight Border Effect (2D High-Performance)
 const AgentCard = ({ speaker, idx }) => {
-  return (
-    <Tilt
-      options={{
-        max: 8,
-        scale: 1,
-        speed: 1000,
-        glass: true,
-        perspective: 1000,
-        easing: "cubic-bezier(.03,.98,.52,.99)",
-      }}
-      className="group relative"
-      style={{ animationDelay: `${idx * 100}ms` }}
-    >
-      {/* Scanner Border Effect Container */}
-      <div className="absolute -inset-[1px] rounded-[2rem] bg-gradient-to-b from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm group-hover:animate-pulse-slow" />
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
 
-      <div className="relative h-full rounded-[2rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-500 group-hover:border-white/30 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      className="group relative transition-all duration-300 ease-out hover:scale-[1.02] hover:-translate-y-[5px]"
+      style={{
+        animationDelay: `${idx * 100}ms`,
+      }}
+    >
+      {/* Spotlight Border Effect - Mouse Tracking Glow */}
+      <div
+        className="absolute -inset-[1px] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.15), transparent 40%)`,
+        }}
+      />
+
+      <div className="relative h-full rounded-[2rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-300 ease-out group-hover:border-white/30 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
         {/* Cinematic Grain Texture */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.07] z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
@@ -140,18 +152,21 @@ const AgentCard = ({ speaker, idx }) => {
           className="block h-full relative z-10"
         >
           <div className="relative aspect-[4/5] overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent z-10 opacity-90" />
+            {/* Enhanced Gradient for Text Readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
 
-            {/* Scanner Line (Decorative) */}
+            {/* Scanner Line (Identity Element) */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent -translate-y-full group-hover:translate-y-[500px] transition-transform duration-[1.5s] ease-in-out z-20 opacity-0 group-hover:opacity-100 delay-100" />
 
+            {/* Image with Grayscale → Color (Target Lock Effect) */}
             <img
               src={speaker.image}
               alt={speaker.name}
-              className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-out will-change-transform"
+              className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 ease-out"
             />
 
-            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 delay-100">
+            {/* Social Buttons - Always Visible (Dimmed) */}
+            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-300">
               <SocialBtn icon={Linkedin} href={speaker.social_links.linkedin} />
               <SocialBtn icon={Twitter} href={speaker.social_links.twitter} />
               <SocialBtn icon={Globe} href={speaker.social_links.website} />
@@ -159,22 +174,24 @@ const AgentCard = ({ speaker, idx }) => {
           </div>
 
           <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex flex-col justify-end h-full pointer-events-none">
-            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
+            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
               <div className="flex justify-between items-end mb-2">
-                <p className="text-[10px] font-geist text-white/50 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">
+                <p className="text-[10px] font-geist text-white/50 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors duration-300">
                   {speaker.expertise}
                 </p>
                 {/* Category Badge */}
-                <span className="text-[9px] font-geist text-white/30 border border-white/10 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity delay-200">
+                <span className="text-[9px] font-geist text-white/30 border border-white/10 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
                   {speaker.category}
                 </span>
               </div>
 
-              <h3 className="text-2xl font-clash font-bold text-white mb-3 leading-none group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] transition-all">
+              {/* Speaker Name - Simplified (No Excessive Glow) */}
+              <h3 className="text-2xl font-clash font-bold text-white mb-3 leading-none transition-all duration-300">
                 {speaker.name}
               </h3>
 
-              <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity duration-500 border-t border-white/10 pt-3 mt-1">
+              {/* Stats Strip */}
+              <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300 border-t border-white/10 pt-3 mt-1">
                 <StatItem label="TALKS" value={speaker.stats.talks} />
                 <StatItem label="MERIT" value={`+${speaker.stats.merit}`} />
                 <StatItem label="RATING" value={speaker.stats.rating} />
@@ -183,7 +200,7 @@ const AgentCard = ({ speaker, idx }) => {
           </div>
         </Link>
       </div>
-    </Tilt>
+    </div>
   );
 };
 

@@ -67,14 +67,11 @@ const CreateEvent = () => {
       throw new Error("Proposal document is required");
     }
 
-    const dateTime = new Date(`${formData.date}T${formData.time}`);
-
     const submitData = new FormData();
 
     // Append simple fields
     Object.keys(formData).forEach((key) => {
       if (key === "tags") {
-        // Handle tags array or string
         const tags =
           typeof formData.tags === "string"
             ? formData.tags
@@ -84,7 +81,6 @@ const CreateEvent = () => {
             : [formData.category];
         tags.forEach((tag) => submitData.append("tags[]", tag));
       } else if (key === "speaker_ids") {
-        // Handle speakers array
         if (Array.isArray(formData.speaker_ids)) {
           formData.speaker_ids.forEach((id) =>
             submitData.append("speaker_ids[]", id),
@@ -96,13 +92,37 @@ const CreateEvent = () => {
         if (formData.venue_id === "other") {
           submitData.append("location", formData.location_manual);
         }
+      } else if (
+        key === "startDateTime" ||
+        key === "endDateTime" ||
+        key === "duration_display"
+      ) {
+        // Handled below or skipped
       } else {
         submitData.append(key, formData[key]);
       }
     });
 
-    // Explicitly add formatting for date/time if needed or rely on backend parsing
-    submitData.set("date_time", dateTime.toISOString());
+    // Explicitly add formatting for date/time
+    if (formData.startDateTime) {
+      submitData.set(
+        "date_time",
+        new Date(formData.startDateTime).toISOString(),
+      );
+    }
+    if (formData.endDateTime) {
+      submitData.set("end_time", new Date(formData.endDateTime).toISOString());
+    }
+
+    // Calculate duration in minutes for backend
+    if (formData.startDateTime && formData.endDateTime) {
+      const dur = Math.round(
+        (new Date(formData.endDateTime) - new Date(formData.startDateTime)) /
+          60000,
+      );
+      submitData.set("duration_minutes", dur);
+    }
+
     submitData.set("capacity", parseInt(formData.capacity));
 
     const token = localStorage.getItem("token");
@@ -110,7 +130,6 @@ const CreateEvent = () => {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        // Content-Type NOT set, let browser set 'multipart/form-data' with boundary
       },
       body: submitData,
     });
@@ -124,62 +143,105 @@ const CreateEvent = () => {
   };
 
   // Inject dynamic options into schema
-  const dynamicSchema = {
-    ...eventSchema,
-    steps: eventSchema.steps.map((step) => {
-      if (step.name === "basics") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "community_id") {
-              return {
-                ...field,
-                options: communities.map((c) => ({
-                  label: c.name,
-                  value: c._id,
-                })),
-              };
-            }
-            return field;
-          }),
-        };
+  const dynamicSchema = (formData) => {
+    // Calculate duration for display
+    let durationDisplay = "Select dates to calculate...";
+    if (formData.startDateTime && formData.endDateTime) {
+      const diffMs =
+        new Date(formData.endDateTime) - new Date(formData.startDateTime);
+      if (diffMs > 0) {
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffMins = Math.round((diffMs % 3600000) / 60000);
+        durationDisplay = `${diffHrs}h ${diffMins}m`;
+      } else if (diffMs <= 0) {
+        durationDisplay = "End must be after Start";
       }
-      if (step.name === "schedule") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "venue_id") {
-              return {
-                ...field,
-                options: [
-                  ...venues.map((v) => ({
-                    label: `${v.name} (${v.location_code})`,
-                    value: v._id,
+    }
+
+    // Get booked dates for current venue if selected
+    const selectedVenueEvents =
+      formData.venue_id && formData.venue_id !== "other"
+        ? events.filter(
+            (e) =>
+              e.venue_id?._id === formData.venue_id ||
+              e.venue_id === formData.venue_id,
+          )
+        : [];
+
+    const disabledDates = selectedVenueEvents.map((e) => ({
+      from: new Date(e.date_time),
+      to: new Date(e.end_time),
+    }));
+
+    return {
+      ...eventSchema,
+      steps: eventSchema.steps.map((step) => {
+        if (step.name === "basics") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "community_id") {
+                return {
+                  ...field,
+                  options: communities.map((c) => ({
+                    label: c.name,
+                    value: c._id,
                   })),
-                  { label: "Other / Manual Entry", value: "other" },
-                ],
-              };
-            }
-            return field;
-          }),
-        };
-      }
-      if (step.name === "talent") {
-        return {
-          ...step,
-          fields: step.fields.map((field) => {
-            if (field.name === "speaker_ids") {
-              return {
-                ...field,
-                options: speakers.map((s) => ({ label: s.name, value: s._id })),
-              };
-            }
-            return field;
-          }),
-        };
-      }
-      return step;
-    }),
+                };
+              }
+              return field;
+            }),
+          };
+        }
+        if (step.name === "schedule") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "venue_id") {
+                return {
+                  ...field,
+                  options: [
+                    ...venues.map((v) => ({
+                      label: `${v.name} (${v.location_code})`,
+                      value: v._id,
+                    })),
+                    { label: "Other / Manual Entry", value: "other" },
+                  ],
+                };
+              }
+              if (field.name === "duration_display") {
+                return { ...field, placeholder: durationDisplay };
+              }
+              if (
+                field.name === "startDateTime" ||
+                field.name === "endDateTime"
+              ) {
+                return { ...field, disabledDates };
+              }
+              return field;
+            }),
+          };
+        }
+        if (step.name === "talent") {
+          return {
+            ...step,
+            fields: step.fields.map((field) => {
+              if (field.name === "speaker_ids") {
+                return {
+                  ...field,
+                  options: speakers.map((s) => ({
+                    label: s.name,
+                    value: s._id,
+                  })),
+                };
+              }
+              return field;
+            }),
+          };
+        }
+        return step;
+      }),
+    };
   };
 
   if (loading) {

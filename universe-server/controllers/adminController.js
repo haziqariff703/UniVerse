@@ -5,6 +5,9 @@ const Venue = require('../models/venue');
 const AuditLog = require('../models/auditLog');
 const Category = require('../models/category');
 const Notification = require('../models/notification');
+const Speaker = require('../models/speaker');
+const Community = require('../models/community');
+const bcrypt = require('bcryptjs');
 
 /**
  * Admin Controller
@@ -108,13 +111,26 @@ exports.updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!['student', 'organizer', 'admin'].includes(role)) {
+    const validRoles = ['student', 'organizer', 'admin', 'staff', 'association'];
+    if (!validRoles.includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    // Prepare roles array update
+    let rolesUpdate = ['student'];
+    if (role !== 'student') rolesUpdate.push(role);
+    if (role === 'association' && !rolesUpdate.includes('organizer')) {
+      rolesUpdate.push('organizer');
     }
 
     const user = await User.findByIdAndUpdate(
       id,
-      { role, organizerRequest: false },
+      { 
+        role, 
+        roles: rolesUpdate,
+        organizerRequest: false,
+        is_organizer_approved: role === 'organizer' || role === 'association'
+      },
       { new: true }
     ).select('-password');
 
@@ -124,7 +140,7 @@ exports.updateUserRole = async (req, res) => {
         action: 'UPDATE_USER_ROLE',
         target_type: 'User',
         target_id: user._id,
-        details: { role },
+        details: { role, roles: rolesUpdate },
         ip_address: req.ip
       });
     }
@@ -361,9 +377,19 @@ exports.getPendingOrganizers = async (req, res) => {
   try {
     const users = await User.find({ role: 'student', organizerRequest: true })
       .select('-password')
-      .sort({ created_at: -1 });
+      .sort({ created_at: -1 })
+      .lean();
 
-    res.json({ users });
+    // Populate the latest proposal for each user
+    const usersWithProposals = await Promise.all(users.map(async (user) => {
+      const proposal = await require('../models/clubProposal').findOne({ 
+        student_id: user._id,
+        status: 'pending' 
+      }).sort({ created_at: -1 });
+      return { ...user, proposal };
+    }));
+
+    res.json({ users: usersWithProposals });
   } catch (error) {
     console.error('Get pending organizers error:', error);
     res.status(500).json({ message: 'Failed to fetch pending organizers' });
@@ -380,15 +406,61 @@ exports.approveOrganizer = async (req, res) => {
 
     const user = await User.findByIdAndUpdate(
       id,
-      { role: 'organizer', organizerRequest: false },
+      { 
+        $addToSet: { roles: 'organizer' }, // Add 'organizer' to roles array if not present
+        role: 'organizer', // Keep legacy for now
+        is_organizer_approved: true,
+        organizerRequest: false 
+      },
       { new: true }
     ).select('-password');
 
     if (user) {
+      // Check for an associated club proposal
+      const ClubProposal = require('../models/clubProposal');
+      const Community = require('../models/community');
+      const CommunityMember = require('../models/communityMember');
+
+      const proposal = await ClubProposal.findOne({ 
+        student_id: user._id, 
+        status: 'pending' 
+      }).sort({ created_at: -1 });
+
+      if (proposal) {
+        // 1. Create the community
+        const community = new Community({
+          name: proposal.clubName,
+          slug: proposal.clubName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
+          description: proposal.mission,
+          category: proposal.category.charAt(0).toUpperCase() + proposal.category.slice(1),
+          advisor: {
+            name: proposal.advisorName,
+            title: 'Faculty Advisor'
+          },
+          owner_id: user._id,
+          is_verified: true // Automatically verified since Admin approved the proposal
+        });
+        await community.save();
+
+        // 2. Add owner as President member
+        const member = new CommunityMember({
+          community_id: community._id,
+          user_id: user._id,
+          role: 'President',
+          status: 'Approved',
+          joined_at: new Date()
+        });
+        await member.save();
+
+        // 3. Mark proposal as approved
+        proposal.status = 'approved';
+        await proposal.save();
+      }
+
       // Create notification
       await Notification.create({
         user_id: user._id,
-        message: 'Your request to become an organizer has been approved!',
+        message: 'Your request to become an organizer has been approved! You can now access the Organizer Suite.',
         type: 'success'
       });
 
@@ -397,7 +469,7 @@ exports.approveOrganizer = async (req, res) => {
         action: 'APPROVE_ORGANIZER',
         target_type: 'User',
         target_id: user._id,
-        details: { email: user.email },
+        details: { email: user.email, hasProposal: !!proposal },
         ip_address: req.ip
       });
     }
@@ -599,7 +671,7 @@ exports.deleteVenue = async (req, res) => {
 
 // ==================== SPEAKER MANAGEMENT ====================
 
-const Speaker = require('../models/speaker');
+// Speaker management logic follows...
 
 /**
  * Get All Speakers
@@ -867,12 +939,15 @@ exports.getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
     
-    // Get usage count for each category from Event model (assuming tags field stores category names)
+    // Get usage count for each category from Event and Community models
     const categoriesWithStats = await Promise.all(categories.map(async (cat) => {
-      const usageCount = await Event.countDocuments({ tags: cat.name });
+      const eventUsage = await Event.countDocuments({ tags: cat.name });
+      const communityUsage = await Community.countDocuments({ category: cat.name });
       return {
         ...cat.toObject(),
-        usageCount
+        usageCount: eventUsage + communityUsage,
+        eventUsage,
+        communityUsage
       };
     }));
 
@@ -1082,3 +1157,178 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
+/**
+ * Create User Manually
+ * @route POST /api/admin/users
+ * @access Admin only
+ */
+exports.createUser = async (req, res) => {
+  try {
+    const { name, email, password, role, student_id } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Role validation
+    const validRoles = ['student', 'organizer', 'staff', 'admin', 'association'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Prepare roles array
+    let roles = ['student'];
+    if (role !== 'student' && !roles.includes(role)) {
+      roles.push(role);
+    }
+    
+    // Associations inherit organizer permissions
+    if (role === 'association' && !roles.includes('organizer')) {
+      roles.push('organizer');
+    }
+
+    // Create user
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: role,
+      roles: roles,
+      student_id: student_id || undefined,
+      is_organizer_approved: role === 'organizer' || role === 'association', // Auto-approve if created by admin
+      organizerRequest: false
+    });
+
+    await newUser.save();
+
+    // Audit Log
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'CREATE_USER_MANUAL',
+      target_type: 'User',
+      target_id: newUser._id,
+      details: { name: newUser.name, email: newUser.email, role: newUser.role },
+      ip_address: req.ip
+    });
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        roles: newUser.roles
+      }
+    });
+
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ message: 'Failed to create user', error: error.message });
+  }
+};
+
+/**
+ * Community Management
+ */
+exports.getAllCommunities = async (req, res) => {
+  try {
+    const communities = await Community.find()
+      .populate('owner_id', 'name email student_id')
+      .sort({ name: 1 });
+
+    // Enforce usage stats (count events for each community)
+    const eventStats = await Event.aggregate([
+      { $group: { _id: '$organizer_id', count: { $sum: 1 } } }
+    ]);
+
+    const statsMap = eventStats.reduce((acc, curr) => {
+      acc[curr._id] = curr.count;
+      return acc;
+    }, {});
+
+    const enrichedDocs = communities.map(doc => ({
+      ...doc.toObject(),
+      eventCount: statsMap[doc.owner_id?._id?.toString()] || 0
+    }));
+
+    res.json({
+      communities: enrichedDocs,
+      stats: {
+        total: communities.length,
+        verified: communities.filter(c => c.is_verified).length,
+        unverified: communities.filter(c => !c.is_verified).length
+      }
+    });
+  } catch (error) {
+    console.error('Get admin communities error:', error);
+    res.status(500).json({ message: 'Failed to fetch communities' });
+  }
+};
+
+exports.createCommunity = async (req, res) => {
+  try {
+    const { name, slug, description, category, advisor, owner_id, tagline } = req.body;
+
+    const community = new Community({
+      name,
+      slug,
+      description,
+      category,
+      advisor,
+      tagline,
+      owner_id: owner_id || req.user.id,
+      is_verified: true // Admin-created are auto-verified
+    });
+
+    await community.save();
+
+    // Audit Log
+    await AuditLog.create({
+      admin_id: req.user.id,
+      action: 'CREATE_COMMUNITY_MANUAL',
+      target_type: 'Community',
+      target_id: community._id,
+      details: { name: community.name },
+      ip_address: req.ip
+    });
+
+    res.status(201).json(community);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error.', error: error.message });
+  }
+};
+
+exports.updateCommunity = async (req, res) => {
+  try {
+    const updates = req.body;
+    const community = await Community.findByIdAndUpdate(req.params.id, updates, { new: true });
+    
+    if (!community) return res.status(404).json({ message: 'Community not found' });
+
+    res.json(community);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error.', error: error.message });
+  }
+};
+
+exports.deleteCommunity = async (req, res) => {
+  try {
+    const community = await Community.findByIdAndDelete(req.params.id);
+    if (!community) return res.status(404).json({ message: 'Community not found' });
+
+    res.json({ message: 'Community deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error.', error: error.message });
+  }
+};

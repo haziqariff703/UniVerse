@@ -42,7 +42,8 @@ const getActivityStyle = (type, status) => {
   };
 };
 
-const InsightsPanel = ({ eventId, event, user }) => {
+const InsightsPanel = (props) => {
+  const { eventId, user, canEdit } = props;
   const [insight, setInsight] = useState({
     label: "REGISTRATION TREND",
     value: "+0%",
@@ -78,8 +79,8 @@ const InsightsPanel = ({ eventId, event, user }) => {
         } else if (data.revenueData) {
           setChartData(
             data.revenueData.map((d) => ({
-              day: d.name,
-              value: d.registrations,
+              day: d.name || "Day",
+              value: d.registrations || 0,
             })),
           );
         }
@@ -117,7 +118,7 @@ const InsightsPanel = ({ eventId, event, user }) => {
   return (
     <div className="space-y-6">
       {/* Sparkline Chart Card */}
-      <div className="bg-[#050505] border border-white/5 rounded-2xl p-6 relative overflow-hidden shadow-xl">
+      <div className="bg-[#050505] border border-white/5 rounded-2xl p-6 relative overflow-hidden shadow-xl min-h-[160px]">
         <div className="flex justify-between items-end mb-4 relative z-10">
           <div>
             <h3 className="text-white font-bold text-lg">Insight</h3>
@@ -130,17 +131,13 @@ const InsightsPanel = ({ eventId, event, user }) => {
           </span>
         </div>
 
-        <div className="h-32 w-full absolute bottom-0 left-0 right-0 opacity-50 z-0">
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
-            minWidth={0}
-            minHeight={0}
-          >
+        <div className="h-32 w-full absolute bottom-0 left-0 right-0 opacity-50 z-0 overflow-hidden">
+          <ResponsiveContainer width="100%" height={128}>
             <AreaChart
               data={
                 chartData.length > 0 ? chartData : [{ day: "Mon", value: 0 }]
               }
+              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
             >
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -148,7 +145,10 @@ const InsightsPanel = ({ eventId, event, user }) => {
                   <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Tooltip cursor={false} content={<div className="hidden" />} />
+              <Tooltip
+                cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+                content={<div className="hidden" />}
+              />
               <Area
                 type="monotone"
                 dataKey="value"
@@ -156,6 +156,7 @@ const InsightsPanel = ({ eventId, event, user }) => {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorValue)"
+                isAnimationActive={false}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -198,14 +199,17 @@ const InsightsPanel = ({ eventId, event, user }) => {
           )}
         </div>
 
-        {(user?._id === event?.organizer_id?._id || user?.role === "admin") && (
+        {user?.role === "admin" ||
+        user?.role === "organizer" ||
+        user?.is_organizer_approved ||
+        canEdit ? (
           <Link
             to={historyLink}
             className="block w-full mt-6 py-2 text-xs font-bold uppercase text-gray-500 hover:text-white border border-transparent hover:border-white/10 rounded-lg transition-all text-center"
           >
             View All History
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -18,6 +18,9 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import EventTimeline from "@/components/organizer/event-dashboard/EventTimeline";
 import EventTodoList from "@/components/organizer/event-dashboard/EventTodoList";
 import { InsightsPanel } from "@/components/organizer/event-dashboard";
+import CrewRosterCard from "@/components/organizer/event-dashboard/CrewRosterCard";
+// Import from direct path since index exports might be tricky with circular deps
+import CrewRosterModal from "@/components/organizer/event-dashboard/CrewRosterModal";
 import NumberTicker from "@/components/ui/NumberTicker";
 
 const EventDashboard = () => {
@@ -25,6 +28,10 @@ const EventDashboard = () => {
   const [event, setEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Workforce state
+  const [isWorkforceModalOpen, setIsWorkforceModalOpen] = useState(false);
+  const [workforceRefreshTrigger, setWorkforceRefreshTrigger] = useState(0);
 
   // Get current user for permission checks
   const user = (() => {
@@ -53,7 +60,9 @@ const EventDashboard = () => {
         const token = localStorage.getItem("token");
 
         // Fetch Event Details
-        const eventRes = await fetch(`http://localhost:5000/api/events/${id}`);
+        const eventRes = await fetch(`http://localhost:5000/api/events/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const eventData = await eventRes.json();
         if (eventRes.ok) setEvent(eventData);
 
@@ -135,13 +144,20 @@ const EventDashboard = () => {
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
           {/* Only show Audit Log to Owner or Admin */}
-          {(user?._id === event?.organizer_id?._id ||
-            user?.role === "admin") && (
+          {(event?.canEdit || user?.role === "admin") && (
             <Link
               to={`/organizer/activity-log?eventId=${id}`}
               className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
             >
               <Clock size={16} /> Audit Log
+            </Link>
+          )}
+          {(event?.canEdit || user?.role === "admin") && (
+            <Link
+              to={`/organizer/event/${id}/edit`}
+              className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              Edit Event
             </Link>
           )}
           <Link
@@ -177,7 +193,11 @@ const EventDashboard = () => {
                 <span className="text-gray-800">•</span>
                 <span className="flex items-center gap-1 font-neuemontreal">
                   <Calendar size={10} className="text-violet-500/70" />{" "}
-                  Thursday, 20th Feb
+                  {new Date(event.date_time).toLocaleDateString("en-MY", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "short",
+                  })}
                 </span>
               </div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">
@@ -191,9 +211,22 @@ const EventDashboard = () => {
                   </span>
                 </div>
                 <div className="w-1 h-1 rounded-full bg-white/10"></div>
-                <span className="opacity-60 font-medium whitespace-nowrap">
-                  Dashboard Control
-                </span>
+                <div className="flex items-center gap-1.5 opacity-80">
+                  <Clock size={12} className="text-cyan-500" />
+                  <span className="opacity-60 font-medium whitespace-nowrap">
+                    {new Date(event.date_time).toLocaleTimeString("en-MY", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    -{" "}
+                    {event.end_time
+                      ? new Date(event.end_time).toLocaleTimeString("en-MY", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "TBA"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -371,11 +404,56 @@ const EventDashboard = () => {
               </Link>
             </div>
           </div>
+
+          {/* Workforce Overview */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xl font-bold text-white">
+                  Event Workforce
+                </h3>
+              </div>
+              {(event?.canEdit || user?.role === "admin") && (
+                <button
+                  onClick={() => setIsWorkforceModalOpen(true)}
+                  className="flex items-center gap-1 text-sm font-medium text-violet-400 hover:text-white transition-colors group"
+                >
+                  Manage Workforce{" "}
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
+              )}
+            </div>
+
+            <CrewRosterCard
+              eventId={id}
+              canEdit={event?.canEdit || user?.role === "admin"}
+              refreshTrigger={workforceRefreshTrigger}
+              onManageClick={() => setIsWorkforceModalOpen(true)}
+            />
+          </div>
         </div>
+
+        <CrewRosterModal
+          isOpen={isWorkforceModalOpen}
+          onClose={() => {
+            setIsWorkforceModalOpen(false);
+            setWorkforceRefreshTrigger((prev) => prev + 1);
+          }}
+          eventId={id}
+          canEdit={event?.canEdit || user?.role === "admin"}
+        />
 
         {/* Right Col - Widgets (1/3 width) */}
         <div className="space-y-6">
-          <InsightsPanel eventId={id} event={event} user={user} />
+          <InsightsPanel
+            eventId={id}
+            event={event}
+            user={user}
+            canEdit={event?.canEdit}
+          />
         </div>
       </div>
 
@@ -384,8 +462,13 @@ const EventDashboard = () => {
         <EventTimeline
           schedule={event.schedule || []}
           onUpdate={updateSchedule}
+          canEdit={event.canEdit}
         />
-        <EventTodoList tasks={event.tasks || []} onUpdate={updateTasks} />
+        <EventTodoList
+          tasks={event.tasks || []}
+          onUpdate={updateTasks}
+          canEdit={event.canEdit}
+        />
       </div>
     </div>
   );

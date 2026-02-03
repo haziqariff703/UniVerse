@@ -1,9 +1,8 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { Calendar, MapPin, Star, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const MissionLogCard = ({ event, index, onReview }) => {
+const MissionLogCard = ({ event, onReview }) => {
   return (
     <div className="group relative w-full bg-slate-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-white/10 transition-all duration-300">
       {/* 1. Image Section (Desaturated) */}
@@ -38,12 +37,29 @@ const MissionLogCard = ({ event, index, onReview }) => {
 
         {/* 3. Action Rail */}
         <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
-          {/* Status Indicator */}
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
-            <span className="text-xs font-medium text-emerald-500/80 uppercase tracking-wider">
-              Completed
-            </span>
+          {/* Status Indicator & Rating */}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
+              <span className="text-xs font-medium text-emerald-500/80 uppercase tracking-wider">
+                Completed
+              </span>
+            </div>
+            {event.review && (
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={cn(
+                      "w-3 h-3",
+                      i < event.review.rating
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-slate-600",
+                    )}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Review Button */}
@@ -51,12 +67,21 @@ const MissionLogCard = ({ event, index, onReview }) => {
             onClick={() => onReview(event)}
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-300",
-              "bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 hover:border-white/20",
+              event.review
+                ? "bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20"
+                : "bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 hover:border-white/20",
               "group/btn",
             )}
           >
-            <MessageSquare className="w-4 h-4 group-hover/btn:text-fuchsia-400 transition-colors" />
-            <span>Mission Report</span>
+            <MessageSquare
+              className={cn(
+                "w-4 h-4 transition-colors",
+                event.review
+                  ? "text-fuchsia-400"
+                  : "group-hover/btn:text-fuchsia-400",
+              )}
+            />
+            <span>{event.review ? "View Report" : "Mission Report"}</span>
           </button>
         </div>
       </div>

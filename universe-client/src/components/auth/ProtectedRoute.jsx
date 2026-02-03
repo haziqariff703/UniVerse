@@ -1,15 +1,13 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-/**
- * ProtectedRoute Component
- * Wraps routes that require authentication and/or specific roles.
- * @param {object} props
- * @param {React.ReactNode} props.children - The component to render if authorized.
- * @param {string[]} [props.allowedRoles] - Optional array of roles allowed to access the route.
- */
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({
+  children,
+  allowedRoles,
+  requirePresident = false,
+}) => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const location = useLocation();
 
   // Not logged in
   if (!token) {
@@ -18,18 +16,39 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // Logged in, check role-based access
   if (allowedRoles) {
-    const hasAllowedRole = allowedRoles.includes(user.role);
+    const isAssociation = user.role === "association";
+    const isAdmin =
+      user.role === "admin" || (user.roles && user.roles.includes("admin"));
 
-    // Special case: users with is_organizer_approved can access "organizer" routes
-    const isApprovedOrganizer =
-      allowedRoles.includes("organizer") && user.is_organizer_approved;
+    const hasRole =
+      isAdmin ||
+      (isAssociation &&
+        (allowedRoles.includes("organizer") ||
+          allowedRoles.includes("admin"))) ||
+      (user.roles && user.roles.some((r) => allowedRoles.includes(r))) ||
+      allowedRoles.includes(user.role);
 
-    if (!hasAllowedRole && !isApprovedOrganizer) {
-      // Redirect to a sensible default based on their actual role
-      if (user.role === "admin") {
-        return <Navigate to="/admin/dashboard" replace />;
-      }
+    if (!hasRole) {
+      if (isAdmin) return <Navigate to="/admin" replace />;
       return <Navigate to="/" replace />;
+    }
+  }
+
+  // New: Check for President/Admin/Association status if required
+  if (requirePresident) {
+    const isTreasurer = user.communityRoles?.includes("Treasurer");
+    const isFinanceRoute = location.pathname.includes("/finance");
+
+    const isAuthorized =
+      user.role === "admin" ||
+      user.role === "association" ||
+      (user.roles && user.roles.includes("admin")) ||
+      user.isPresident ||
+      (isTreasurer && isFinanceRoute);
+
+    if (!isAuthorized) {
+      // Redirect to Workforce as it's the only thing they can see
+      return <Navigate to="/organizer/workforce" replace />;
     }
   }
 

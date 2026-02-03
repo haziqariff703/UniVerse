@@ -115,9 +115,25 @@ exports.updateMemberStatus = async (req, res) => {
       return res.status(404).json({ message: 'Membership record not found.' });
     }
 
-    // Authorization check: User must be an owner/President of the community
+    // Authorization check: User must be an owner/President of the community, an Admin, or an Association member
     const community = await Community.findById(member.community_id);
-    if (!community || (community.owner_id.toString() !== req.user.id && req.user.role !== 'admin')) {
+    
+    let isMember = false;
+    if (req.user.roles.includes('association')) {
+      const membership = await CommunityMember.findOne({
+        community_id: member.community_id,
+        user_id: req.user.id,
+        status: 'Approved'
+      });
+      if (membership) isMember = true;
+    }
+
+    const isAuthorized = 
+      community?.owner_id.toString() === req.user.id || 
+      req.user.roles.includes('admin') || 
+      isMember;
+
+    if (!community || !isAuthorized) {
       return res.status(403).json({ message: 'Not authorized to manage this community.' });
     }
 
@@ -130,8 +146,16 @@ exports.updateMemberStatus = async (req, res) => {
     if (status === 'Approved' && !member.joined_at) {
       member.joined_at = new Date();
       
-      // If approved as AJK or higher, approve their organizer status globally
-      await User.findByIdAndUpdate(member.user_id, { is_organizer_approved: true });
+      // If approved as AJK or higher (any role other than Member), grant organizer access
+      const organizerRoles = ['President', 'Secretary', 'Treasurer', 'Committee', 'AJK'];
+      if (organizerRoles.includes(member.role)) {
+        await User.findByIdAndUpdate(member.user_id, { 
+          is_organizer_approved: true,
+          $addToSet: { roles: 'organizer' }
+        });
+      } else {
+        await User.findByIdAndUpdate(member.user_id, { is_organizer_approved: true });
+      }
     }
 
     await member.save();
@@ -157,7 +181,7 @@ exports.getCommunityApplicants = async (req, res) => {
     }
     
     const isOwner = community.owner_id.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.roles.includes('admin');
     
     let isMember = false;
     if (!isOwner && !isAdmin) {
@@ -183,6 +207,80 @@ exports.getCommunityApplicants = async (req, res) => {
 };
 
 /**
+ * @desc    Directly add a member to community (Invite/Add)
+ * @route   POST /api/communities/:id/members
+ * @access  Private (Organizer)
+ */
+exports.addMember = async (req, res) => {
+  try {
+    const community_id = req.params.id;
+    const { student_id } = req.body;
+
+    if (!student_id) {
+      return res.status(400).json({ message: 'Student ID is required.' });
+    }
+
+    // 1. Authorization Check
+    const community = await Community.findById(community_id);
+    if (!community) return res.status(404).json({ message: 'Community not found.' });
+
+    const isOwner = community.owner_id.toString() === req.user.id;
+    const isAdmin = req.user.roles.includes('admin');
+    
+    // Check if user is an approved Association member
+    let isAssociationMember = false;
+    if (req.user.roles.includes('association')) {
+      const callerMembership = await CommunityMember.findOne({
+        community_id,
+        user_id: req.user.id,
+        status: 'Approved'
+      });
+      if (callerMembership) isAssociationMember = true;
+    }
+
+    if (!isOwner && !isAdmin && !isAssociationMember) {
+      return res.status(403).json({ message: 'Not authorized to add members.' });
+    }
+
+    // 2. Find User
+    const user = await User.findOne({ student_id });
+    if (!user) {
+      return res.status(404).json({ message: 'Student not found with this ID.' });
+    }
+
+    // 3. Check duplicate membership
+    const existingMember = await CommunityMember.findOne({ community_id, user_id: user._id });
+    if (existingMember) {
+      return res.status(400).json({ 
+        message: `User is already a member with status: ${existingMember.status}` 
+      });
+    }
+
+    // 4. Create Member
+    const newMember = new CommunityMember({
+      community_id,
+      user_id: user._id,
+      status: 'Approved', // Auto-approve direct adds
+      role: 'AJK', // Standardized from 'Crew' to match Model Enum
+      joined_at: new Date()
+    });
+
+    await newMember.save();
+
+    // 5. Grant Organizer Access (Same as updateMemberStatus logic)
+    await User.findByIdAndUpdate(user._id, { 
+      is_organizer_approved: true,
+      $addToSet: { roles: 'organizer' }
+    });
+
+    res.status(201).json({ message: 'Member added successfully', member: newMember, user });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
  * @desc    Get communities where user is owner or approved member
  * @route   GET /api/communities/my-communities
  * @access  Private
@@ -192,6 +290,12 @@ exports.getMyCommunities = async (req, res) => {
     const CommunityMember = require('../models/communityMember');
     const Community = require('../models/community');
     
+    // If Admin, return all communities
+    if (req.user.roles.includes('admin')) {
+      const allCommunities = await Community.find();
+      return res.status(200).json(allCommunities);
+    }
+
     // 1. Communities owned by user
     const owned = await Community.find({ owner_id: req.user.id });
     

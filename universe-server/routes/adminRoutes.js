@@ -13,6 +13,7 @@ router.get('/stats', auth, authorize('admin'), adminController.getDashboardStats
 
 // User Management
 router.get('/users', auth, authorize('admin'), adminController.getAllUsers);
+router.post('/users', auth, authorize('admin'), adminController.createUser);
 router.put('/users/:id/role', auth, authorize('admin'), adminController.updateUserRole);
 router.delete('/users/:id', auth, authorize('admin'), adminController.deleteUser);
 
@@ -56,5 +57,11 @@ router.get('/categories', auth, authorize('admin'), adminController.getAllCatego
 router.post('/categories', auth, authorize('admin'), adminController.createCategory);
 router.put('/categories/:id', auth, authorize('admin'), adminController.updateCategory);
 router.delete('/categories/:id', auth, authorize('admin'), adminController.deleteCategory);
+
+// Community Management
+router.get('/communities', auth, authorize('admin'), adminController.getAllCommunities);
+router.post('/communities', auth, authorize('admin'), adminController.createCommunity);
+router.put('/communities/:id', auth, authorize('admin'), adminController.updateCommunity);
+router.delete('/communities/:id', auth, authorize('admin'), adminController.deleteCommunity);
 
 module.exports = router;

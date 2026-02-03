@@ -23,7 +23,6 @@ const communitySchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Academic', 'Leadership', 'Uniformed', 'Creative', 'Lifestyle', 'Community'],
     required: true
   },
   logo: {

@@ -110,14 +110,30 @@ const Events = () => {
           : [],
       );
 
+      // Create a map of reviews by event ID
+      const reviewMap = {};
+      if (Array.isArray(regs)) {
+        regs.forEach((reg) => {
+          if (reg.review) {
+            const eventId = reg.event_id?._id || reg.event_snapshot?._id;
+            if (eventId) reviewMap[eventId] = reg.review;
+          }
+        });
+      }
+
       const mapWithReg = (event) => ({
         ...mapEventToCardProps(event),
         isRegistered: registeredEventIds.has(event._id),
+        review: reviewMap[event._id] || null, // Link review data
       });
 
       setFeaturedEvents(Array.isArray(feat) ? feat.map(mapWithReg) : []);
       setUpcomingEvents(Array.isArray(up) ? up.map(mapWithReg) : []);
-      setPastEvents(Array.isArray(past) ? past.map(mapWithReg) : []);
+      setPastEvents(
+        Array.isArray(past)
+          ? past.map(mapWithReg).filter((e) => e.isRegistered)
+          : [],
+      );
 
       // Fetch user profile stats for merit tracking
       if (token) {
@@ -361,9 +377,11 @@ const Events = () => {
       </section>
 
       <ReviewModal
+        key={reviewEvent?.id || "none"}
         isOpen={isReviewOpen}
         onClose={() => setIsReviewOpen(false)}
         event={reviewEvent}
+        readOnly={true}
       />
     </div>
   );

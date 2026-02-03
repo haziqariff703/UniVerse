@@ -1,5 +1,7 @@
 const EventCrew = require('../models/eventCrew');
 const User = require('../models/user');
+const Event = require('../models/event');
+const CommunityMember = require('../models/communityMember');
 
 /**
  * @desc    Get all crew/talent for an event
@@ -25,6 +27,72 @@ exports.getCrewByEvent = async (req, res) => {
 };
 
 /**
+ * @desc    Update crew member role/department
+ * @route   PUT /api/crew/:id
+ * @access  Private (Organizer/Admin)
+ */
+exports.updateCrewMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, department } = req.body;
+
+    const member = await EventCrew.findByIdAndUpdate(
+      id,
+      { role, department },
+      { new: true }
+    ).populate('user_id', 'name email');
+
+    if (!member) {
+      return res.status(404).json({ message: "Crew member not found" });
+    }
+
+    res.status(200).json(member);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+/**
+ * @desc    Get eligible members for assignment (Approved community members not yet in crew)
+ * @route   GET /api/crew/eligible/:eventId
+ * @access  Private (Organizer/Admin)
+ */
+exports.getEligibleMembers = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    
+    // Find the event to get its community_id
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    if (!event.community_id) {
+       return res.status(200).json([]); // No community, no eligible members from membership
+    }
+
+    // Find all approved community members
+    const approvedMembers = await CommunityMember.find({
+      community_id: event.community_id,
+      status: 'Approved'
+    }).populate('user_id', 'name email student_id');
+
+    // Find already assigned crew for this event
+    const assignedCrew = await EventCrew.find({ event_id: eventId }).select('user_id');
+    const assignedUserIds = assignedCrew.map(c => c.user_id?.toString());
+
+    // Filter out members who are already in the crew
+    const eligibleMembers = approvedMembers.filter(m => 
+      m.user_id && !assignedUserIds.includes(m.user_id._id.toString())
+    );
+
+    res.status(200).json(eligibleMembers);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+/**
  * @desc    Add a member to the workforce (Invite/Assign)
  * @route   POST /api/crew
  * @access  Private (Organizer/Admin)
@@ -33,12 +101,33 @@ exports.addCrewMember = async (req, res) => {
   try {
     const { event_id, user_id, temp_name, role, type, department } = req.body;
 
-    // Check if user is already assigned to this event
+    // Validation: If assigning a user, verify they are an approved community member
     if (user_id) {
-        const existing = await EventCrew.findOne({ event_id, user_id });
-        if (existing) {
-            return res.status(400).json({ message: "User already assigned to this event." });
+      const event = await Event.findById(event_id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Check if user is an approved member of the event's community
+      if (event.community_id) {
+        const isMember = await CommunityMember.findOne({
+          community_id: event.community_id,
+          user_id: user_id,
+          status: 'Approved'
+        });
+
+        if (!isMember) {
+          return res.status(403).json({ 
+            message: "User must be an approved community member to be assigned as event crew." 
+          });
         }
+      }
+
+      // Check if user is already assigned to this event
+      const existing = await EventCrew.findOne({ event_id, user_id });
+      if (existing) {
+        return res.status(400).json({ message: "User already assigned to this event." });
+      }
     }
 
     const newCrew = new EventCrew({

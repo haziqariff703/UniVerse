@@ -19,6 +19,7 @@ import {
   CreditCard,
   User,
   TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -45,6 +46,15 @@ const UsersList = ({ onBack }) => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [deleteProcessing, setDeleteProcessing] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "student",
+    student_id: "",
+  });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -145,6 +155,42 @@ const UsersList = ({ onBack }) => {
     }
   };
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newUser),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create user");
+      }
+
+      setIsCreateModalOpen(false);
+      setNewUser({
+        name: "",
+        email: "",
+        password: "",
+        role: "student",
+        student_id: "",
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error creating user:", error);
+      alert(error.message);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   // --- KPI Calculations (Client-side approximation based on current page/filters - ideally should be backend) ---
   // Note: For a real production app, we should have a dedicated /stats endpoint for accurately counting total users by role across all pages.
   // For now, we will simulate the "Total" counts using the data we have or just display generic icons if we can't get totals.
@@ -169,6 +215,8 @@ const UsersList = ({ onBack }) => {
         return "bg-gradient-to-r from-rose-500 to-orange-500";
       case "organizer":
         return "bg-gradient-to-r from-violet-500 to-fuchsia-500";
+      case "association":
+        return "bg-gradient-to-r from-amber-500 to-orange-600";
       case "staff":
         return "bg-gradient-to-r from-blue-500 to-cyan-500";
       default:
@@ -206,7 +254,13 @@ const UsersList = ({ onBack }) => {
           >
             <RefreshCw size={14} /> <span>Refresh</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/10 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold shadow-lg shadow-violet-500/20 hover:bg-violet-600 transition-all active:scale-95"
+          >
+            <UserPlus size={16} /> <span>Create User</span>
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-starlight/5 text-starlight text-sm hover:bg-starlight/10 transition-colors">
             <Download size={14} /> <span>Export List</span>
           </button>
         </div>
@@ -278,6 +332,7 @@ const UsersList = ({ onBack }) => {
               <option value="all">All Roles</option>
               <option value="student">Student</option>
               <option value="organizer">Organizer</option>
+              <option value="association">Association</option>
               <option value="staff">Staff</option>
               <option value="admin">Admin</option>
             </select>
@@ -399,6 +454,9 @@ const UsersList = ({ onBack }) => {
                           </option>
                           <option value="organizer" className="text-black">
                             Organizer
+                          </option>
+                          <option value="association" className="text-black">
+                            Association
                           </option>
                           <option value="staff" className="text-black">
                             Staff
@@ -656,6 +714,141 @@ const UsersList = ({ onBack }) => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="bg-[#050505] border-white/10 text-starlight p-0 overflow-hidden max-w-lg">
+          <div className="flex flex-col">
+            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+              <h2 className="text-xl font-bold text-starlight flex items-center gap-2">
+                <UserPlus size={20} className="text-violet-400" />
+                Register New User
+              </h2>
+              <p className="text-starlight/40 text-xs mt-1">
+                Directly add a verified student or association official to the
+                platform.
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+              <div className="space-y-4">
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-starlight/60 ml-1">
+                    Full Name
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={newUser.name}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, name: e.target.value })
+                    }
+                    placeholder="Enter full name"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-starlight/60 ml-1">
+                    Official Email
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, email: e.target.value })
+                    }
+                    placeholder="e.g. association@uitm.edu.my"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* System Role */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-starlight/60 ml-1">
+                      System Role
+                    </label>
+                    <select
+                      value={newUser.role}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, role: e.target.value })
+                      }
+                      className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+                    >
+                      <option value="student">Student</option>
+                      <option value="organizer">Organizer</option>
+                      <option value="association">Association</option>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  {/* Student ID (Optional) */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-starlight/60 ml-1">
+                      Student ID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={newUser.student_id}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, student_id: e.target.value })
+                      }
+                      placeholder="20XXXXXXXX"
+                      className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Initial Password */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-xs font-bold text-starlight/60 ml-1">
+                    Temporary Password
+                  </label>
+                  <input
+                    required
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, password: e.target.value })
+                    }
+                    placeholder="Min. 8 characters"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="flex-1 py-3 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-white transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold shadow-lg shadow-violet-500/20 hover:from-violet-500 hover:to-fuchsia-500 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  {createLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <RefreshCw size={14} className="animate-spin" />{" "}
+                      Finalizing...
+                    </span>
+                  ) : (
+                    "Initialize Account"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

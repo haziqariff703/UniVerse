@@ -149,6 +149,19 @@ const EventDetails = () => {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        finishDate: data.end_time
+          ? new Date(data.end_time).toLocaleDateString("en-MY", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : null,
+        finishTime: data.end_time
+          ? new Date(data.end_time).toLocaleTimeString("en-MY", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : null,
         venue: {
           name: data.venue_id?.name || data.location || "TBA",
           location: data.venue_id?.location_code || "",
@@ -524,6 +537,23 @@ const EventDetails = () => {
                         </p>
                       </div>
                     </div>
+
+                    {event.finishTime && (
+                      <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-[2rem] hover:border-white/20 transition-all">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-900/80 flex items-center justify-center text-rose-400 border border-white/5">
+                          <Clock className="w-6 h-6 rotate-180" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                            Event Finish
+                          </p>
+                          <p className="text-base font-bold text-white leading-none">
+                            {event.finishTime}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-[2rem] hover:border-white/20 transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-slate-900/80 flex items-center justify-center text-cyan-400 border border-white/5">
                         <MapPin className="w-6 h-6" />

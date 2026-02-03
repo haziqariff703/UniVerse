@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Hero from "@/components/home/Hero";
 import Stats from "@/components/home/Stats";
 import CampusLifeInMotion from "@/components/sections/CampusLifeInMotion";
@@ -41,17 +41,38 @@ const mapEventToCardProps = (event) => ({
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [featuredEvents, setFeaturedEvents] = useState([]);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser && storedUser !== "undefined") {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Failed to parse user", e);
+        return JSON.parse(storedUser);
+      } catch {
+        return null;
       }
     }
+    return null;
+  });
+
+  useEffect(() => {
+    // Sync with other tabs or storage changes
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser && storedUser !== "undefined") {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch {
+          // Silently skip
+        }
+      } else {
+        setUser(null);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("authChange", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("authChange", handleStorageChange);
+    };
   }, []);
 
   const fetchFeatured = useCallback(async () => {
@@ -75,9 +96,37 @@ const Home = () => {
     fetchFeatured();
   }, [fetchFeatured]);
 
-  // If user is logged in AND is a student (or undefined role), show the Student Dashboard
-  if (user && (!user.role || user.role === "student")) {
-    return <StudentDashboard user={user} />;
+  // Redirect login users based on roles
+  if (user) {
+    const hasStudentRole =
+      user.role === "student" || user.roles?.includes("student");
+    const isAssociation = user.role === "association";
+    const isPureOrg =
+      user.role === "organizer" && !user.roles?.includes("student");
+
+    console.log("Home Redirect Check:", {
+      userRole: user.role,
+      userRoles: user.roles,
+      hasStudentRole,
+      isAssociation,
+      isPureOrg,
+    });
+
+    // Associations and non-student organizers land on Management Command Center
+    if (isAssociation || isPureOrg) {
+      console.log("Redirecting to /organizer/my-events");
+      return <Navigate to="/organizer/my-events" replace />;
+    }
+
+    if (user.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+
+    // Students land on the Student Dashboard
+    if (hasStudentRole || !user.role) {
+      console.log("Rendering Student Dashboard");
+      return <StudentDashboard user={user} />;
+    }
   }
 
   return (

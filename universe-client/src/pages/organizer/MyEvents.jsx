@@ -202,7 +202,9 @@ const MyEvents = () => {
 
         {/* Right Column (30%) - Insights Panel */}
         <div className="lg:col-span-4 space-y-6">
-          <InsightsPanel />
+          <InsightsPanel
+            user={JSON.parse(localStorage.getItem("user") || "{}")}
+          />
         </div>
       </div>
     </div>

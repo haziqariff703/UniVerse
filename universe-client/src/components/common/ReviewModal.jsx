@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -47,25 +47,54 @@ const getScoreColor = (score) => {
   return "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]";
 };
 
-const ReviewModal = ({ isOpen, onClose, event, readOnly = false }) => {
-  const [ratings, setRatings] = useState(
-    readOnly && event?.ratings
-      ? event.ratings
-      : { value: 5, energy: 5, welfare: 5 },
-  );
-  const [comment, setComment] = useState(
-    readOnly && event?.comment ? event.comment : "",
-  );
-  const [photos, setPhotos] = useState([]); // Array of preview URLs
+const ReviewModal = ({
+  isOpen,
+  onClose,
+  event,
+  readOnly = false,
+  onSubmit,
+}) => {
+  // Use event.review if available (backend naming)
+  const [ratings, setRatings] = useState({ value: 5, energy: 5, welfare: 5 });
+  const [comment, setComment] = useState("");
+  const [photos, setPhotos] = useState([]); // Array of preview URLs or server URLs
+  const [photoFiles, setPhotoFiles] = useState([]); // Array of actual File objects
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Mock Photo Upload
+  // Sync state when modal opens or event changes
+  useEffect(() => {
+    if (isOpen && event) {
+      const reviewData = event.review || event.ratings;
+      if (readOnly && reviewData) {
+        setRatings({
+          value: reviewData.value || 5,
+          energy: reviewData.energy || 5,
+          welfare: reviewData.welfare || 5,
+        });
+        setComment(reviewData.comment || "");
+        // Map server paths to absolute URLs
+        const serverPhotos = (reviewData.photos || []).map((p) =>
+          p.startsWith("http") ? p : `http://localhost:5000/${p}`,
+        );
+        setPhotos(serverPhotos);
+      } else {
+        // Reset for new submission
+        setRatings({ value: 5, energy: 5, welfare: 5 });
+        setComment("");
+        setPhotos([]);
+        setPhotoFiles([]);
+      }
+    }
+  }, [isOpen, event, readOnly]);
+
+  // Actual Photo Selection
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setPhotos([...photos, url].slice(0, 3)); // Limit to 3
+      setPhotos([...photos, url].slice(0, 3));
+      setPhotoFiles([...photoFiles, file].slice(0, 3));
     }
   };
 
@@ -77,16 +106,36 @@ const ReviewModal = ({ isOpen, onClose, event, readOnly = false }) => {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const avgScore = calculateOverall();
+      const finalRating = Math.max(1, Math.min(5, Math.round(avgScore / 2)));
+
+      if (typeof onSubmit === "function") {
+        await onSubmit({
+          rating: finalRating,
+          value: ratings.value,
+          energy: ratings.energy,
+          welfare: ratings.welfare,
+          comment,
+          photos: photoFiles, // Pass actual files
+        });
+      } else {
+        console.warn("ReviewModal: onSubmit is not a function", onSubmit);
+      }
+
       setIsSuccess(true);
       setTimeout(() => {
         onClose();
         setIsSuccess(false); // Reset for next time
       }, 1500);
-    }, 1500);
+    } catch (error) {
+      console.error("Review submission failed", error);
+      alert("Submission Error: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const overallScore =
@@ -316,8 +365,8 @@ const ReviewModal = ({ isOpen, onClose, event, readOnly = false }) => {
                       <Loader2 className="w-5 h-5 animate-spin text-fuchsia-600" />
                     ) : isSuccess ? (
                       <>
-                        <span>Submitted</span>
-                        <Check className="w-5 h-5" />
+                        <span>Verified Submission</span>
+                        <CheckCircle className="w-5 h-5" />
                       </>
                     ) : (
                       <>

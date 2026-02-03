@@ -36,7 +36,15 @@ const MainSidebar = ({ user, collapsed }) => {
       ];
     }
 
-    if (user.role === "organizer") {
+    const isAssociation = user.role === "association";
+    const isOrganizerMode =
+      location.pathname.startsWith("/organizer") || isAssociation;
+    const hasOrganizerRole =
+      user.roles?.includes("organizer") ||
+      user.role === "organizer" ||
+      isAssociation;
+
+    if (hasOrganizerRole && isOrganizerMode) {
       const baseItems = [
         { label: "My Events", path: "/organizer/my-events", icon: Calendar },
         {

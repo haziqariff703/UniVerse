@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Mail,
   Lock,
@@ -55,8 +55,24 @@ const Login = () => {
       window.dispatchEvent(new Event("authChange"));
 
       setTimeout(() => {
-        if (data.user.role === "admin") {
+        const isAdmin =
+          data.user.roles?.includes("admin") || data.user.role === "admin";
+        const isAssociation =
+          data.user.roles?.includes("association") ||
+          data.user.role === "association";
+        const isOrganizer =
+          data.user.roles?.includes("organizer") ||
+          data.user.role === "organizer";
+
+        if (isAdmin) {
           navigate("/admin/dashboard");
+        } else if (isAssociation) {
+          navigate("/organizer/my-events");
+        } else if (
+          isOrganizer &&
+          !window.location.pathname.startsWith("/student")
+        ) {
+          navigate("/");
         } else {
           navigate("/");
         }

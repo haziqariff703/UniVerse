@@ -17,12 +17,14 @@ import {
   TrendingUp,
   BarChart3,
   Layers,
+  Users,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -369,7 +371,7 @@ const CategoryManager = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
               >
                 <option value={10}>10 Entries</option>
                 <option value={25}>25 Entries</option>
@@ -486,11 +488,19 @@ const CategoryManager = () => {
                         {cat.color}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <BarChart3 size={10} className="text-violet-400" />
-                      <span className="text-[10px] text-starlight/60 font-bold">
-                        {cat.usageCount || 0} Events
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <BarChart3 size={10} className="text-violet-400" />
+                        <span className="text-[10px] text-starlight/60 font-bold">
+                          {cat.eventUsage || 0} Events
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users size={10} className="text-cyan-400" />
+                        <span className="text-[10px] text-starlight/60 font-bold">
+                          {cat.communityUsage || 0} Clubs
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -547,9 +557,9 @@ const CategoryManager = () => {
               <DialogTitle className="text-xl font-bold tracking-tight uppercase">
                 {currentCategory ? "Refine Sector" : "Register New Sector"}
               </DialogTitle>
-              <p className="text-[10px] font-medium text-starlight/40 opacity-80 uppercase tracking-widest mt-1">
+              <DialogDescription className="text-[10px] font-medium text-starlight/40 opacity-80 uppercase tracking-widest mt-1">
                 Forensic Logic Configuration
-              </p>
+              </DialogDescription>
             </div>
             <div className="p-3 bg-white/5 rounded-xl border border-white/10">
               <Layers size={20} className="text-violet-400" />

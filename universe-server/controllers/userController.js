@@ -66,11 +66,28 @@ exports.updateProfile = async (req, res) => {
  */
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password').lean();
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
-    res.status(200).json(user);
+
+    // Include community roles summary
+    const CommunityMember = require('../models/communityMember');
+    const memberships = await CommunityMember.find({ 
+      user_id: req.user.id, 
+      status: 'Approved' 
+    });
+
+    const communityRoles = memberships.map(m => m.role);
+    const isPresident = communityRoles.includes('President');
+
+    console.log(`[getProfile] User: ${user.email}, Roles: ${user.roles}, IsPresident: ${isPresident}`);
+    
+    res.status(200).json({
+      ...user,
+      isPresident,
+      communityRoles
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error.', error: error.message });
   }
