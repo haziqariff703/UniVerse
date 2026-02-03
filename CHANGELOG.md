@@ -86,6 +86,16 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Spotlight Border Effect for Speakers Page**: Implemented high-performance 2D mouse-tracking radial gradient glow on speaker cards, replacing react-tilt 3D effect for better performance and reduced dependency complexity.
+- **Sidebar Navigation**: Added `/speakers` page to the student sidebar menu for easy access to the speaker directory.
+- **Profile Page Overhaul ('Cosmic Command Center')**: Transformed student profile into a high-fidelity "Identity Layer" featuring a customizable Cosmic Cover, Portal Avatar, Identity Block, and a modular Dashboard Grid (Student DNA, Quest Log, Loadout, Decrypted Assets).
+
+### Changed
+
+- **Profile UI Refinements ('Floating Archipelago')**: Detached banner as standalone floating island, removed background boxes from identity block, applied Eclipse rim light effect to avatar (replacing neon glow), added silver gradient to name typography, enhanced glass-morphism on widgets (bg-black/40 for improved readability), implemented pulsing constellation timeline in Quest Log, enlarged DNA tags for better visual balance, and aligned gamification stats with banner edge.
+- **Profile Photo Upload**: Implemented full-stack functionality for users to upload and update their profile avatar and cover photo directly from the profile page.
+- **Edit Profile Modal**: Implemented a comprehensive high-fidelity modal dashboard for profile management. Features include a dual-tab architecture ("Identity" & "Visuals"), curated Skill Tree (DNA) selector with limit enforcement, and unified upload triggers via camera icons.
+- **Profile Persistence**: Upgraded backend `User` schema and `userController` to persistently store and serve `bio` (Mission Statement), `links` (Social Uplinks), and `dna` (Skill Tree tags).
+- **Profile UI Update**: Integrated "Mission Statement" display within the identity card and "Communication Uplinks" (clickable social icons) within the Signal Center widget.
 
 ### Changed
 
