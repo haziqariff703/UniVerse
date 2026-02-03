@@ -72,10 +72,10 @@ const calculateTimeDiff = (start, end) => {
 export const VIBE_TAGS = [
   {
     id: "quiet",
-    label: "🤫 QUIET STUDY",
+    label: "QUIET STUDY",
     criteria: ["Academic", "Residential"],
   },
-  { id: "ac", label: "❄️ COLD AC", criteria: ["AC"] },
-  { id: "wifi", label: "📶 HIGH-SPEED WIFI", criteria: ["Wifi"] },
-  { id: "social", label: "👥 SOCIAL HUB", criteria: ["Social", "Outdoor"] },
+  { id: "ac", label: "COLD AC", criteria: ["AC"] },
+  { id: "wifi", label: "HIGH-SPEED WIFI", criteria: ["Wifi"] },
+  { id: "social", label: "SOCIAL HUB", criteria: ["Social", "Outdoor"] },
 ];

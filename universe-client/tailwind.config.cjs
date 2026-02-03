@@ -57,6 +57,7 @@ module.exports = {
         space: ['"Space Grotesk"', "monospace"],
         neuemontreal: ["Manrope", "sans-serif"],
         raleway: ["Raleway", "sans-serif"],
+        geist: ['"Geist Mono"', "monospace"],
       },
       letterSpacing: {
         "tighter-plus": "-0.05em", // Vercel-style ultra-tight tracking

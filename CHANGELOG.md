@@ -39,6 +39,25 @@ All notable changes to this project will be documented in this file.
 - **Live Insights Panel**: Updated `InsightsPanel.jsx` to display real-time registration trends, dynamic sparkline charts, and the 5 most recent registration activities sourced from backend data.
 - **Event-Specific Analytics API**: Created `/api/events/:id/analytics` endpoint returning event-specific registration trends (7-day chart), combined activity feed (registrations + audit logs), and insight summaries.
 - **Context-Aware InsightsPanel**: Enhanced `InsightsPanel` component to accept an `eventId` prop, displaying event-specific data when viewing an individual EventDashboard.
+- **Student Speaker Profile - 'The Visionary Dossier'**:
+  - **Holographic Card UI**: Implemented a centered, glassmorphic profile card with Framer Motion animations.
+  - **Strict Access Control**: Protected `/speakers` and `/speakers/:id` routes to be accessible ONLY by logged-in students.
+  - **Typography**: Integrated `Geist Mono` for technical data and `Clash Display` for headers.
+  - **Minimalist Data**: Restricted view to Name, Verification, Past Events ("Ticket Stubs"), and Socials ("Connection Dock").
+- **Speakers Grid Overhaul - 'The Nebula Directorate'**:
+  - **Spotlight Hero**: Restructured layout to a centered "Command Line" aesthetic with a massive floating search bar.
+  - **Smart Filters**: Added interactive Glass Pills to filter agents by category (Science, Tech, Arts).
+  - **Visual Polish**: Integrated cinematic grain textures and "Scanner Beam" hover effects on cards.
+  - **Living Interactions**: Preserved 3D Tilt physics, metadata signal strips, and Typewriter Search.
+  - **Headline Upgrade**: Implemented static **White-to-Fuchsia** gradient headline (`from-white via-fuchsia-400 to-purple-500`) for high-contrast visibility.
+- **Architectural Refactor**:
+  - **Shared Data Layer**: Extracted `MOCK_SPEAKERS` to `@/data/mockSpeakers.js` to ensure consistent data usage across the entire platform and fix routing inconsistencies.
+  - **Speaker Details Overhaul**:
+    - **Routing Fix**: Resolved bug where all clicks redirected to "Dr. Elena Void" by implementing dynamic logic `MOCK_SPEAKERS.find(id)`.
+    - **Premium UI Redesign**: Transformed `SpeakerDetails.jsx` into a comprehensive "Agent Dossier" with a 2-column bento layout.
+    - **Enhanced Metadata**: Added "Key Achievements", "Extended Bio", and "Next Transmission" (Upcoming Events) sections.
+    - **Visual upgrade**: Implemented "Active Pulse" status, "Layered Identity" cards, and stats grid (Talks/Merit/Rating).
+  - **Venues Hub Refinement**: Removed emojis from "Vibe Filters" (`liveVenueStatus.js`) and replaced them with professional Lucide icons (BookOpen, Snowflake, Wifi, Users) in `Venues.jsx`.
 - **Interactive Activity Log**: Implemented row selection, bulk export, and a high-fidelity "Snapshot Viewer" modal for detailed audit trail analysis. Added toast notifications for user interactions.
 - **Extended Audit Log Model**: Added organizer actions (`CREATE_EVENT`, `UPDATE_EVENT`, `CHECKIN_ATTENDEE`, `CANCEL_REGISTRATION`) to enable event-level audit tracking.
 - **Organizer Activity Logs API**: Created `GET /api/audit/organizer` endpoint that fetches combined audit logs and registrations for an organizer's events, with support for eventId filtering, search, date range, and pagination.
@@ -60,6 +79,10 @@ All notable changes to this project will be documented in this file.
 
 - **Backend Event Filtering**: Updated the `getAllEvents` controller to support `status=all`, allowing organizers to see all scheduled events (including pending ones) on the roadmap.
 - **Frontend Fetch Strategy**: Switched to the public `/api/venues` endpoint for better consistency across roles.
+
+### Fixed
+
+- **Dependencies**: Resolved "Failed to resolve import `react-hot-toast`" build error by installing missing package.
 
 ## [2026-02-01]
 

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import TrueFocus from "@/components/ui/TrueFocus";
 import { VIBE_TAGS } from "@/data/liveVenueStatus";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, BookOpen, Snowflake, Wifi, Users } from "lucide-react";
 
 const CATEGORIES = ["All", "Academic", "Residential", "Social", "Outdoor"];
 
@@ -143,25 +143,43 @@ const Venues = () => {
 
           {/* VIBE CHIPS (Integrated) */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {VIBE_TAGS.map((vibe) => (
-              <button
-                key={vibe.id}
-                onClick={() =>
-                  setActiveVibe(activeVibe === vibe.id ? null : vibe.id)
-                }
-                className={cn(
-                  "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all backdrop-blur-xl border select-none",
-                  activeVibe === vibe.id
-                    ? "bg-slate-900/80 text-white border-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.3)] scale-105"
-                    : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-white",
-                )}
-              >
-                {activeVibe === vibe.id && (
-                  <Sparkles className="w-3 h-3 text-fuchsia-400 animate-pulse" />
-                )}
-                {vibe.label}
-              </button>
-            ))}
+            {VIBE_TAGS.map((vibe) => {
+              const Icon =
+                vibe.id === "quiet"
+                  ? BookOpen
+                  : vibe.id === "ac"
+                    ? Snowflake
+                    : vibe.id === "wifi"
+                      ? Wifi
+                      : vibe.id === "social"
+                        ? Users
+                        : Sparkles;
+
+              return (
+                <button
+                  key={vibe.id}
+                  onClick={() =>
+                    setActiveVibe(activeVibe === vibe.id ? null : vibe.id)
+                  }
+                  className={cn(
+                    "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all backdrop-blur-xl border select-none",
+                    activeVibe === vibe.id
+                      ? "bg-slate-900/80 text-white border-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.3)] scale-105"
+                      : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-white",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "w-3.5 h-3.5",
+                      activeVibe === vibe.id
+                        ? "text-fuchsia-400"
+                        : "opacity-70",
+                    )}
+                  />
+                  {vibe.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

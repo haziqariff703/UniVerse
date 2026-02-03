@@ -207,8 +207,6 @@ function App() {
               <Route path="/events/:id" element={<EventDetails />} />
               <Route path="/venues" element={<Venues />} />
               <Route path="/venues/:id" element={<VenueDetails />} />
-              <Route path="/speakers" element={<Speakers />} />
-              <Route path="/speakers/:id" element={<SpeakerDetails />} />
 
               {/* Protected Routes - Any Logged In User */}
               <Route
@@ -240,6 +238,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <News />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/speakers"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <Speakers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/speakers/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <SpeakerDetails />
                   </ProtectedRoute>
                 }
               />

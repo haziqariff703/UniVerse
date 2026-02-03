@@ -18,6 +18,9 @@ const BlurText = ({
   const ref = useRef();
 
   useEffect(() => {
+    // Immediate fallback: If IntersectionObserver fails or element is already in view but not triggering
+    const timer = setTimeout(() => setInView(true), 200);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -32,7 +35,10 @@ const BlurText = ({
       observer.observe(ref.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
   }, [threshold, rootMargin]);
 
   const defaultFrom =
@@ -59,7 +65,7 @@ const BlurText = ({
   ];
 
   return (
-    <p ref={ref} className={`blur-text ${className} flex flex-wrap`}>
+    <p ref={ref} className={`blur-text ${className}`}>
       {elements.map((element, index) => (
         <motion.span
           key={index}
