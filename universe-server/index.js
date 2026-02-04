@@ -21,7 +21,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/public', express.static('public'));
+app.use("/public", express.static("public"));
 
 // API Routes
 app.use("/api/events", eventRoutes);
@@ -45,9 +45,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || "Internal Server Error" });
 });
 
-// Basic Route for Testing
 app.get("/", (req, res) => {
   res.send("UniVerse Backend is Online and Optimized! 🚀");
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("=== Global Error Handler ===");
+  console.error("Error:", err);
+  if (err.stack) console.error("Stack:", err.stack);
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? err : {},
+  });
 });
 
 // Async Server Startup - Wait for DB Connection First

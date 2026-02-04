@@ -1,16 +1,26 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
-// Set storage engine
+// --- BULLETPROOF STORAGE ENGINE ---
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "public/uploads/");
+  destination: (req, file, cb) => {
+    // 1. Define the target folder (public/uploads/assets)
+    const dir = path.join(process.cwd(), "public/uploads/assets");
+
+    // 2. CHECK & CREATE: If it doesn't exist, make it!
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`📂 Created missing directory: ${dir}`);
+    }
+
+    cb(null, dir);
   },
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname),
-    );
+  filename: (req, file, cb) => {
+    // 3. Rename file to avoid conflicts (userId + timestamp + extension)
+    const userId = req.user ? req.user.id : "anonymous";
+    const uniqueName = `${userId}-${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
   },
 });
 
@@ -38,7 +48,7 @@ function checkFileType(file, cb) {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb("Error: Unsupported file type! Allowed: images, PDF, Word, TXT");
+    cb(new Error("Unsupported file type! Allowed: images, PDF, Word, TXT"));
   }
 }
 
