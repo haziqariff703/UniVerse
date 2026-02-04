@@ -12,8 +12,25 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "three": path.resolve(__dirname, "node_modules/three/build/three.module.js")
+      three: path.resolve(
+        __dirname,
+        "node_modules/three/build/three.module.js",
+      ),
     },
     dedupe: ["three"],
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/public": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

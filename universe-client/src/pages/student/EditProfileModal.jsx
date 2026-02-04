@@ -165,8 +165,8 @@ const EditProfileModal = ({
       const token = localStorage.getItem("token");
       const endpoint =
         type === "avatar"
-          ? "http://localhost:5000/api/users/profile/avatar"
-          : "http://localhost:5000/api/users/profile/cover";
+          ? "/api/users/profile/avatar"
+          : "/api/users/profile/cover";
 
       const res = await fetch(endpoint, {
         method: "PUT",
@@ -177,7 +177,7 @@ const EditProfileModal = ({
       const data = await res.json();
 
       if (res.ok) {
-        const imageUrl = `http://localhost:5000${type === "avatar" ? data.avatar : data.coverImage}`;
+        const imageUrl = type === "avatar" ? data.avatar : data.coverImage;
         if (type === "avatar") setAvatarPreview(imageUrl);
         else setCoverPreview(imageUrl);
 
@@ -191,6 +191,35 @@ const EditProfileModal = ({
       console.error("Upload failed", error);
     } finally {
       setUploading((prev) => ({ ...prev, [type]: false }));
+    }
+  };
+
+  // Asset Upload Logic
+  const handleAssetUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/users/profile/assets", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setFormData((prev) => ({
+          ...prev,
+          assets: data.assets,
+        }));
+      }
+    } catch (error) {
+      console.error("Asset upload failed", error);
     }
   };
 
@@ -238,6 +267,11 @@ const EditProfileModal = ({
                 label="Visuals"
                 active={activeTab === "visuals"}
                 onClick={() => setActiveTab("visuals")}
+              />
+              <TabButton
+                label="Assets"
+                active={activeTab === "assets"}
+                onClick={() => setActiveTab("assets")}
               />
             </div>
 
@@ -433,6 +467,59 @@ const EditProfileModal = ({
                         Replace Image
                       </button>
                     </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* === ASSETS TAB === */}
+              {activeTab === "assets" && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-medium">Decrypted Assets</h3>
+                    <label className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors cursor-pointer flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Upload Document
+                      <input
+                        type="file"
+                        onChange={handleAssetUpload}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.txt"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(formData.assets || []).map((asset, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-black/40 text-fuchsia-400">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-white/90">
+                              {asset.name}
+                            </div>
+                            <div className="text-sm text-white/40 font-mono">
+                              {asset.size} •{" "}
+                              {new Date(asset.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(formData.assets || []).length === 0 && (
+                      <div className="text-center py-8 text-white/30 text-sm italic">
+                        No assets decrypted yet. Upload files to populate your
+                        inventory.
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

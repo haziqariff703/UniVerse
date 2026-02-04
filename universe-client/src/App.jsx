@@ -114,7 +114,7 @@ const Layout = ({ children }) => {
       if (!token) return;
 
       try {
-        const res = await fetch("http://localhost:5000/api/users/profile", {
+        const res = await fetch("/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -153,7 +153,7 @@ const Layout = ({ children }) => {
       const timer = setTimeout(() => {
         const syncUserProfile = async () => {
           try {
-            const res = await fetch("http://localhost:5000/api/users/profile", {
+            const res = await fetch("/api/users/profile", {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {

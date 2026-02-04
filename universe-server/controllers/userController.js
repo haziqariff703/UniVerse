@@ -94,10 +94,16 @@ exports.getProfile = async (req, res) => {
 
     res.status(200).json({
       ...user,
+      avatar: user.avatar || "",
+      coverImage: user.coverImage || "",
+      bio: user.bio || "",
+      dna: user.dna || [],
+      assets: user.assets || [],
       isPresident,
       communityRoles,
     });
   } catch (error) {
+    console.error("[getProfile] Error:", error);
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
@@ -156,6 +162,78 @@ exports.uploadCover = async (req, res) => {
     res.status(200).json({
       message: "Cover image uploaded successfully",
       coverImage: coverUrl,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc    Upload document asset
+ * @route   PUT /api/users/profile/assets
+ * @access  Private
+ */
+exports.uploadAsset = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Please upload a file" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const asset = {
+      name: req.file.originalname,
+      url: `/public/uploads/${req.file.filename}`,
+      type: req.file.mimetype,
+      size: (req.file.size / 1024 / 1024).toFixed(2) + " MB",
+    };
+
+    user.assets.push(asset);
+    await user.save();
+
+    res.status(200).json({
+      message: "Asset uploaded successfully",
+      assets: user.assets,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc    Upload document asset
+ * @route   PUT /api/users/profile/assets
+ * @access  Private
+ */
+exports.uploadAsset = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Please upload a file" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const asset = {
+      name: req.file.originalname,
+      url: `/public/uploads/${req.file.filename}`,
+      type: req.file.mimetype,
+      size: (req.file.size / 1024 / 1024).toFixed(2) + " MB",
+    };
+
+    user.assets.push(asset);
+    await user.save();
+
+    res.status(200).json({
+      message: "Asset uploaded successfully",
+      assets: user.assets,
     });
   } catch (error) {
     console.error(error);

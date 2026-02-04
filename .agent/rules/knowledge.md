@@ -1,14 +1,18 @@
-# UniVerse Project Knowledge Base
+# Merit System Architecture
 
-This document serves as a repository for technical logic, strategic design decisions, and system insights intended for use in project reports and academic documentation.
+## Overview
 
-## 1. Category Intelligence Engine (Heuristic Analysis)
+The Merit System is a core gamification feature that rewards students for attending events. It is fully integrated between the backend database and the frontend Profile UI.
 
-The system utilizes a **Heuristic Intelligence Engine** to provide automated post-mortem analysis of event performance.
+## Data Flow
 
-### A. Classification Algorithms
+1.  **Event Definition**: Each `Event` document has a `merit_points` field.
+2.  **Attendance Trigger**: When a student scans their QR Code at an event, the `registrationController.checkIn` function executes.
+3.  **Database Update**: The backend adds `event.merit_points` to the `User`'s `current_merit` field using `$inc`.
+4.  **Frontend Binding**: `Profile.jsx` fetches the user data and maps `userData.current_merit` to the `xp` prop of the gamification component.
+5.  **Visualization**: `RankAscension.jsx` takes the raw XP value and calculates the current Rank (Cadet, Scout, etc.) and progress percentage towards the next rank.
 
-Events are categorized into performance tiers using multi-dimensional data points:
+## Key Constraints
 
 - **High Performer**: (Revenue > Mean) && (Rating >= 4.0).
 - **Quality Issue**: (Revenue > Mean) && (Rating < 3.5).
@@ -110,3 +114,6 @@ The system implements a robust temporal logic for event status to ensure UI cons
 - **Outcome-Based Status Determination**: Transitions from a simple "Start-Time" check to a more accurate `end_time` logic. Events are only considered "Past" or "Completed" after their full duration has elapsed.
 - **Fallback Heuristics**: In cases where `end_time` is not explicitly defined, the system falls back to `date_time` (start time) to ensure no breakage.
 - **Cross-Layer Synchronization**: This temporal logic is synchronized across the Backend (Filtering API, Analytics Engine) and Frontend (Status Badges, Roadmap Displays) to prevent cognitive dissonance for users (e.g., an event appearing as "Completed" while it is still happening).
+- Points are awarded **only upon Check-In** (attendance), not just registration.
+- Points are cumulative and persistent in the `User` model.
+- The Rank System is purely visual and derived from the `current_merit` total.

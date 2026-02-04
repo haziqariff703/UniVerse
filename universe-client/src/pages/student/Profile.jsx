@@ -23,6 +23,7 @@ import {
 import { MOCK_STUDENT_PROFILE } from "@/data/mockStudent";
 import { cn } from "@/lib/utils";
 import EditProfileModal from "./EditProfileModal";
+import RankAscension from "../../components/profile/RankAscension";
 
 // --- SUB-COMPONENTS ---
 
@@ -106,7 +107,7 @@ const Profile = () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const res = await fetch("http://localhost:5000/api/users/profile", {
+          const res = await fetch("/api/users/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -116,16 +117,20 @@ const Profile = () => {
               ...prev,
               name: userData.name || prev.name,
               studentId: userData.student_id || prev.studentId,
-              avatar: userData.avatar
-                ? `http://localhost:5000${userData.avatar}`
-                : prev.avatar,
-              coverImage: userData.coverImage
-                ? `http://localhost:5000${userData.coverImage}`
-                : prev.coverImage,
-              // Add mock bio/links/dna if not in backend yet, or use what's returned
-              bio: userData.bio || prev.bio,
-              links: userData.links || prev.links,
-              dna: userData.dna || prev.dna,
+              avatar:
+                userData.avatar ||
+                "https://ui-avatars.com/api/?name=Student&background=18181b&color=fff",
+              coverImage: userData.coverImage || "",
+              // Use backend data or empty strings/arrays, do NOT fall back to mock data for these fields
+              bio: userData.bio || "",
+              links: userData.links || {
+                github: "",
+                linkedin: "",
+                website: "",
+              },
+              dna: userData.dna || [],
+              assets: userData.assets || [],
+              xp: userData.current_merit || 0,
             }));
           }
         }
@@ -152,7 +157,7 @@ const Profile = () => {
     // 2. Persist to Backend (only text fields, images are already uploaded via modal)
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/users/profile", {
+      await fetch("/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +168,7 @@ const Profile = () => {
           bio: updatedData.bio,
           links: updatedData.links,
           dna: updatedData.dna,
-          // avatar/cover are handled separately in modal via upload endpoint
+          // avatar/cover/assets are handled separately in modal via upload endpoint
         }),
       });
     } catch (err) {
@@ -267,15 +272,8 @@ const Profile = () => {
           {/* Right Side: Gamification + Actions */}
           <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Gamification Stats (Glass Pill) */}
-            <div className="flex items-center gap-6 px-6 py-3 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-bold font-clash text-white">
-                  {student.rank}
-                </span>
-              </div>
-              <XpBar current={student.xp} max={student.maxXp} />
-            </div>
+            {/* Gamification Stats (Rank Ascension System) */}
+            <RankAscension currentXP={student.xp} />
 
             {/* Action Buttons */}
             <div className="flex gap-3">

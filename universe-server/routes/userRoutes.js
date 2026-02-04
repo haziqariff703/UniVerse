@@ -34,4 +34,14 @@ router.put(
   userController.uploadCover,
 );
 
+// @route   PUT /api/users/profile/assets
+// @desc    Upload document asset
+// @access  Private
+router.put(
+  "/profile/assets",
+  auth,
+  upload.single("file"),
+  userController.uploadAsset,
+);
+
 module.exports = router;
