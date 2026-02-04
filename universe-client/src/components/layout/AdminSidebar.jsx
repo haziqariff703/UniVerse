@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +20,7 @@ import {
   Tag,
 } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
+import { cn } from "@/lib/utils";
 
 import {
   Collapsible,
@@ -151,9 +153,10 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
 
   return (
     <aside
-      className={`${
-        collapsed ? "w-20" : "w-64"
-      } hidden md:flex flex-col border-r border-white/5 bg-[#0e0e12] transition-all duration-300 relative z-20`}
+      className={cn(
+        "relative flex flex-col min-h-screen border-r border-white/5 bg-[#0e0e12] transition-all duration-300",
+        collapsed ? "w-20" : "w-64",
+      )}
     >
       <div className="h-20 flex items-center px-6 border-b border-white/5">
         <div className="flex items-center gap-3">
@@ -182,7 +185,7 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
         </div>
       </div>
 
-      <div className="p-4 space-y-2 flex-grow overflow-y-auto custom-scrollbar">
+      <div className="p-4 space-y-2 flex-grow overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <SidebarItem
           icon={LayoutDashboard}
           label="Overview"

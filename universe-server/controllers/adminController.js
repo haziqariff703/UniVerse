@@ -7,6 +7,7 @@ const Category = require('../models/category');
 const Notification = require('../models/notification');
 const Speaker = require('../models/speaker');
 const Community = require('../models/community');
+const Review = require('../models/review');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -21,52 +22,259 @@ const bcrypt = require('bcryptjs');
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    const [totalUsers, totalEvents, totalBookings, activeEvents, pendingEvents, pendingOrganizers, pendingSpeakers] = await Promise.all([
-      User.countDocuments(),
-      Event.countDocuments(),
-      Registration.countDocuments(),
-      Event.countDocuments({ 
-        $or: [
-          { end_time: { $gte: new Date() } },
-          { end_time: { $exists: false }, date_time: { $gte: new Date() } }
-        ], 
-        status: 'approved' 
-      }),
+    const range = req.query.range || 'year';
+    const now = new Date();
+    
+    // 1. Define Date Ranges (Current vs Previous)
+    let startDate = new Date();
+    let prevStartDate = new Date();
+    // Default values if 'year'
+    startDate.setFullYear(now.getFullYear() - 1);
+    prevStartDate.setFullYear(now.getFullYear() - 2);
+
+    switch(range) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        prevStartDate.setDate(now.getDate() - 14);
+        break;
+      case 'month':
+        startDate.setDate(now.getDate() - 30);
+        prevStartDate.setDate(now.getDate() - 60);
+        break;
+      case 'year':
+        // Already set defaults
+        break;
+    }
+
+    // 2. KPI Counts (Filtered by Range)
+    const [
+      currentUsers, 
+      prevUsers, 
+      currentEvents, 
+      prevEvents, 
+      currentBookings, 
+      prevBookings,
+      pendingEvents,
+      activeEvents
+    ] = await Promise.all([
+      User.countDocuments({ created_at: { $gte: startDate } }),
+      User.countDocuments({ created_at: { $gte: prevStartDate, $lt: startDate } }),
+      Event.countDocuments({ created_at: { $gte: startDate } }),
+      Event.countDocuments({ created_at: { $gte: prevStartDate, $lt: startDate } }),
+      Registration.countDocuments({ booking_time: { $gte: startDate } }),
+      Registration.countDocuments({ booking_time: { $gte: prevStartDate, $lt: startDate } }),
       Event.countDocuments({ status: 'pending' }),
-      User.countDocuments({ role: 'student', organizerRequest: true }),
-      Speaker.countDocuments({ status: 'pending' })
+      Event.countDocuments({ status: 'approved', end_time: { $gte: new Date() } })
     ]);
 
-    const recentActivity = await Registration.find()
-      .sort({ booking_time: -1 })
-      .limit(10)
-      .populate('user_id', 'name student_id')
-      .populate('event_id', 'title');
+    // Total counts (Lifetime) - helpful for context
+    const [totalUsers, totalEvents, totalBookings] = await Promise.all([
+      User.countDocuments(),
+      Event.countDocuments(),
+      Registration.countDocuments()
+    ]);
+
+    const calculateChange = (current, prev) => {
+      if (prev === 0) return current > 0 ? "100" : "0.0";
+      const change = ((current - prev) / prev) * 100;
+      return change.toFixed(1);
+    };
+
+    // 3. Revenue Calculation (Real aggregation)
+    const revenueDocs = await Registration.aggregate([
+      { 
+        $match: { 
+          status: { $ne: 'Cancelled' },
+          booking_time: { $gte: startDate }
+        } 
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $ifNull: ['$event.ticket_price', 0] } }
+        }
+      }
+    ]);
+    const totalRevenue = revenueDocs.length > 0 ? revenueDocs[0].totalRevenue : 0;
+
+    // 4. Daily Traffic (Last 7 Days - constant window but relevant for "Daily")
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const dailyActivity = await Registration.aggregate([
+      { $match: { booking_time: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$booking_time' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const trafficData = days.map((day, index) => {
+      const found = dailyActivity.find(d => d._id === index + 1);
+      return { 
+        name: day, 
+        value: found ? found.count : 0,
+        active: new Date().getDay() === index
+      };
+    });
+
+    // 5. Trending Events (Top 5 by Registrations in specified range)
+    const trendingEvents = await Registration.aggregate([
+      { $match: { booking_time: { $gte: startDate } } },
+      {
+        $group: {
+          _id: '$event_id',
+          sold: { $sum: 1 }
+        }
+      },
+      { $sort: { sold: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'events',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $project: {
+          name: '$event.title',
+          sold: 1,
+          revenue: { $multiply: ['$sold', { $ifNull: ['$event.ticket_price', 0] }] },
+          rating: { $ifNull: ['$event.rating', 5.0] }
+        }
+      }
+    ]);
+
+    // 6. User Satisfaction (Real aggregation from Reviews)
+    const reviewStats = await Review.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          positive: { 
+            $sum: { 
+              $cond: [{ $gte: ["$rating", 4] }, 1, 0] 
+            } 
+          }
+        }
+      }
+    ]);
+
+    // 7. Platform Activity (Revenue Trend over time)
+    let groupBy;
+    switch(range) {
+      case 'week':
+      case 'month':
+        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$booking_time" } };
+        break;
+      case 'year':
+      default:
+        groupBy = { $month: '$booking_time' };
+        break;
+    }
+
+    const activityStats = await Registration.aggregate([
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $match: {
+          status: { $ne: 'Cancelled' },
+          booking_time: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: groupBy,
+          revenue: { $sum: { $ifNull: ['$event.ticket_price', 0] } },
+          sales: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    let formattedActivityData = [];
+    if (range === 'year') {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      formattedActivityData = months.map((month, index) => {
+        const found = activityStats.find(stat => stat._id === index + 1);
+        return {
+          name: month,
+          value: found ? found.revenue : 0,
+          sales: found ? found.sales : 0
+        };
+      });
+    } else {
+      const dates = [];
+      let currentDate = new Date(startDate);
+      while (currentDate <= now) {
+        dates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      formattedActivityData = dates.map(date => {
+        const dateString = date.toISOString().split('T')[0];
+        const found = activityStats.find(stat => stat._id === dateString);
+        return {
+          name: range === 'week' 
+            ? date.toLocaleDateString('en-US', { weekday: 'short' })
+            : date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+          value: found ? found.revenue : 0,
+          sales: found ? found.sales : 0,
+          fullDate: dateString
+        };
+      });
+    }
+
+    const satisfactionData = reviewStats.length > 0 ? {
+      score: Math.round((reviewStats[0].positive / reviewStats[0].total) * 100),
+      positive: reviewStats[0].positive,
+      total: reviewStats[0].total
+    } : { score: 0, positive: 0, total: 0 };
 
     res.json({
       stats: {
-        totalUsers,
-        totalEvents,
-        totalBookings,
-        activeEvents,
+        totalEvents: range === 'year' ? totalEvents : currentEvents,
+        eventsChange: calculateChange(currentEvents, prevEvents),
+        totalUsers: range === 'year' ? totalUsers : currentUsers,
+        usersChange: calculateChange(currentUsers, prevUsers),
+        totalBookings: range === 'year' ? totalBookings : currentBookings,
+        bookingsChange: calculateChange(currentBookings, prevBookings),
         pendingEvents,
-        pendingOrganizers,
-        pendingSpeakers,
-        revenue: 0
-      },
-      recentActivity: recentActivity.map(reg => ({
-        id: reg._id,
-        user: reg.user_id?.name || reg.user_snapshot?.name || 'Unknown',
-        action: 'Registered for',
-        target: reg.event_id?.title || reg.event_snapshot?.title || 'Unknown Event',
-        time: reg.booking_time
-      }))
+        activeEvents,
+        revenue: totalRevenue,
+        trafficData,
+        trendingEvents,
+        satisfaction: satisfactionData,
+        activityStats: formattedActivityData
+      }
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
     res.status(500).json({ message: 'Failed to fetch dashboard stats' });
   }
 };
+
 
 /**
  * Get All Users
@@ -95,12 +303,28 @@ exports.getAllUsers = async (req, res) => {
 
     const total = await User.countDocuments(query);
 
+    // Fetch global stats for KPI cards
+    const [totalUsers, studentCount, organizerCount, adminCount, associationCount] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'student' }),
+      User.countDocuments({ role: 'organizer' }),
+      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ role: 'association' })
+    ]);
+
     res.json({
       users,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         totalUsers: total
+      },
+      stats: {
+        total: totalUsers,
+        student: studentCount,
+        organizer: organizerCount,
+        admin: adminCount,
+        association: associationCount
       }
     });
   } catch (error) {
@@ -117,7 +341,7 @@ exports.updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    const validRoles = ['student', 'organizer', 'admin', 'staff', 'association'];
+    const validRoles = ['student', 'organizer', 'admin', 'association'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
@@ -565,7 +789,19 @@ exports.getAllVenues = async (req, res) => {
  */
 exports.createVenue = async (req, res) => {
   try {
-    const { name, location_code, max_capacity, facilities } = req.body;
+    const { 
+      name, 
+      location_code, 
+      max_capacity, 
+      facilities, 
+      type, 
+      description, 
+      bestFor,
+      accessHours,
+      accessLevel,
+      managedBy,
+      occupancyStatus 
+    } = req.body;
 
     if (!name || !location_code || !max_capacity) {
       return res.status(400).json({ message: 'Name, location code, and max capacity are required' });
@@ -582,7 +818,15 @@ exports.createVenue = async (req, res) => {
       location_code, 
       max_capacity: parseInt(max_capacity),
       facilities: typeof facilities === 'string' ? JSON.parse(facilities) : (facilities || []),
-      images
+      type: type || 'Other',
+      description,
+      bestFor: typeof bestFor === 'string' ? JSON.parse(bestFor) : (bestFor || []),
+      accessHours,
+      accessLevel,
+      managedBy,
+      occupancyStatus: occupancyStatus || 'Available',
+      images,
+      image: images.length > 0 ? images[0] : undefined
     });
     await venue.save();
 
@@ -609,18 +853,39 @@ exports.createVenue = async (req, res) => {
 exports.updateVenue = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location_code, max_capacity, facilities } = req.body;
+    const { 
+      name, 
+      location_code, 
+      max_capacity, 
+      facilities,
+      type, 
+      description, 
+      bestFor,
+      accessHours,
+      accessLevel,
+      managedBy,
+      occupancyStatus 
+    } = req.body;
 
     const updateData = {
       name,
       location_code,
       max_capacity: max_capacity ? parseInt(max_capacity) : undefined,
-      facilities: typeof facilities === 'string' ? JSON.parse(facilities) : facilities
+      facilities: typeof facilities === 'string' ? JSON.parse(facilities) : facilities,
+      type,
+      description,
+      bestFor: typeof bestFor === 'string' ? JSON.parse(bestFor) : bestFor,
+      accessHours,
+      accessLevel,
+      managedBy,
+      occupancyStatus
     };
 
     if (req.file) {
       const filePath = req.file.path.replace(/\\/g, "/");
-      updateData.images = [`http://localhost:5000/${filePath}`];
+      const imageUrl = `http://localhost:5000/${filePath}`;
+      updateData.images = [imageUrl];
+      updateData.image = imageUrl;
     }
 
     const venue = await Venue.findByIdAndUpdate(
@@ -874,7 +1139,7 @@ exports.verifySpeaker = async (req, res) => {
 
 // ==================== REVIEW MANAGEMENT ====================
 
-const Review = require('../models/review');
+
 
 /**
  * Get All Reviews

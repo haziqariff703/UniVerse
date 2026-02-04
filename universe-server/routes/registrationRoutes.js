@@ -15,8 +15,8 @@ router.get('/my-bookings', registrationController.getMyBookings);
 router.delete('/:id', registrationController.cancelRegistration);
 
 // Staff/Admin/Organizer routes
-router.get('/event/:id', authorize('organizer', 'admin', 'staff'), registrationController.getEventRegistrations);
-router.post('/checkin', authorize('organizer', 'admin', 'staff'), registrationController.checkIn);
-router.patch('/:id/status', authorize('organizer', 'admin', 'staff'), registrationController.updateStatus);
+router.get('/event/:id', authorize('organizer', 'admin'), registrationController.getEventRegistrations);
+router.post('/checkin', authorize('organizer', 'admin'), registrationController.checkIn);
+router.patch('/:id/status', authorize('organizer', 'admin'), registrationController.updateStatus);
 
 module.exports = router;

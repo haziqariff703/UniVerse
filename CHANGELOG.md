@@ -1,6 +1,52 @@
-## [Unreleased] - 2026-02-05
+# Changelog
+
+## [2026-02-04]
 
 ### Added
+
+- **Mobile-Responsive Admin Navbar**: Implemented a sliding sidebar with a hamburger menu button for the admin interface, ensuring full accessibility on mobile devices.
+- **Admin Dashboard Navigation**: Added a direct navigation link to the "Pending Approvals" KPI card on the Admin Dashboard, allowing one-click access to the event approvals page.
+- **Unified Menu Icons**: Integrated `Menu` and `X` (CloseIcon) from `lucide-react` for standard mobile navigation control.
+
+### Changed
+
+- **Navigation Logic**: Updated `AdminSidebar` to automatically close the mobile menu upon navigation or backdrop click.
+- **Standardized Approval Routes**: Corrected all approval-related navigation paths to use consistent sub-routes (e.g., `/admin/events/approvals`, `/admin/organizers/approvals`).
+- **Data Fetching Optimization**: Refactored `AdminLayout` statistics fetching using `useCallback` to improve performance and resolve React linting warnings.
+
+### Fixed
+
+- **Approval Path Bug**: Resolved an issue where "approvals" links in the system alerts and notifications would incorrectly redirect to the dashboard.
+- **Sidebar JSX Integrity**: Fixed a structural issue in `AdminSidebar.jsx` that caused rendering errors during the mobile-responsiveness refactor.
+
+### Added
+
+- **Real-time User Analytics**: Integrated live user statistics into the User Management Command Center. KPI cards now reflect actual database counts for Students, Organizers, Admins, etc., replacing mock placeholders.
+- **PDF Export Engine**: Implemented a functional "Export List" tool in `UsersList.jsx` using `jsPDF` and `jspdf-autotable`. Admins can now download the current user registry as a professional PDF report.
+- **Enhanced Admin API**: Updated `getAllUsers` in `adminController.js` to return global user statistics alongside paginated user data for efficient KPI hydration.
+- **Dependency Integration**: Added `jspdf` and `jspdf-autotable` to the student workspace with React 19 compatibility.
+- **Global Dashboard Filters**: Implemented a synchronized time-range filter (Weekly, Monthly, Yearly) that updates all KPI cards and charts globally across the Admin Dashboard.
+- **Platform activity Analysis**: Upgraded the activity chart to show **Revenue vs. Sales Volume** trends using real-time MongoDB aggregations.
+
+### Fixed
+
+- **Changed**: Admin Dashboard transformed into a fully range-aware command center (Week, Month, Year filters)
+- **Changed**: Optimized API calls to handle relative pathing and memoized data fetching
+- **Fixed**: Corrected `StatCard` percentage display and positive/negative indicators
+- **Removed**: Final cleanup of 'staff' role references across backend validation and frontend UI components
+- **Added**: Backend period-aware calculations for all KPI metrics and revenue trends
+- **Dashboard Syntax Errors**: Resolved multiple JSX nesting and unclosed tag issues in `AdminDashboard.jsx` that were causing build failures.
+- **Backend Stability**: Fixed a `SyntaxError` in `adminController.js` regarding duplicate variable declarations.
+- **Duplicate Imports**: Removed redundant model imports in `adminController.js` that caused initial server crashes.
+
+### Removed
+
+- **Staff Role**: Removed the deprecated "Staff" role from the User model, Authorization middleware, and Admin Dashboard to streamline the permission hierarchy.
+
+### Changed
+
+- **Admin Dashboard**: Upgraded the dashboard to clearer, real-time analytics. Added actual Revenue calculation, Daily Traffic tracking (via registrations), and Trending Events logic. Implemented a "Three Dot" action menu for data controls.
+- **Analytics Widget**: Replaced the static "Admin Revenue" widget with a dynamic "User Satisfaction" gauge. This uses MongoDB aggregation to calculate user sentiment from real-time event reviews.
 
 - **Event Completion Logic**: Updated event status logic to correctly reflect an event's completion based on its `end_time`, rather than its `start_time`. This applies to:
   - Backend filtering in `eventController.js` (for "Past" events).
@@ -10,7 +56,16 @@
 - **Crew Access**: Expanded `getEventRegistrations` to allow Workforce (Crew) to view guest lists.
 - **Dashboard Guardrails**: Added frontend redirects and 403 handling in `EventDashboard.jsx` to protect sensitive management UI.
 
-## [Unreleased] - 2026-02-04
+## [2026-02-05]
+
+### Fixed
+
+- **Venue Creation 500 Error**: Resolved a critical server error during venue creation by correctly parsing `bestFor` and `facilities` from JSON strings in `adminController.js`.
+- **Image Field Redundancy**: Removed duplicate file append in `VenueManager.jsx` that caused Multer to reject the request with "Unexpected field".
+- **Infrastructure Stability**: Added a global JSON error handler to `index.js` to prevent the backend from returning HTML error pages, ensuring the frontend receives clear error messages.
+- **Venue Image Display**: Implemented robust fallback logic in `VenueLandscapeCard.jsx` and updated `adminController.js` to populate both `image` and `images` fields, ensuring venue photography renders correctly across all listings and roles.
+
+## [2026-02-05] - Content Persistence Update
 
 ### Added
 

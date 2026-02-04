@@ -62,6 +62,13 @@ const VenueManager = ({ onBack }) => {
     name: "",
     location_code: "",
     max_capacity: "",
+    type: "Other",
+    description: "",
+    bestFor: [],
+    accessHours: "08:00 - 22:00",
+    accessLevel: "Student ID",
+    managedBy: "HEP Office",
+    occupancyStatus: "Available",
     facilities: [], // Changed to array
   });
   const [saving, setSaving] = useState(false);
@@ -70,6 +77,7 @@ const VenueManager = ({ onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [customBestFor, setCustomBestFor] = useState(""); // State for "Best For" tag input
 
   const fetchVenues = useCallback(async () => {
     setLoading(true);
@@ -122,6 +130,13 @@ const VenueManager = ({ onBack }) => {
       name: "",
       location_code: "",
       max_capacity: "",
+      type: "Other",
+      description: "",
+      bestFor: [],
+      accessHours: "08:00 - 22:00",
+      accessLevel: "Student ID",
+      managedBy: "HEP Office",
+      occupancyStatus: "Available",
       facilities: [],
     });
     setShowModal(true);
@@ -135,6 +150,13 @@ const VenueManager = ({ onBack }) => {
       name: venue.name,
       location_code: venue.location_code,
       max_capacity: venue.max_capacity.toString(),
+      type: venue.type || "Other",
+      description: venue.description || "",
+      bestFor: venue.bestFor || [],
+      accessHours: venue.accessHours || "08:00 - 22:00",
+      accessLevel: venue.accessLevel || "Student ID",
+      managedBy: venue.managedBy || "HEP Office",
+      occupancyStatus: venue.occupancyStatus || "Available",
       facilities: venue.facilities || [],
     });
 
@@ -157,6 +179,13 @@ const VenueManager = ({ onBack }) => {
       name: "",
       location_code: "",
       max_capacity: "",
+      type: "Other",
+      description: "",
+      bestFor: [],
+      accessHours: "08:00 - 22:00",
+      accessLevel: "Student ID",
+      managedBy: "HEP Office",
+      occupancyStatus: "Available",
       facilities: [],
     });
     setCustomFacility("");
@@ -200,6 +229,25 @@ const VenueManager = ({ onBack }) => {
     setCustomFacility("");
   };
 
+  const handleAddBestFor = (e) => {
+    e.preventDefault();
+    if (!customBestFor.trim()) return;
+    if (!formData.bestFor.includes(customBestFor.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        bestFor: [...prev.bestFor, customBestFor.trim()],
+      }));
+    }
+    setCustomBestFor("");
+  };
+
+  const handleRemoveBestFor = (tag) => {
+    setFormData((prev) => ({
+      ...prev,
+      bestFor: prev.bestFor.filter((t) => t !== tag),
+    }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -222,7 +270,15 @@ const VenueManager = ({ onBack }) => {
       data.append("name", formData.name);
       data.append("location_code", formData.location_code);
       data.append("max_capacity", formData.max_capacity);
+      data.append("type", formData.type);
+      data.append("description", formData.description);
+      data.append("accessHours", formData.accessHours);
+      data.append("accessLevel", formData.accessLevel);
+      data.append("managedBy", formData.managedBy);
+      data.append("occupancyStatus", formData.occupancyStatus);
       data.append("facilities", JSON.stringify(formData.facilities));
+      data.append("bestFor", JSON.stringify(formData.bestFor));
+
       if (imageFile) {
         data.append("image", imageFile);
       }
@@ -744,7 +800,176 @@ const VenueManager = ({ onBack }) => {
                   </div>
                 </div>
 
-                {/* Section 2: Assets & Facilities */}
+                {/* Section 2: Type & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Venue Type
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) =>
+                        setFormData({ ...formData, type: e.target.value })
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors cursor-pointer"
+                    >
+                      <option value="Academic">Academic</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Social">Social</option>
+                      <option value="Outdoor">Outdoor</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Current Occupancy Status
+                    </label>
+                    <select
+                      value={formData.occupancyStatus}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          occupancyStatus: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors cursor-pointer"
+                    >
+                      <option value="Available">Available</option>
+                      <option value="Busy">Busy</option>
+                      <option value="Moderate">Moderate</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Section 3: Description */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors min-h-[100px]"
+                    placeholder="Describe the venue's features and atmosphere..."
+                  />
+                </div>
+
+                {/* Section 4: Operations */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Access Hours
+                    </label>
+                    <div className="relative">
+                      <Clock
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+                        size={18}
+                      />
+                      <input
+                        type="text"
+                        value={formData.accessHours}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            accessHours: e.target.value,
+                          })
+                        }
+                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors"
+                        placeholder="e.g., 08:00 - 22:00"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Access Level
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.accessLevel}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          accessLevel: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors"
+                      placeholder="e.g., Student ID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Managed By
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.managedBy}
+                      onChange={(e) =>
+                        setFormData({ ...formData, managedBy: e.target.value })
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-starlight placeholder-starlight/20 focus:outline-none focus:border-violet-500 transition-colors"
+                      placeholder="e.g., HEP Office"
+                    />
+                  </div>
+                </div>
+
+                {/* Section 5: Best For */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">
+                      Best For (Usage Scenarios)
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={customBestFor}
+                        onChange={(e) => setCustomBestFor(e.target.value)}
+                        placeholder="Add Scenario..."
+                        className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-xs text-starlight placeholder:text-starlight/60 focus:outline-none focus:border-violet-500/50 min-w-[150px]"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddBestFor(e);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddBestFor}
+                        className="w-8 h-8 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center hover:bg-violet-600 hover:text-white transition-all border border-violet-500/20"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.bestFor.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-starlight/80"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBestFor(tag)}
+                          className="hover:text-rose-400"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                    {formData.bestFor.length === 0 && (
+                      <span className="text-xs text-starlight/30 italic">
+                        No usage scenarios added
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section 6: Assets & Facilities */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-white/5">
                     <label className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em] pl-1">

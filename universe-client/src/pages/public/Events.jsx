@@ -15,15 +15,6 @@ import EventCard from "@/components/common/EventCard";
 import EventCarousel from "@/components/public/EventCarousel";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 
-const CATEGORIES = [
-  "All",
-  "Academic",
-  "Creative",
-  "Lifestyle",
-  "Community",
-  "Leadership",
-];
-
 const API_BASE = "http://localhost:5000";
 
 const mapEventToCardProps = (event) => ({
@@ -47,10 +38,7 @@ const mapEventToCardProps = (event) => ({
   category: event.category,
   target: event.target_audience,
   meritValue: event.merit_points,
-  theme:
-    event.category === "Academic" || event.category === "Leadership"
-      ? "purple"
-      : "cyan",
+  theme: "cyan", // Default theme, can be dynamic later if category model has color
   benefit: event.merit_points > 0 ? `+${event.merit_points} Merit` : null,
   tags: event.tags,
 });
@@ -65,6 +53,7 @@ const Events = () => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [pastEvents, setPastEvents] = useState([]);
+  const [categories, setCategories] = useState(["All"]);
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewEvent, setReviewEvent] = useState(null);
@@ -86,23 +75,30 @@ const Events = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const [featRes, upRes, pastRes, registrationsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/events?is_featured=true&upcoming=true`),
-        fetch(`${API_BASE}/api/events?upcoming=true`),
-        fetch(`${API_BASE}/api/events?upcoming=false`),
-        token
-          ? fetch(`${API_BASE}/api/registrations/my-bookings`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-          : Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
-      ]);
+      const [featRes, upRes, pastRes, registrationsRes, catRes] =
+        await Promise.all([
+          fetch(`${API_BASE}/api/events?is_featured=true&upcoming=true`),
+          fetch(`${API_BASE}/api/events?upcoming=true`),
+          fetch(`${API_BASE}/api/events?upcoming=false`),
+          token
+            ? fetch(`${API_BASE}/api/registrations/my-bookings`, {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+            : Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
+          fetch(`${API_BASE}/api/categories`),
+        ]);
 
-      const [feat, up, past, regs] = await Promise.all([
+      const [feat, up, past, regs, cats] = await Promise.all([
         featRes.json(),
         upRes.json(),
         pastRes.json(),
         registrationsRes.ok ? registrationsRes.json() : Promise.resolve([]),
+        catRes.ok ? catRes.json() : Promise.resolve([]),
       ]);
+
+      if (Array.isArray(cats)) {
+        setCategories(["All", ...cats.map((c) => c.name)]);
+      }
 
       const registeredEventIds = new Set(
         Array.isArray(regs)
@@ -291,7 +287,7 @@ const Events = () => {
           />
         </div>
         <div className="flex flex-wrap gap-2 justify-center md:justify-end">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
               key={c}
               onClick={() => setSelectedCategory(c)}

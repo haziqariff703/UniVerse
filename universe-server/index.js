@@ -39,6 +39,11 @@ app.use("/api/crew", require("./routes/crewRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/notifications", notificationRoutes);
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("Global Error:", err.stack);
+  res.status(500).json({ message: err.message || "Internal Server Error" });
+});
 
 // Basic Route for Testing
 app.get("/", (req, res) => {

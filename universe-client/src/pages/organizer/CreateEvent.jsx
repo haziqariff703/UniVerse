@@ -12,6 +12,7 @@ const CreateEvent = () => {
   const [speakers, setSpeakers] = useState([]);
   const [events, setEvents] = useState([]);
   const [communities, setCommunities] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,15 +21,21 @@ const CreateEvent = () => {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [venuesRes, speakersRes, eventsRes, communitiesRes] =
-          await Promise.all([
-            fetch("http://localhost:5000/api/venues", { headers }),
-            fetch("http://localhost:5000/api/speakers", { headers }),
-            fetch("http://localhost:5000/api/events?status=all", { headers }),
-            fetch("http://localhost:5000/api/communities/my-communities", {
-              headers,
-            }),
-          ]);
+        const [
+          venuesRes,
+          speakersRes,
+          eventsRes,
+          communitiesRes,
+          categoriesRes,
+        ] = await Promise.all([
+          fetch("http://localhost:5000/api/venues", { headers }),
+          fetch("http://localhost:5000/api/speakers", { headers }),
+          fetch("http://localhost:5000/api/events?status=all", { headers }),
+          fetch("http://localhost:5000/api/communities/my-communities", {
+            headers,
+          }),
+          fetch("http://localhost:5000/api/categories", { headers }),
+        ]);
 
         if (venuesRes.ok) {
           const data = await venuesRes.json();
@@ -45,6 +52,10 @@ const CreateEvent = () => {
         if (communitiesRes.ok) {
           const data = await communitiesRes.json();
           setCommunities(data || []);
+        }
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json();
+          setCategories(data || []);
         }
       } catch (error) {
         console.error("Error fetching creator data:", error);
@@ -203,6 +214,15 @@ const CreateEvent = () => {
                   options: communities.map((c) => ({
                     label: c.name,
                     value: c._id,
+                  })),
+                };
+              }
+              if (field.name === "category") {
+                return {
+                  ...field,
+                  options: categories.map((c) => ({
+                    label: c.name,
+                    value: c.name,
                   })),
                 };
               }

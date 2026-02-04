@@ -27,7 +27,7 @@ const auth = (req, res, next) => {
 /**
  * Role-based Authorization Middleware
  * Restricts access to specific roles.
- * @param  {...string} roles - Allowed roles (e.g., 'admin', 'staff')
+ * @param  {...string} roles - Allowed roles (e.g., 'admin', 'organizer')
  */
 const authorize = (...roles) => {
   return async (req, res, next) => {

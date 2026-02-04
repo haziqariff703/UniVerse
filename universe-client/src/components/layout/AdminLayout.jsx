@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import {
@@ -29,10 +29,10 @@ const AdminLayout = ({ ...props }) => {
   const navigate = useNavigate();
   const { formattedDate, formattedTime } = useMalaysiaTime();
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/stats", {
+      const response = await fetch("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -46,13 +46,13 @@ const AdminLayout = ({ ...props }) => {
     } catch (error) {
       console.error("Error fetching alert stats:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStats();
     const interval = setInterval(fetchStats, 30000); // Poll every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchStats]);
 
   const totalAlerts =
     stats.pendingEvents + stats.pendingOrganizers + stats.pendingSpeakers;
@@ -102,9 +102,9 @@ const AdminLayout = ({ ...props }) => {
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#0A0A0A]">
         {/* Global Admin Header */}
-        <header className="h-20 border-b border-white/5 bg-[#0e0e12]/50 backdrop-blur-xl sticky top-0 z-40 px-8 flex items-center justify-between">
+        <header className="h-20 border-b border-white/5 bg-[#0e0e12]/50 backdrop-blur-xl sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-xl font-black text-white uppercase tracking-tight hidden sm:block">
               {getPageTitle()}
             </h1>
             <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-1.5 border border-white/5 font-mono">
@@ -183,7 +183,7 @@ const AdminLayout = ({ ...props }) => {
                     label: "Event Proposals",
                     count: stats.pendingEvents,
                     icon: Calendar,
-                    path: "/admin/events",
+                    path: "/admin/events/approvals",
                     color: "text-amber-400",
                     bg: "bg-amber-400/10",
                   },
@@ -191,7 +191,7 @@ const AdminLayout = ({ ...props }) => {
                     label: "Organizer Requests",
                     count: stats.pendingOrganizers,
                     icon: UserCheck,
-                    path: "/admin/organizers",
+                    path: "/admin/organizers/approvals",
                     color: "text-violet-400",
                     bg: "bg-violet-400/10",
                   },
@@ -199,7 +199,7 @@ const AdminLayout = ({ ...props }) => {
                     label: "Speaker Verifications",
                     count: stats.pendingSpeakers,
                     icon: Mic2,
-                    path: "/admin/speakers",
+                    path: "/admin/speakers/approvals",
                     color: "text-emerald-400",
                     bg: "bg-emerald-400/10",
                   },
@@ -264,7 +264,7 @@ const AdminLayout = ({ ...props }) => {
         </SidePeek>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar h-[calc(100vh-5rem)] p-8">
+        <div className="flex-1 p-8">
           <Outlet />
         </div>
       </main>

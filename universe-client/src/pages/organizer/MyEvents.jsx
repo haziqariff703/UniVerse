@@ -48,6 +48,21 @@ const MyEvents = () => {
     }
   };
 
+  // Compute counts for tabs
+  const counts = {
+    all: events.length,
+    live: events.filter(
+      (e) =>
+        (e.status === "approved" || e.status === "Open") &&
+        new Date(e.date_time) >= new Date(),
+    ).length,
+    pending: events.filter((e) => e.status === "pending").length,
+    rejected: events.filter((e) => e.status === "rejected").length,
+    past: events.filter(
+      (e) => new Date(e.date_time) < new Date() || e.status === "Completed",
+    ).length,
+  };
+
   const getFilteredEvents = () => {
     let filtered = events;
 
@@ -61,14 +76,21 @@ const MyEvents = () => {
     // Tab Filter
     const now = new Date();
     if (activeTab === "past") {
-      filtered = filtered.filter((e) => new Date(e.date_time) < now);
+      filtered = filtered.filter(
+        (e) => new Date(e.date_time) < now || e.status === "Completed",
+      );
     } else if (activeTab === "live") {
-      // Assuming 'live' means currently happening or strictly upcoming for this context?
-      // Let's interpret 'live' as upcoming for now, or maybe 'published' if we had that status
-      filtered = filtered.filter((e) => new Date(e.date_time) >= now);
+      // Live means upcoming approved events or currently active ones
+      filtered = filtered.filter(
+        (e) =>
+          (e.status === "approved" || e.status === "Open") &&
+          new Date(e.date_time) >= now,
+      );
+    } else if (activeTab === "pending") {
+      filtered = filtered.filter((e) => e.status === "pending");
+    } else if (activeTab === "rejected") {
+      filtered = filtered.filter((e) => e.status === "rejected");
     }
-    // 'pending' would require a status field like 'draft' or 'approval_pending' which we might not have yet.
-    // We'll leave it as just 'all' for the other cases or implement basic time-based logic.
 
     return filtered;
   };
@@ -148,29 +170,51 @@ const MyEvents = () => {
           {viewMode === "grid" && (
             <div className="flex justify-start pb-1">
               <TabGroup
-                selectedIndex={["all", "live", "pending", "past"].indexOf(
-                  activeTab,
-                )}
+                selectedIndex={[
+                  "all",
+                  "live",
+                  "pending",
+                  "rejected",
+                  "past",
+                ].indexOf(activeTab)}
                 onChange={(index) =>
-                  setActiveTab(["all", "live", "pending", "past"][index])
+                  setActiveTab(
+                    ["all", "live", "pending", "rejected", "past"][index],
+                  )
                 }
               >
-                <TabList className="flex bg-[#050505] border border-white/10 rounded-full p-1 gap-1 shadow-lg">
-                  {["all", "live", "pending", "past"].map((tab) => (
+                <TabList className="flex bg-[#050505] border border-white/10 rounded-full p-1 gap-1 shadow-lg overflow-x-auto max-w-full">
+                  {["all", "live", "pending", "rejected", "past"].map((tab) => (
                     <Tab
                       key={tab}
-                      className="rounded-full px-5 py-2 text-sm font-neuemontreal font-bold uppercase tracking-wide text-gray-400 focus:outline-none data-[selected]:bg-white/10 data-[selected]:text-white data-[hover]:bg-white/5 transition-all duration-200 border border-transparent"
+                      className="rounded-full px-5 py-2 text-sm font-neuemontreal font-bold uppercase tracking-wide text-gray-400 focus:outline-none data-[selected]:bg-white/10 data-[selected]:text-white data-[hover]:bg-white/5 transition-all duration-200 border border-transparent whitespace-nowrap flex items-center gap-2"
                     >
                       {({ selected }) => (
-                        <div className="flex items-center gap-2">
+                        <>
                           {tab === "live" && selected && (
                             <span className="relative flex h-2 w-2">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
                           )}
-                          {tab}
-                        </div>
+                          {/* Dot for Rejected */}
+                          {tab === "rejected" &&
+                            counts.rejected > 0 &&
+                            !selected && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                            )}
+                          {tab === "pending" &&
+                            counts.pending > 0 &&
+                            !selected && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                            )}
+                          <span>{tab}</span>
+                          <span
+                            className={`text-[10px] uppercase font-clash py-0.5 px-1.5 rounded-full ${selected ? "bg-white text-black font-bold" : "bg-white/10 text-gray-400 font-medium"}`}
+                          >
+                            {counts[tab]}
+                          </span>
+                        </>
                       )}
                     </Tab>
                   ))}

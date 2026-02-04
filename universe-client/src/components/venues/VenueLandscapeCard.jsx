@@ -103,7 +103,17 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
           <div className="relative w-full md:w-[35%] aspect-[16/9] md:aspect-auto md:h-auto z-10 overflow-hidden bg-zinc-900 border-r border-white/5">
             {/* IMAGE */}
             <img
-              src={image}
+              src={
+                image
+                  ? image.startsWith("http")
+                    ? image
+                    : `http://localhost:5000/${image}`
+                  : venue.images?.[0]
+                    ? venue.images[0].startsWith("http")
+                      ? venue.images[0]
+                      : `http://localhost:5000/${venue.images[0]}`
+                    : "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800"
+              }
               alt={name}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />

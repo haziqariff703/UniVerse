@@ -21,6 +21,8 @@ import {
   TrendingUp,
   UserPlus,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -55,6 +57,13 @@ const UsersList = ({ onBack }) => {
     role: "student",
     student_id: "",
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    student: 0,
+    organizer: 0,
+    admin: 0,
+    association: 0,
+  });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -81,6 +90,9 @@ const UsersList = ({ onBack }) => {
       const data = await response.json();
       setUsers(data.users);
       setTotalPages(data.pagination.totalPages);
+      if (data.stats) {
+        setStats(data.stats);
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
       setError("Failed to load users");
@@ -191,7 +203,30 @@ const UsersList = ({ onBack }) => {
     }
   };
 
-  // --- KPI Calculations (Client-side approximation based on current page/filters - ideally should be backend) ---
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const tableColumn = ["Name", "Email", "Role", "Student ID", "Joined Date"];
+    const tableRows = [];
+
+    users.forEach((user) => {
+      const userData = [
+        user.name,
+        user.email,
+        user.role.toUpperCase(),
+        user.student_id || "N/A",
+        new Date(user.created_at).toLocaleDateString(),
+      ];
+      tableRows.push(userData);
+    });
+
+    doc.autoTable(tableColumn, tableRows, { startY: 20 });
+    doc.text("UniVerse - User List", 14, 15);
+    doc.save(
+      `UniVerse_Users_List_${new Date().toISOString().split("T")[0]}.pdf`,
+    );
+  };
+
+  // --- KPI Calculations ---
   // Note: For a real production app, we should have a dedicated /stats endpoint for accurately counting total users by role across all pages.
   // For now, we will simulate the "Total" counts using the data we have or just display generic icons if we can't get totals.
   // Actually, let's just use the current view's data trends or maybe just fetch stats once if possible.
@@ -217,8 +252,6 @@ const UsersList = ({ onBack }) => {
         return "bg-gradient-to-r from-violet-500 to-fuchsia-500";
       case "association":
         return "bg-gradient-to-r from-amber-500 to-orange-600";
-      case "staff":
-        return "bg-gradient-to-r from-blue-500 to-cyan-500";
       default:
         return "bg-gradient-to-r from-emerald-500 to-teal-500";
     }
@@ -260,17 +293,20 @@ const UsersList = ({ onBack }) => {
           >
             <UserPlus size={16} /> <span>Create User</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-starlight/5 text-starlight text-sm hover:bg-starlight/10 transition-colors">
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-starlight/5 text-starlight text-sm hover:bg-starlight/10 transition-colors"
+          >
             <Download size={14} /> <span>Export List</span>
           </button>
         </div>
       </div>
 
-      {/* 2. KPI Cards Row (Simulated stats for UI completeness) */}
+      {/* 2. KPI Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Total Users"
-          value={users.length > 0 ? "150+" : "Loading..."} // Placeholder as we don't have global stats readily available in this component yet
+          value={loading && stats.total === 0 ? "..." : stats.total}
           icon={Users}
           color="text-blue-400"
           subValue="System genealogy"
@@ -278,7 +314,7 @@ const UsersList = ({ onBack }) => {
         />
         <KpiCard
           title="Active Students"
-          value="120+"
+          value={loading && stats.student === 0 ? "..." : stats.student}
           icon={GraduationCap}
           color="text-emerald-400"
           subValue="Academic population"
@@ -286,7 +322,7 @@ const UsersList = ({ onBack }) => {
         />
         <KpiCard
           title="Organizers"
-          value="15"
+          value={loading && stats.organizer === 0 ? "..." : stats.organizer}
           icon={Briefcase}
           color="text-violet-400"
           subValue="Proposal velocity"
@@ -294,7 +330,7 @@ const UsersList = ({ onBack }) => {
         />
         <KpiCard
           title="Administrators"
-          value="5"
+          value={loading && stats.admin === 0 ? "..." : stats.admin}
           icon={Shield}
           color="text-rose-400"
           subValue="Safety & Governance"
@@ -333,7 +369,6 @@ const UsersList = ({ onBack }) => {
               <option value="student">Student</option>
               <option value="organizer">Organizer</option>
               <option value="association">Association</option>
-              <option value="staff">Staff</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -457,9 +492,6 @@ const UsersList = ({ onBack }) => {
                           </option>
                           <option value="association" className="text-black">
                             Association
-                          </option>
-                          <option value="staff" className="text-black">
-                            Staff
                           </option>
                           <option value="admin" className="text-black">
                             Admin
@@ -784,7 +816,6 @@ const UsersList = ({ onBack }) => {
                       <option value="student">Student</option>
                       <option value="organizer">Organizer</option>
                       <option value="association">Association</option>
-                      <option value="staff">Staff</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>

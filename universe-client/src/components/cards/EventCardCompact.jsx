@@ -55,16 +55,54 @@ const EventCardCompact = ({ event }) => {
         </div>
 
         {/* Status Badge - Top Right */}
-        <div className="absolute top-3 right-3">
-          {isPast ? (
-            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-black/60 backdrop-blur-md text-gray-400 border border-white/10">
-              Completed
-            </span>
-          ) : (
-            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-violet-600/90 text-white shadow-lg shadow-violet-600/20 backdrop-blur-md">
-              Upcoming
-            </span>
-          )}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {(() => {
+            // Priority 1: Rejected
+            if (event.status === "rejected") {
+              return (
+                <div className="group/status relative">
+                  <span className="px-2 py-1 rounded text-[10px] font-clash font-bold uppercase bg-red-500/90 text-white shadow-lg shadow-red-500/20 backdrop-blur-md flex items-center gap-1 cursor-help">
+                    Rejected
+                  </span>
+                  {event.rejection_reason && (
+                    <div className="absolute top-full right-0 mt-2 w-48 p-3 bg-red-950/90 border border-red-500/30 rounded-lg text-xs text-red-100 z-50 opacity-0 group-hover/status:opacity-100 transition-opacity pointer-events-none shadow-xl">
+                      <strong>Reason:</strong> {event.rejection_reason}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            // Priority 2: Pending
+            if (event.status === "pending") {
+              return (
+                <span className="px-2 py-1 rounded text-[10px] font-clash font-bold uppercase bg-amber-500/90 text-black shadow-lg shadow-amber-500/20 backdrop-blur-md">
+                  Pending Approval
+                </span>
+              );
+            }
+            // Priority 3: Cancelled
+            if (event.status === "Cancelled") {
+              return (
+                <span className="px-2 py-1 rounded text-[10px] font-clash font-bold uppercase bg-gray-500/90 text-white shadow-lg backdrop-blur-md border border-white/10">
+                  Cancelled
+                </span>
+              );
+            }
+            // Priority 4: Past / Completed
+            if (isPast) {
+              return (
+                <span className="px-2 py-1 rounded text-[10px] font-clash font-bold uppercase bg-black/60 backdrop-blur-md text-gray-400 border border-white/10">
+                  Completed
+                </span>
+              );
+            }
+            // Priority 5: Default (Upcoming/Open)
+            return (
+              <span className="px-2 py-1 rounded text-[10px] font-clash font-bold uppercase bg-violet-600/90 text-white shadow-lg shadow-violet-600/20 backdrop-blur-md">
+                Upcoming
+              </span>
+            );
+          })()}
         </div>
       </div>
 

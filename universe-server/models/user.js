@@ -25,12 +25,12 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["student", "admin", "staff", "organizer", "association"],
+    enum: ["student", "admin", "organizer", "association"],
     default: "student",
   },
   roles: {
     type: [String],
-    enum: ["student", "admin", "staff", "organizer", "association"],
+    enum: ["student", "admin", "organizer", "association"],
     default: ["student"],
   },
   preferences: {

@@ -354,7 +354,7 @@ const VenueDetails = () => {
                         </p>
                         <p className="text-xs text-zinc-500 leading-relaxed font-medium">
                           {venue.accessLevel ||
-                            "Requires valid student/staff ID for entry."}
+                            "Requires valid student or member credentials for entry."}
                         </p>
                       </div>
                     </div>
