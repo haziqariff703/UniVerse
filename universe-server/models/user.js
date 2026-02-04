@@ -103,14 +103,38 @@ const userSchema = new mongoose.Schema({
   assets: {
     type: [
       {
+        title: String,
         name: String,
         url: String,
-        type: String,
+        fileType: String, // Renamed from 'type' to avoid Mongoose keyword collision
         size: String,
         date: { type: Date, default: Date.now },
       },
     ],
     default: [],
+  },
+
+  settings: {
+    privacy: {
+      visibility: {
+        type: String,
+        enum: ["public", "campus", "ghost"],
+        default: "public",
+      },
+      searchable: { type: Boolean, default: true },
+      readReceipts: { type: Boolean, default: true },
+    },
+    notifications: {
+      mentions: { type: Boolean, default: true },
+      reminders: { type: Boolean, default: true },
+      announcements: { type: Boolean, default: true },
+      emailDigest: {
+        type: String,
+        enum: ["weekly", "off"],
+        default: "weekly",
+      },
+    },
+    recoveryEmail: { type: String, default: "" },
   },
 
   created_at: {

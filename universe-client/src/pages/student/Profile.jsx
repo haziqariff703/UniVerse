@@ -19,11 +19,16 @@ import {
   Github,
   Linkedin,
   Globe,
+  User,
+  X, // Added X icon
 } from "lucide-react";
 import { MOCK_STUDENT_PROFILE } from "@/data/mockStudent";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import EditProfileModal from "./EditProfileModal";
+import SettingsModal from "./SettingsModal";
 import RankAscension from "../../components/profile/RankAscension";
+import CertificateUpload from "../../components/profile/CertificateUpload";
 
 // --- SUB-COMPONENTS ---
 
@@ -98,8 +103,12 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
 
   // Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [modalInitialTab, setModalInitialTab] = useState("identity");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editTab, setEditTab] = useState("identity");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("account");
+  const [showDisconnect, setShowDisconnect] = useState(false);
+  const [certificates, setCertificates] = useState([]);
 
   useEffect(() => {
     // Check if we have a logged in user and fetch their latest data
@@ -132,6 +141,8 @@ const Profile = () => {
               assets: userData.assets || [],
               xp: userData.current_merit || 0,
             }));
+            // Load certificates
+            setCertificates(userData.assets || []);
           }
         }
       } catch (err) {
@@ -142,17 +153,17 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, [isEditModalOpen]); // Re-fetch when modal closes/saves
+  }, [isEditOpen]); // Re-fetch when modal closes/saves
 
   const handleOpenEdit = (tab = "identity") => {
-    setModalInitialTab(tab);
-    setIsEditModalOpen(true);
+    setEditTab(tab);
+    setIsEditOpen(true);
   };
 
   const handleSaveProfile = async (updatedData) => {
     // 1. Optimistic Update
     setStudent(updatedData);
-    setIsEditModalOpen(false);
+    setIsEditOpen(false);
 
     // 2. Persist to Backend (only text fields, images are already uploaded via modal)
     try {
@@ -177,6 +188,18 @@ const Profile = () => {
     }
   };
 
+  const handleOpenSettings = (tab) => {
+    setSettingsTab(tab);
+    setIsSettingsOpen(true);
+  };
+
+  const handleDisconnect = () => {
+    // Basic Logout logic + Navigation
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
@@ -188,12 +211,60 @@ const Profile = () => {
     <div className="min-h-screen bg-transparent w-full overflow-x-hidden pb-20 text-white font-sans selection:bg-fuchsia-500/30">
       {/* Edit Profile Modal */}
       <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
         initialData={student}
-        initialTab={modalInitialTab}
+        initialTab={editTab}
         onSave={handleSaveProfile}
       />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        initialTab={settingsTab}
+      />
+
+      {/* Disconnect Confirmation Modal */}
+      <AnimatePresence>
+        {showDisconnect && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDisconnect(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm bg-[#0a0a0f] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 text-center"
+            >
+              <h3 className="text-xl font-clash font-bold text-white mb-2">
+                Disconnect?
+              </h3>
+              <p className="text-sm text-white/60 mb-6">
+                Are you sure you want to sign out of the UniVerse network?
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleDisconnect}
+                  className="w-full py-3 rounded-xl border border-rose-500/50 text-rose-400 font-bold hover:bg-rose-500 hover:text-white transition-all"
+                >
+                  Sign Out
+                </button>
+                <button
+                  onClick={() => setShowDisconnect(false)}
+                  className="w-full py-3 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-7xl mx-auto px-6 pt-8">
         {/* WRAPPER FOR BANNER + AVATAR */}
@@ -290,10 +361,11 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* IV. THE DASHBOARD GRID (Darker Glass) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Widget 1: Student DNA (Larger Tags) */}
-          <div className="md:col-span-1">
+        {/* IV. THE DASHBOARD GRID (3-Column Masonry) */}
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
+          {/* COLUMN 1: THE IDENTITY STACK (Left) */}
+          <div className="w-full lg:w-1/3 flex flex-col gap-6">
+            {/* Widget 1: Student DNA (Larger Tags) */}
             <WidgetCard title="Student DNA" icon={Hash} className="h-full">
               <div className="flex flex-wrap gap-3">
                 {student.dna.map((tag, idx) => (
@@ -307,10 +379,75 @@ const Profile = () => {
                 </button>
               </div>
             </WidgetCard>
+
+            {/* Widget 5: Signal Center (Moved Here) */}
+            <WidgetCard title="Signal Center" icon={Zap} className="h-full">
+              {/* Social Uplinks */}
+              {student.links && Object.values(student.links).some((l) => l) && (
+                <div className="flex gap-2 mb-4 pb-4 border-b border-white/5">
+                  {student.links.github && (
+                    <a
+                      href={student.links.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Github className="w-4 h-4" />
+                    </a>
+                  )}
+                  {student.links.linkedin && (
+                    <a
+                      href={student.links.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                  )}
+                  {student.links.website && (
+                    <a
+                      href={student.links.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              )}
+              <div className="space-y-2">
+                <ActionRow
+                  icon={Settings}
+                  label="Account Settings"
+                  onClick={() => handleOpenSettings("account")}
+                />
+                <ActionRow
+                  icon={Shield}
+                  label="Privacy & Data"
+                  onClick={() => handleOpenSettings("privacy")}
+                />
+                <ActionRow
+                  icon={Bell}
+                  label="Notifications"
+                  onClick={() => handleOpenSettings("notifications")}
+                />
+                <div className="pt-2">
+                  <ActionRow
+                    icon={LogOut}
+                    label="Disconnect"
+                    colorClass="text-rose-400 hover:bg-rose-500/10 border-rose-500/20"
+                    onClick={() => setShowDisconnect(true)}
+                  />
+                </div>
+              </div>
+            </WidgetCard>
           </div>
 
-          {/* Widget 2: Current Loadout */}
-          <div className="md:col-span-1">
+          {/* COLUMN 2: THE ACADEMIC STACK (Center) */}
+          <div className="w-full lg:w-1/3 flex flex-col gap-6">
+            {/* Widget 2: Current Loadout */}
             <WidgetCard title="Current Loadout" icon={Book}>
               <div className="space-y-3">
                 {student.loadout.map((subject, idx) => (
@@ -338,39 +475,8 @@ const Profile = () => {
                 ))}
               </div>
             </WidgetCard>
-          </div>
 
-          {/* Widget 3: Decrypted Assets */}
-          <div className="md:col-span-1">
-            <WidgetCard title="Decrypted Assets" icon={FileText}>
-              <div className="space-y-3">
-                {student.assets.map((asset, idx) => (
-                  <button
-                    key={idx}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-black/40 text-fuchsia-400 group-hover:scale-110 transition-transform">
-                        <Trophy className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-white/90 group-hover:text-white line-clamp-1">
-                          {asset.name}
-                        </div>
-                        <div className="text-[10px] text-white/40 font-mono">
-                          {asset.type} • {asset.size}
-                        </div>
-                      </div>
-                    </div>
-                    <Download className="w-4 h-4 text-white/20 group-hover:text-fuchsia-400 transition-colors" />
-                  </button>
-                ))}
-              </div>
-            </WidgetCard>
-          </div>
-
-          {/* Widget 4: Quest Log (Constellation Timeline) */}
-          <div className="md:col-span-2">
+            {/* Widget 4: Quest Log (Constellation Timeline) */}
             <WidgetCard
               title="Quest Log // Timeline"
               icon={Clock}
@@ -414,72 +520,87 @@ const Profile = () => {
             </WidgetCard>
           </div>
 
-          {/* Widget 5: Signal Center */}
-          <div className="md:col-span-1">
-            <WidgetCard title="Signal Center" icon={Zap} className="h-full">
-              {/* Social Uplinks */}
-              {student.links && Object.values(student.links).some((l) => l) && (
-                <div className="flex gap-2 mb-4 pb-4 border-b border-white/5">
-                  {student.links.github && (
-                    <a
-                      href={student.links.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    >
-                      <Github className="w-4 h-4" />
-                    </a>
-                  )}
-                  {student.links.linkedin && (
-                    <a
-                      href={student.links.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    >
-                      <Linkedin className="w-4 h-4" />
-                    </a>
-                  )}
-                  {student.links.website && (
-                    <a
-                      href={student.links.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-              )}
-              <div className="space-y-2">
-                <ActionRow
-                  icon={Settings}
-                  label="Account Settings"
-                  onClick={() => navigate("/settings")}
+          {/* COLUMN 3: THE ASSET VAULT (Right) */}
+          <div className="w-full lg:w-1/3 h-full">
+            {/* Widget 3: Decrypted Assets */}
+            <WidgetCard
+              title="Decrypted Assets"
+              icon={FileText}
+              className="h-full min-h-[500px]"
+            >
+              <div className="space-y-4">
+                <CertificateUpload
+                  onUploadSuccess={(assets) => setCertificates(assets)}
+                  compact={certificates.length > 0} // Dynamic sizing
                 />
-                <ActionRow
-                  icon={Shield}
-                  label="Privacy & Data"
-                  onClick={() => navigate("/privacy")}
-                />
-                <ActionRow
-                  icon={Bell}
-                  label="Notifications"
-                  onClick={() => navigate("/notifications")}
-                />
-                <div className="pt-2">
-                  <ActionRow
-                    icon={LogOut}
-                    label="Disconnect"
-                    colorClass="text-rose-400 hover:bg-rose-500/10 border-rose-500/20"
-                    onClick={() => {
-                      localStorage.removeItem("token");
-                      localStorage.removeItem("user");
-                      navigate("/login");
-                    }}
-                  />
-                </div>
+
+                {certificates.length > 0 && (
+                  <div className="pt-2">
+                    {/* Removed border-t */}
+                    {certificates.map((cert) => (
+                      <div
+                        key={cert._id}
+                        className="w-full flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg mb-2 group hover:bg-white/10 transition-all"
+                      >
+                        {/* 1. Left Side (Info) */}
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 rounded bg-fuchsia-500/20 text-fuchsia-400">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col">
+                            <h4 className="text-sm font-bold text-white leading-tight">
+                              {cert.title}
+                            </h4>
+                            <p className="text-[10px] uppercase tracking-wider text-white/40 mt-0.5 font-mono">
+                              {new Date(cert.date).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 2. Right Side (Actions) */}
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a
+                            href={cert.url}
+                            download
+                            className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                            title="Download Asset"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                          <button
+                            onClick={async () => {
+                              if (confirm("Delete this certificate?")) {
+                                try {
+                                  const token = localStorage.getItem("token");
+                                  const res = await fetch(
+                                    `/api/users/profile/assets/${cert._id}`,
+                                    {
+                                      method: "DELETE",
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                    },
+                                  );
+                                  if (res.ok) {
+                                    const data = await res.json();
+                                    setCertificates(data.assets);
+                                    toast.success("Certificate deleted");
+                                  }
+                                } catch (error) {
+                                  toast.error("Failed to delete");
+                                }
+                              }
+                            }}
+                            className="p-2 rounded-lg hover:bg-rose-500/10 text-white/40 hover:text-rose-400 transition-colors"
+                            title="Delete Asset"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </WidgetCard>
           </div>

@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file.
 - **Dashboard Integration**: Added an interactable Info icon to the "Merit Status" card on the Student Dashboard to view Ascension Status.
 - **Merit Synchronization**: Refactored rank logic into a shared utility (`rankSystem.js`) to ensure the Dashboard and Profile page display identical Rank and XP progress.
 - **Modal Positioning**: Fixed the Ascension Map modal to always render in the center of the viewport (using Portals) instead of being constrained by the dashboard card.
+- **Certificate Upload System (Decrypted Assets)**: Implemented professional certificate management system:
+  - **Backend**: Extended User model with `title` field for assets, added PDF-only validation (5MB max), file size limits, and DELETE endpoint for asset removal.
+  - **Frontend**: Created `CertificateUpload` component with drag-and-drop interface, holographic hover effects ("Acquiring Signal..."), title input form (post-drop), and matrix-style "DECRYPTING..." upload animation.
+  - **Certificate Display**: Grid layout showing custom titles, original filenames, file sizes, upload dates, with Download and Delete actions.
+  - **UX**: Green glow on hover, "Identify this asset" title prompt, optimistic UI updates, and toast notifications for all actions.
 
 ### Fixed
 
@@ -350,6 +355,18 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Signal Center Backend (Safe Mode)**: Implemented full backend logic for settings management:
+  - Extended User model with `settings` schema (privacy, notifications, recoveryEmail).
+  - Created API endpoints: `PUT /security/password`, `PUT /settings`, `POST /data/export`.
+  - Integrated frontend with backend using optimistic UI updates and toast notifications.
+  - Password strength validation (8+ chars, number, symbol required).
+  - Data export excludes sensitive fields (password, \_\_v).
+- **Signal Center**: Implemented comprehensive Settings Modal with Account, Privacy, and Notification tabs. Features include:
+  - Glassmorphism UI with sidebar navigation.
+  - Interactive Password Strength Meter.
+  - Privacy toggles (Ghost Mode, Searchability).
+  - Custom "Disconnect" confirmation dialog.
+- **RankAscension.jsx**: Fixed a syntax error, restored the missing `export default` statement, and switched to named `createPortal` import for better stability.nteractions.
 - **VenueLandscapeCard Crash**: Restored the missing `type` destructuring which caused a `ReferenceError` and broke page interactions.
 - **Search & Filter Logic**: Fixed the `PlaceholdersAndVanishInput` component to properly sync its state with the parent component, resolving the issue where filters wouldn't apply correctly.
 - **Mobile Responsiveness**: Adjusted the font size of the `TrueFocus` header on mobile devices to prevent layout breaking.

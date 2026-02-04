@@ -212,27 +212,254 @@ exports.uploadAsset = async (req, res) => {
  */
 exports.uploadAsset = async (req, res) => {
   try {
+    console.log("=== Upload Asset Request ===");
+    console.log("File:", req.file ? req.file.originalname : "No file");
+    console.log("User:", req.user ? req.user.id : "No user");
+    console.log("Body:", req.body);
+
     if (!req.file) {
-      return res.status(400).json({ message: "Please upload a file" });
+      return res.status(400).json({ message: "No file uploaded" });
     }
 
+    // Validate PDF only
+    if (req.file.mimetype !== "application/pdf") {
+      return res.status(400).json({
+        message: "Only PDF files are allowed for certificates",
+      });
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (req.file.size > maxSize) {
+      return res.status(400).json({
+        message: "File size exceeds 5MB limit",
+      });
+    }
+
+    // Validate title
+    const { title } = req.body;
+    if (!title || title.trim().length < 3 || title.trim().length > 50) {
+      return res.status(400).json({
+        message: "Title is required (3-50 characters)",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      console.error("Upload Asset: User not found in DB", req.user.id);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Initialize assets if they don't exist
+    if (!user.assets) {
+      console.log("Upload Asset: Initializing assets array for user");
+      user.assets = [];
+    }
+
+    const asset = {
+      title: title.trim(),
+      name: req.file.originalname,
+      url: `/public/uploads/assets/${req.file.filename}`, // Updated path
+      fileType: req.file.mimetype, // Renamed from 'type'
+      size: (req.file.size / 1024 / 1024).toFixed(2) + " MB",
+    };
+
+    console.log("Upload Asset: Pushing new asset", asset);
+    user.assets.push(asset);
+
+    console.log("Upload Asset: Saving user document...");
+    await user.save();
+    console.log("Upload Asset: Save successful");
+
+    res.status(200).json({
+      message: "Certificate uploaded successfully",
+      assets: user.assets,
+    });
+  } catch (error) {
+    console.error("=== Upload Asset Error ===");
+    console.error("Error Message:", error.message);
+    console.error("Stack Trace:", error.stack);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc    Update user password
+ * @route   PUT /api/users/security/password
+ * @access  Private
+ */
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Validation
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Current password and new password are required.",
+      });
+    }
+
+    // Password strength validation (8+ chars, at least one number, one symbol)
+    const passwordRegex =
+      /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters with a number and symbol.",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    // Hash and save new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("Update Password Error:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Update user settings (privacy, notifications)
+ * @route   PUT /api/users/settings
+ * @access  Private
+ */
+exports.updateSettings = async (req, res) => {
+  try {
+    const { privacy, notifications, recoveryEmail } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Merge settings (partial updates)
+    if (privacy) {
+      user.settings.privacy = { ...user.settings.privacy, ...privacy };
+    }
+    if (notifications) {
+      user.settings.notifications = {
+        ...user.settings.notifications,
+        ...notifications,
+      };
+    }
+    if (recoveryEmail !== undefined) {
+      user.settings.recoveryEmail = recoveryEmail;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Settings updated successfully.",
+      settings: user.settings,
+    });
+  } catch (error) {
+    console.error("Update Settings Error:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Export user data as JSON
+ * @route   POST /api/users/data/export
+ * @access  Private
+ */
+exports.exportUserData = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select("-password -__v")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Gather event history
+    const Registration = require("../models/registration");
+    const Event = require("../models/event");
+
+    const registrations = await Registration.find({ user_id: req.user.id })
+      .populate("event_id", "title date category")
+      .lean();
+
+    const eventHistory = registrations.map((reg) => ({
+      eventTitle: reg.event_id?.title || "Unknown Event",
+      eventDate: reg.event_id?.date,
+      category: reg.event_id?.category,
+      status: reg.status,
+      registeredAt: reg.created_at,
+    }));
+
+    const exportData = {
+      profile: {
+        name: user.name,
+        email: user.email,
+        studentId: user.student_id,
+        bio: user.bio,
+        dna: user.dna,
+        links: user.links,
+      },
+      gamification: {
+        currentMerit: user.current_merit,
+        meritGoal: user.merit_goal,
+      },
+      eventHistory,
+      settings: user.settings,
+      exportedAt: new Date().toISOString(),
+    };
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=student_data.json",
+    );
+    res.status(200).json(exportData);
+  } catch (error) {
+    console.error("Export Data Error:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Delete user asset
+ * @route   DELETE /api/users/profile/assets/:assetId
+ * @access  Private
+ */
+exports.deleteAsset = async (req, res) => {
+  try {
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const asset = {
-      name: req.file.originalname,
-      url: `/public/uploads/${req.file.filename}`,
-      type: req.file.mimetype,
-      size: (req.file.size / 1024 / 1024).toFixed(2) + " MB",
-    };
+    const assetId = req.params.assetId;
+    const assetIndex = user.assets.findIndex(
+      (asset) => asset._id.toString() === assetId,
+    );
 
-    user.assets.push(asset);
+    if (assetIndex === -1) {
+      return res.status(404).json({ message: "Asset not found" });
+    }
+
+    // Remove asset from array
+    user.assets.splice(assetIndex, 1);
     await user.save();
 
     res.status(200).json({
-      message: "Asset uploaded successfully",
+      message: "Certificate deleted successfully",
       assets: user.assets,
     });
   } catch (error) {

@@ -44,4 +44,26 @@ router.put(
   userController.uploadAsset,
 );
 
+// --- SIGNAL CENTER ROUTES ---
+
+// @route   PUT /api/users/security/password
+// @desc    Update user password
+// @access  Private
+router.put("/security/password", auth, userController.updatePassword);
+
+// @route   PUT /api/users/settings
+// @desc    Update user settings (privacy, notifications)
+// @access  Private
+router.put("/settings", auth, userController.updateSettings);
+
+// @route   POST /api/users/data/export
+// @desc    Export user data as JSON
+// @access  Private
+router.post("/data/export", auth, userController.exportUserData);
+
+// @route   DELETE /api/users/profile/assets/:assetId
+// @desc    Delete user asset
+// @access  Private
+router.delete("/profile/assets/:assetId", auth, userController.deleteAsset);
+
 module.exports = router;
