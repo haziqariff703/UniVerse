@@ -21,6 +21,7 @@ import {
   Utensils,
   ChevronDown,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const API_BASE = "http://localhost:5000";
@@ -138,7 +139,9 @@ const EventDetails = () => {
         ...data,
         id: data._id,
         image: data.image
-          ? `${API_BASE}/${data.image}`
+          ? data.image.startsWith("http")
+            ? data.image
+            : `${API_BASE}/${data.image}`
           : "/placeholder-event.jpg",
         date: new Date(data.date_time).toLocaleDateString("en-MY", {
           year: "numeric",
@@ -265,7 +268,9 @@ const EventDetails = () => {
       fetchEvent();
     } catch (err) {
       console.error("Registration error:", err);
-      alert(err.message);
+      toast.error("Registration Failed", {
+        description: err.message,
+      });
     } finally {
       setRegistering(false);
     }
@@ -457,45 +462,51 @@ const EventDetails = () => {
               </section>
             )}
 
-            {/* 3. VISUALS (GRID POLISH) */}
-            <section className="space-y-12">
-              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">
-                Visuals
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 h-[600px]">
-                <div className="col-span-2 row-span-2 relative rounded-[3rem] overflow-hidden border border-white/10 group cursor-pointer">
-                  <img
-                    src={event.gallery?.[0] || event.image}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all" />
-                  <div className="absolute bottom-8 left-8 flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-all">
-                    <Maximize2 className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-                      Enlarge
-                    </span>
-                  </div>
+            {/* 3. FEATURED TALENT (DYNAMIC) */}
+            {event.speaker_ids && event.speaker_ids.length > 0 && (
+              <section className="space-y-12">
+                <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">
+                  Featured Talent
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {event.speaker_ids.map((speaker, i) => (
+                    <Link
+                      key={speaker._id || i}
+                      to={`/speakers/${speaker._id}`}
+                      className="group relative h-[400px] rounded-[2.5rem] overflow-hidden border border-white/10 hover:border-fuchsia-500/50 transition-all cursor-pointer"
+                    >
+                      <img
+                        src={
+                          speaker.image ||
+                          "https://images.unsplash.com/photo-1540575467063-178a50c2df87"
+                        }
+                        alt={speaker.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-all" />
+
+                      <div className="absolute bottom-0 left-0 right-0 p-8 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                        <div className="space-y-2">
+                          <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-widest text-fuchsia-300">
+                            {speaker.role || "Speaker"}
+                          </span>
+                          <h4 className="text-2xl font-clash font-bold text-white leading-none">
+                            {speaker.name}
+                          </h4>
+                          <p className="text-sm text-slate-300 line-clamp-2">
+                            {speaker.expertise || speaker.bio}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border border-white/20">
+                        <Maximize2 className="w-4 h-4 text-white" />
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-                <div className="col-span-1 row-span-1 relative rounded-[2.5rem] overflow-hidden border border-white/10 group cursor-pointer">
-                  <img
-                    src={
-                      event.gallery?.[1] ||
-                      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800"
-                    }
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-                <div className="col-span-1 row-span-1 relative rounded-[2.5rem] overflow-hidden border border-white/10 group cursor-pointer">
-                  <img
-                    src={
-                      event.gallery?.[2] ||
-                      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800"
-                    }
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-              </div>
-            </section>
+              </section>
+            )}
           </div>
 
           {/* RIGHT SIDEBAR (LAUNCHPAD) */}

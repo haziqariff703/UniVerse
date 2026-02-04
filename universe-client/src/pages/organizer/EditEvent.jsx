@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import DynamicSteppedForm from "@/components/forms/DynamicSteppedForm";
 import { eventSchema } from "@/config/schemas/eventSchema";
 import EventRoadmap from "@/components/organizer/EventRoadmap";
@@ -201,9 +202,25 @@ const EditEvent = () => {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.message || "Failed to update event");
+      if (response.status === 400 && data.message.includes("Conflict")) {
+        toast.error("Update Conflict", {
+          description: data.message,
+          duration: 6000,
+        });
+      } else {
+        toast.error("Update failed", {
+          description:
+            data.error ||
+            data.message ||
+            "Failed to update event. Please try again.",
+        });
+      }
+      throw new Error(data.error || data.message || "Failed to update event");
     }
 
+    toast.success("Event Updated!", {
+      description: "Your changes have been saved and applied.",
+    });
     navigate(`/organizer/event/${id}/dashboard`);
   };
 
@@ -322,7 +339,9 @@ const EditEvent = () => {
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8">
       {/* Header */}
       <div className="max-w-[1600px] mx-auto mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Edit Event</h1>
+        <h1 className="text-3xl font-clash font-bold text-white mb-2">
+          Edit Event
+        </h1>
         <p className="text-zinc-500 text-sm">
           Update your event configuration and assets.
         </p>
@@ -358,7 +377,7 @@ const EditEvent = () => {
             </div>
 
             <div className="rounded-xl overflow-hidden border border-zinc-900 bg-black/40">
-              <EventRoadmap events={events} />
+              <EventRoadmap events={events} readOnly={true} />
             </div>
 
             <div className="mt-6 p-4 rounded-xl bg-violet-500/5 border border-violet-500/10">

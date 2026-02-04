@@ -22,6 +22,7 @@ import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 import SpotlightCard from "@/components/ui/SpotlightCard";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 import { cn } from "@/lib/utils";
+import { getVenueStatus } from "@/lib/venueUtils";
 
 const facilityIconMap = {
   AC: <Wind className="w-3.5 h-3.5" />,
@@ -40,21 +41,20 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
     id,
     name,
     location_code,
-    max_capacity,
     image,
     facilities,
     description,
-    bestFor,
     glowColor,
     type,
-    occupancyStatus = "Available", // Default for safety
-    liveOccupancy = 0,
-    nextAvailable = "Now",
   } = venue;
 
   const [isFavorited, setIsFavorited] = React.useState(false);
   const [showMap, setShowMap] = useState(false);
   const liveStatus = React.useMemo(() => getLiveVenueStatus(venue), [venue]);
+  const venueStatus = React.useMemo(
+    () => getVenueStatus(venue.accessHours || "08:00 - 22:00"),
+    [venue.accessHours],
+  );
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -80,14 +80,6 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
     setIsFavorited(!isFavorited);
   };
 
-  // Calculate capacity percentage for the gauge
-  const capacityPercentage = Math.min((max_capacity / 1000) * 100, 100);
-
-  const accentColor = glowColor === "cyan" ? "bg-cyan-500" : "bg-purple-500";
-  const glowShadow =
-    glowColor === "cyan"
-      ? "shadow-[0_0_15px_rgba(6,182,212,0.5)]"
-      : "shadow-[0_0_15px_rgba(168,85,247,0.5)]";
   const borderGlow =
     glowColor === "cyan"
       ? "h-[1.5px] w-[1.5px] bg-cyan-400"
@@ -156,18 +148,24 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full animate-pulse",
-                    liveStatus.isOccupied ? "bg-rose-500" : "bg-emerald-500",
+                    !venueStatus.isOpen
+                      ? "bg-rose-500"
+                      : liveStatus.isOccupied
+                        ? "bg-amber-500"
+                        : "bg-emerald-500",
                   )}
                 />
                 <span
                   className={cn(
                     "text-[10px] font-mono font-bold tracking-wider uppercase",
-                    liveStatus.isOccupied
+                    !venueStatus.isOpen
                       ? "text-rose-400"
-                      : "text-emerald-400",
+                      : liveStatus.isOccupied
+                        ? "text-amber-400"
+                        : "text-emerald-400",
                   )}
                 >
-                  {liveStatus.status}
+                  {venueStatus.isOpen ? liveStatus.status : "Closed"}
                 </span>
               </div>
             </div>

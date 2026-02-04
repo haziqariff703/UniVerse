@@ -27,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 /**
  * KPI Card Component
  */
@@ -86,6 +88,7 @@ const SpeakerApprovals = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   const fetchPendingSpeakers = useCallback(async () => {
     setLoading(true);
@@ -270,153 +273,237 @@ const SpeakerApprovals = () => {
           </div>
         ) : (
           <>
-            <div className="w-full overflow-x-auto">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="p-4 pl-6 text-xs font-bold text-starlight/30 uppercase tracking-widest">
-                    Candidate Identity
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest">
-                    Proposed Expertise
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest">
-                    Credentials
-                  </th>
-                  <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest text-right pr-6">
-                    Management
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredSpeakers.map((speaker) => (
-                  <tr
-                    key={speaker._id}
-                    className="hover:bg-white/[0.01] transition-colors group"
-                  >
-                    <td className="p-4 pl-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/20 flex items-center justify-center font-black text-starlight uppercase">
-                          {speaker.name?.substring(0, 2) || "S"}
-                        </div>
-                        <div>
-                          <p className="text-starlight font-black tracking-tight">
-                            {speaker.name}
-                          </p>
-                          <div className="flex items-center gap-1.5 text-starlight/40 text-[10px] mt-0.5">
-                            <Clock size={10} />
-                            <span>
-                              Proposed by{" "}
-                              {speaker.requested_by?.name || "Organizer"}
-                            </span>
+            <div className="w-full overflow-x-auto pb-4">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="p-4 pl-6 text-xs font-bold text-starlight/30 uppercase tracking-widest">
+                      Candidate Identity
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest">
+                      Proposed Expertise
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest">
+                      Credentials
+                    </th>
+                    <th className="p-4 text-xs font-bold text-starlight/30 uppercase tracking-widest text-right pr-6">
+                      Management
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredSpeakers.map((speaker) => (
+                    <tr
+                      key={speaker._id}
+                      className="hover:bg-white/[0.01] transition-colors group"
+                    >
+                      <td className="p-4 pl-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/20 flex items-center justify-center font-black text-starlight uppercase">
+                            {speaker.name?.substring(0, 2) || "S"}
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase tracking-widest border border-cyan-500/20">
-                        {speaker.expertise || "General Expert"}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {speaker.proposal_url ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-violet-400/60 bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10 w-fit">
-                            Documentation Present
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-starlight/20 bg-white/5 px-2 py-0.5 rounded border border-white/5 w-fit">
-                          No Files
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right pr-6">
-                      <div className="flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
-                              <MoreVertical size={18} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="w-56 glass-panel border-white/10"
-                          >
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
-                              Talent Certification
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator className="bg-white/5" />
-
-                            {/* Document Action */}
-                            <DropdownMenuItem
-                              disabled={!speaker.proposal_url}
-                              className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
-                            >
-                              {speaker.proposal_url ? (
+                          <div>
+                            <p className="text-starlight font-black tracking-tight">
+                              {speaker.name}
+                            </p>
+                            <div className="flex items-center gap-1.5 text-starlight/40 text-[10px] mt-0.5">
+                              <Clock size={10} />
+                              <span>
+                                Proposed by{" "}
+                                {speaker.requested_by?.name || "Organizer"}
+                              </span>
+                            </div>
+                            {/* Social Links */}
+                            {/* Social Links */}
+                            <div className="flex items-center gap-2 mt-2">
+                              {speaker.social_links?.linkedin && (
                                 <a
-                                  href={speaker.proposal_url}
+                                  href={
+                                    speaker.social_links.linkedin.startsWith(
+                                      "http",
+                                    )
+                                      ? speaker.social_links.linkedin
+                                      : `https://${speaker.social_links.linkedin}`
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-2 w-full"
+                                  className="text-starlight/40 hover:text-blue-400 transition-colors"
+                                  title="LinkedIn Profile"
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                    <FileText size={16} />
-                                  </div>
-                                  <span className="font-bold text-xs uppercase tracking-widest text-blue-400">
-                                    Forensic Audit
-                                  </span>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                    <rect width="4" height="12" x="2" y="9" />
+                                    <circle cx="4" cy="4" r="2" />
+                                  </svg>
                                 </a>
-                              ) : (
-                                <>
-                                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-starlight/20">
-                                    <FileText size={16} />
-                                  </div>
-                                  <span className="font-bold text-xs uppercase tracking-widest text-starlight/20">
-                                    Missing Docs
-                                  </span>
-                                </>
                               )}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator className="bg-white/5" />
-
-                            {/* Execution Actions */}
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleAction(speaker._id, "approve")
-                              }
-                              disabled={processingId === speaker._id}
-                              className="flex items-center gap-2 p-3 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer rounded-lg transition-colors group"
+                              {speaker.social_links?.twitter && (
+                                <a
+                                  href={
+                                    speaker.social_links.twitter.startsWith(
+                                      "http",
+                                    )
+                                      ? speaker.social_links.twitter
+                                      : `https://${speaker.social_links.twitter}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-starlight/40 hover:text-sky-400 transition-colors"
+                                  title="Twitter Profile"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+                                  </svg>
+                                </a>
+                              )}
+                              {speaker.social_links?.website && (
+                                <a
+                                  href={
+                                    speaker.social_links.website.startsWith(
+                                      "http",
+                                    )
+                                      ? speaker.social_links.website
+                                      : `https://${speaker.social_links.website}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-starlight/40 hover:text-emerald-400 transition-colors"
+                                  title="Personal Website"
+                                >
+                                  <ExternalLink size={12} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase tracking-widest border border-cyan-500/20">
+                          {speaker.expertise || "General Expert"}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {speaker.proposal_url ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-violet-400/60 bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10 w-fit">
+                              Documentation Present
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-black uppercase tracking-widest text-starlight/20 bg-white/5 px-2 py-0.5 rounded border border-white/5 w-fit">
+                            No Files
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right pr-6">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 glass-panel border-white/10"
                             >
-                              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                                <Check size={16} />
-                              </div>
-                              <span className="font-bold text-xs uppercase tracking-widest">
-                                Authorize Talent
-                              </span>
-                            </DropdownMenuItem>
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Talent Certification
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
 
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleAction(speaker._id, "reject")
-                              }
-                              disabled={processingId === speaker._id}
-                              className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
-                                <X size={16} />
-                              </div>
-                              <span className="font-bold text-xs uppercase tracking-widest">
-                                Dismiss Entry
-                              </span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                              {/* Document Action */}
+                              <DropdownMenuItem
+                                disabled={!speaker.proposal_url}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group disabled:opacity-50"
+                              >
+                                {speaker.proposal_url ? (
+                                  <div
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setSelectedDoc(speaker.proposal_url);
+                                    }}
+                                    className="flex items-center gap-2 w-full cursor-pointer"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                      <FileText size={16} />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-blue-400">
+                                      Forensic Audit
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-starlight/20">
+                                      <FileText size={16} />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-starlight/20">
+                                      Missing Docs
+                                    </span>
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator className="bg-white/5" />
+
+                              {/* Execution Actions */}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleAction(speaker._id, "approve")
+                                }
+                                disabled={processingId === speaker._id}
+                                className="flex items-center gap-2 p-3 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                  <Check size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  Authorize Talent
+                                </span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleAction(speaker._id, "reject")
+                                }
+                                disabled={processingId === speaker._id}
+                                className="flex items-center gap-2 p-3 text-rose-400 hover:bg-rose-600/10 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-rose-600/10 flex items-center justify-center text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                  <X size={16} />
+                                </div>
+                                <span className="font-bold text-xs uppercase tracking-widest">
+                                  Dismiss Entry
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             {/* Pagination */}
@@ -445,6 +532,76 @@ const SpeakerApprovals = () => {
           </>
         )}
       </div>
+
+      {/* Document Viewer Modal */}
+      <AnimatePresence>
+        {selectedDoc && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedDoc(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-5xl h-[85vh] glass-panel border border-white/10 rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white font-clash">
+                      Forensic Audit
+                    </h3>
+                    <p className="text-xs font-medium text-starlight/40 uppercase tracking-widest">
+                      Credential Verification
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedDoc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2.5 rounded-xl bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <ExternalLink size={20} />
+                  </a>
+                  <button
+                    onClick={() => setSelectedDoc(null)}
+                    className="p-2.5 rounded-xl bg-white/5 text-starlight/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 bg-neutral-900/50 relative overflow-hidden">
+                {selectedDoc.endsWith(".pdf") ? (
+                  <iframe
+                    src={selectedDoc}
+                    className="w-full h-full border-none"
+                    title="Document Preview"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
+                    <img
+                      src={selectedDoc}
+                      alt="Document Preview"
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const EventRoadmap = ({ events }) => {
+const EventRoadmap = ({ events, readOnly = false }) => {
   const navigate = useNavigate();
 
   // Transform events for FullCalendar
@@ -44,6 +44,7 @@ const EventRoadmap = ({ events }) => {
         status: isPast ? "Completed" : "Upcoming",
         image: imageUrl,
         host: event.community_id?.name || "Independent",
+        canEdit: event.canEdit,
       },
       backgroundColor: isPast
         ? "rgba(16, 185, 129, 0.2)"
@@ -60,7 +61,9 @@ const EventRoadmap = ({ events }) => {
       <TooltipProvider>
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
-            <div className="w-full h-full p-1 cursor-pointer overflow-hidden text-xs font-semibold truncate flex items-center gap-1">
+            <div
+              className={`w-full h-full p-1 ${props.canEdit ? "cursor-pointer" : "cursor-default"} overflow-hidden text-xs font-semibold truncate flex items-center gap-1`}
+            >
               <div
                 className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                   props.status === "Completed"
@@ -68,7 +71,21 @@ const EventRoadmap = ({ events }) => {
                     : "bg-violet-400"
                 }`}
               />
-              <span className="truncate">{eventInfo.event.title}</span>
+              <span className="truncate flex-1">{eventInfo.event.title}</span>
+              {!props.canEdit && (
+                <div className="shrink-0 text-white/40">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="w-2.5 h-2.5"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+              )}
             </div>
           </TooltipTrigger>
           <TooltipContent
@@ -137,6 +154,13 @@ const EventRoadmap = ({ events }) => {
                   {props.ticketPrice === 0 ? "FREE" : `RM ${props.ticketPrice}`}
                 </div>
               </div>
+
+              {!props.canEdit && (
+                <div className="pt-2 flex items-center gap-2 text-[10px] text-amber-500 font-bold uppercase tracking-wider">
+                  <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                  Read-only Access
+                </div>
+              )}
             </div>
           </TooltipContent>
         </Tooltip>
@@ -145,7 +169,9 @@ const EventRoadmap = ({ events }) => {
   };
 
   const handleEventClick = (clickInfo) => {
-    navigate(`/organizer/event/${clickInfo.event.id}/dashboard`);
+    if (!readOnly && clickInfo.event.extendedProps.canEdit) {
+      navigate(`/organizer/event/${clickInfo.event.id}/dashboard`);
+    }
   };
 
   return (

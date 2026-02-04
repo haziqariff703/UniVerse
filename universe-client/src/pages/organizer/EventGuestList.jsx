@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Star,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AreaChart,
   Area,
@@ -213,11 +214,15 @@ const EventGuestList = () => {
         setActiveMenu(null);
       } else {
         const error = await res.json();
-        alert(error.message || "Failed to update status");
+        toast.error("Update Failed", {
+          description: error.message || "Failed to update guest status.",
+        });
       }
     } catch (err) {
       console.error("Update Status Error:", err);
-      alert("Error updating status");
+      toast.error("Network Error", {
+        description: "Could not reach the server to update guest status.",
+      });
     }
   };
 
@@ -253,7 +258,7 @@ const EventGuestList = () => {
       {/* Dashboard Overview Section (Professional & Compact) */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-white">Overview</h1>
+          <h1 className="text-2xl font-clash font-bold text-white">Overview</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={exportToCSV}

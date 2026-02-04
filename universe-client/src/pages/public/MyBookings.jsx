@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import TrueFocus from "@/components/ui/TrueFocus";
 import { cn } from "@/lib/utils";
 import QRCode from "react-qr-code";
+import { toast } from "sonner";
 
 const API_BASE = "http://localhost:5000";
 
@@ -46,7 +47,9 @@ const MyBookings = () => {
 
   const handleSubmitReview = async (reviewData) => {
     if (!reviewEvent?.id) {
-      alert("Error: Missing Event ID. Data: " + JSON.stringify(reviewEvent));
+      toast.error("Review Error", {
+        description: "Missing event context for review submission.",
+      });
       return;
     }
 
@@ -59,6 +62,7 @@ const MyBookings = () => {
 
       const formData = new FormData();
       formData.append("rating", reviewData.rating);
+      formData.append("speaker_rating", reviewData.speaker_rating);
       formData.append("value", reviewData.value);
       formData.append("energy", reviewData.energy);
       formData.append("welfare", reviewData.welfare);
@@ -96,7 +100,9 @@ const MyBookings = () => {
       console.log("Review submitted successfully:", data);
     } catch (err) {
       console.error("Review submission error:", err);
-      alert("Booking Page Error: " + err.message);
+      toast.error("Submission Failed", {
+        description: err.message,
+      });
       throw err; // Re-throw so ReviewModal knows it failed
     }
   };
@@ -137,14 +143,14 @@ const MyBookings = () => {
                 reg.event_id?.title ||
                 "Unknown Event",
               date: new Date(
-                reg.event_snapshot?.date_time || reg.event_id?.date_time,
+                reg.event_id?.date_time || reg.event_snapshot?.date_time,
               ).toLocaleDateString("en-MY", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               }),
               time: new Date(
-                reg.event_snapshot?.date_time || reg.event_id?.date_time,
+                reg.event_id?.date_time || reg.event_snapshot?.date_time,
               ).toLocaleTimeString("en-MY", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -165,6 +171,7 @@ const MyBookings = () => {
                 ? `${API_BASE}/${reg.event_id.image}`
                 : "/placeholder-event.jpg",
               qr_code: reg.qr_code_string,
+              rawDate: reg.event_id?.date_time || reg.event_snapshot?.date_time,
             }))
           : [];
 
@@ -221,8 +228,12 @@ const MyBookings = () => {
     }
   };
 
-  // Helper to check if reviewable
-  const canReview = (status) => status === "CheckedIn";
+  // Helper to check if reviewable - Only after event date has passed
+  const canReview = (pass) => {
+    if (pass.status !== "CheckedIn") return false;
+    if (!pass.rawDate) return false;
+    return new Date(pass.rawDate) < new Date();
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -395,7 +406,7 @@ const MyBookings = () => {
                         {getStatusBadge(pass.status)}
 
                         {/* Review Button for Completed Events */}
-                        {canReview(pass.status) && (
+                        {canReview(pass) && (
                           <button
                             onClick={() => handleOpenReview(pass)}
                             className="w-full relative group/btn px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:bg-fuchsia-500/10 hover:border-fuchsia-500/30 mb-3"

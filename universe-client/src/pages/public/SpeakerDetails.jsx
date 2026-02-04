@@ -25,11 +25,20 @@ const SpeakerDetails = () => {
   const [speaker, setSpeaker] = useState(null);
 
   useEffect(() => {
-    // Simulate API fetch (replace with finding from imported MOCK)
-    // In real app, this would be an API call
+    const fetchSpeaker = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/speakers/${id}`,
+        );
+        if (!response.ok) throw new Error("Speaker not found");
+        const data = await response.json();
+        setSpeaker(data.speaker);
+      } catch (error) {
+        console.error("Failed to fetch speaker:", error);
+      }
+    };
     if (id) {
-      const found = MOCK_SPEAKERS.find((s) => s.id === parseInt(id));
-      setSpeaker(found || null);
+      fetchSpeaker();
     }
   }, [id]);
 
@@ -100,10 +109,13 @@ const SpeakerDetails = () => {
               <div className="flex gap-3 pt-4 border-t border-white/5">
                 <SocialBtn
                   icon={Linkedin}
-                  href={speaker.social_links.linkedin}
+                  href={speaker.social_links?.linkedin}
                 />
-                <SocialBtn icon={Twitter} href={speaker.social_links.twitter} />
-                <SocialBtn icon={Globe} href={speaker.social_links.website} />
+                <SocialBtn
+                  icon={Twitter}
+                  href={speaker.social_links?.twitter}
+                />
+                <SocialBtn icon={Globe} href={speaker.social_links?.website} />
               </div>
             </div>
           </motion.div>
@@ -112,19 +124,19 @@ const SpeakerDetails = () => {
           <div className="grid grid-cols-3 gap-4">
             <StatBox
               label="Talks"
-              value={speaker.stats.talks}
+              value={speaker.stats?.talks || 0}
               icon={Mic}
               delay={0.1}
             />
             <StatBox
               label="Merit"
-              value={speaker.stats.merit}
+              value={speaker.stats?.merit || 0}
               icon={Zap}
               delay={0.2}
             />
             <StatBox
               label="Rating"
-              value={speaker.stats.rating}
+              value={speaker.stats?.rating || 0}
               icon={TrendingUp}
               delay={0.3}
             />
@@ -159,7 +171,7 @@ const SpeakerDetails = () => {
                   Key Achievements
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {speaker.achievements.map((ach, i) => (
+                  {speaker.achievements?.map((ach, i) => (
                     <div
                       key={i}
                       className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors"
@@ -204,7 +216,7 @@ const SpeakerDetails = () => {
                 Historical Data
               </h3>
               <div className="space-y-4">
-                {speaker.past_events.map((event, i) => (
+                {speaker.past_events?.map((event, i) => (
                   <div
                     key={i}
                     className="group flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"

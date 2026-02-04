@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 // Context
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Toaster } from "sonner";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -647,6 +648,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
+          <Toaster position="top-right" richColors closeButton />
         </div>
       </Router>
     </ThemeProvider>

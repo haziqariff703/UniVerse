@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import DynamicSteppedForm from "@/components/forms/DynamicSteppedForm";
 import { eventSchema } from "@/config/schemas/eventSchema";
 import EventRoadmap from "@/components/organizer/EventRoadmap";
@@ -59,7 +59,7 @@ const CreateEvent = () => {
   const handleCreateEvent = async (formData) => {
     // Validation: Proposal is mandatory
     if (!formData.proposal) {
-      toast.error("Proposal Document Required", {
+      toast.warning("Proposal Document Required", {
         description: "You must upload a proposal PDF to publish your event.",
         duration: 4000,
         icon: "📄",
@@ -123,7 +123,7 @@ const CreateEvent = () => {
       submitData.set("duration_minutes", dur);
     }
 
-    submitData.set("capacity", parseInt(formData.capacity));
+    submitData.set("capacity", parseInt(formData.capacity) || 0);
 
     const token = localStorage.getItem("token");
     const response = await fetch("http://localhost:5000/api/events", {
@@ -136,9 +136,26 @@ const CreateEvent = () => {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.message || "Failed to launch event");
+      if (response.status === 400 && data.message.includes("Conflict")) {
+        toast.error("Scheduling Conflict", {
+          description: data.message,
+          duration: 6000,
+        });
+      } else {
+        toast.error("Error launching event", {
+          description:
+            data.error ||
+            data.message ||
+            "Failed to create event. Please try again.",
+        });
+      }
+      throw new Error(data.error || data.message || "Failed to launch event");
     }
 
+    toast.success("Event Launched!", {
+      description:
+        "Your event has been successfully scheduled and broadcasted.",
+    });
     navigate("/organizer/my-events");
   };
 
@@ -256,7 +273,9 @@ const CreateEvent = () => {
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8">
       {/* Header */}
       <div className="max-w-[1600px] mx-auto mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
+        <h1 className="text-3xl font-clash font-bold text-white mb-2">
+          Create New Event
+        </h1>
         <p className="text-zinc-500 text-sm">
           Set up your event details and broadcast your vision.
         </p>
@@ -290,7 +309,7 @@ const CreateEvent = () => {
             </div>
 
             <div className="rounded-xl overflow-hidden border border-zinc-900 bg-black/40">
-              <EventRoadmap events={events} />
+              <EventRoadmap events={events} readOnly={true} />
             </div>
 
             <div className="mt-6 p-4 rounded-xl bg-violet-500/5 border border-violet-500/10">

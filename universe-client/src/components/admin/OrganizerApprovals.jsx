@@ -28,7 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 const KpiCard = ({
   title,
@@ -153,7 +153,7 @@ const OrganizerApprovals = () => {
       setOrganizers(organizers.filter((o) => o._id !== id));
       toast.success("Organizer request approved");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || "Failed to approve organizer");
     } finally {
       setProcessingId(null);
     }
@@ -185,8 +185,7 @@ const OrganizerApprovals = () => {
       setRejectingOrgId(null);
       toast.success("Organizer request rejected");
     } catch (err) {
-      alert(err.message);
-      toast.error(err.message);
+      toast.error(err.message || "Failed to reject organizer");
     } finally {
       setProcessingId(null);
     }

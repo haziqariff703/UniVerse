@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-02-04]
+
+### Added
+
+- **Dynamic Venue Status**: Implemented real-time "OPEN" / "CLOSED" indicators for all venue views. The logic uses a new `venueUtils.js` script to accurately compare Malaysian time (`Asia/Kuala_Lumpur`) against official `accessHours`. This is applied to `VenueEvents.jsx`, `Venues.jsx` (via `VenueLandscapeCard`), and `VenueDetails.jsx`.
+- **System Architecture Analysis**: Conducted a deep-dive analysis of the UniVerse data structure and best practices, documented in the `universe_architect` skill.
+- **Conditional Rating Button**: Implemented logic to ensure the "Rate Event" button in `MyBookings.jsx` only appears after the event date has passed and the student has checked in.
+- **Roadmap Access & Privacy Security**: Implemented multi-layer security for the Roadmap. Non-public events (Pending/Rejected) are now strictly hidden from unauthorized users. For public events, dashboard access is restricted to the workforce and community leaders with visual "Lock" indicators.
+- **Workforce UI Enhancement**: Restored the page header and ensured the active community selector is visible even for single-club presidents, ensuring UI consistency across the platform.
+- **Global Sonner Integration**: Standardized all system-wide notifications by replacing `react-hot-toast` and legacy `alert()` calls with `sonner` toasts. This ensures a consistent, premium, and performant feedback experience across all student, organizer, and administrative modules.
+
+### Fixed
+
+- **Venue Registry UX**: Refined the venue session list in `VenueEvents.jsx` to be view-only, removing interactive links and navigation chevrons to prevent unintended dashboard access from the public/organizer registry list.
+- **Dependency Restoration**: Resolved "Failed to resolve import `typewriter-effect`" error by performing a clean `npm install --legacy-peer-deps` in the client directory.
+
 ## [2026-02-03]
 
 ### Changed
@@ -371,7 +387,17 @@ All notable changes to this project will be documented in this file.
 - **Fixed**: Resolved `ReferenceError` in `EventApprovals.jsx` caused by `useEffect` dependency hoisting.
 - **Fixed**: Repaired syntax errors and resolved lint warnings in `VenueManager.jsx` and `AuditLogList.jsx`.
 - **Added**: Audit Logs Forensics Command Center with KPI cards and snapshot viewer.
-- **Added**: Venue Image Uploads with real-time preview and Multer backend support.
+- **Fixed**: Critical file corruption in `VenueLandscapeCard.jsx`, `VenueEvents.jsx`, and `VenueDetails.jsx` preventing page reloads.
+- **Fixed**: `ReferenceError: motion is not defined` and `SyntaxError` in venue components.
+- **Fixed**: `VenueDetails.jsx` crash by ensuring `upcomingEvents` defaults to an empty array.
+- **Added**: Dynamic venue status (Open/Closed) based on Malaysia time for all venue views.
+- **Added**: Complete Speakers Module Backend:
+  - Created `Speaker` Mongoose model with full schema (role, category, stats, social links).
+  - Implemented `speakerController` with `getVerifiedSpeakers`, `getSpeakerById`, `proposeSpeaker`, and seed functionality.
+  - Added `POST /api/speakers/seed` to populate database with mock data.
+  - Connected `Speakers.jsx`, `SpeakerDetails.jsx`, and `OrganizerSpeakers.jsx` to the live API.
+- **Removed**: Redundant `occupancyStatus` field from backend schema and frontend components.
+- **Changed**: Improved Venue Events registry UI with higher information density.
 - **Changed**: Enhanced Audit Logs API with advanced filtering and summary stats.
 - **Changed**: Venue Management table now uses always-visible direct icons (Edit/Delete).
 - **Dynamic Facilities System**: Implemented a checkbox-based asset selector with a manual "Add Custom Facility" feature.

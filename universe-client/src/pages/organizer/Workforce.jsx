@@ -14,6 +14,7 @@ import {
   Rocket,
   ChevronDown,
 } from "lucide-react";
+import { toast } from "sonner";
 import TalentGrid from "@/components/organizer/workforce/TalentGrid";
 import TeamGrid from "@/components/organizer/workforce/TeamGrid";
 import { cn } from "@/lib/utils";
@@ -97,9 +98,10 @@ const Workforce = () => {
       if (res.status === 403) {
         setApplicants([]);
         setTeam([]);
-        alert(
-          "Access Denied: You are not the authorized President of this community.",
-        );
+        toast.error("Access Denied", {
+          description:
+            "You are not the authorized President of this community.",
+        });
         return;
       }
 
@@ -141,7 +143,9 @@ const Workforce = () => {
 
       if (res.ok) {
         fetchApplicants();
-        alert(`Status updated to ${status}`);
+        toast.success("Update Successful", {
+          description: `Member status moved to ${status}`,
+        });
       }
     } catch (err) {
       console.error("Update error:", err);
@@ -166,14 +170,20 @@ const Workforce = () => {
 
       const data = await res.json();
       if (res.ok) {
-        alert("Crew member added successfully!");
+        toast.success("Member Added", {
+          description: "Crew member added successfully!",
+        });
         fetchApplicants();
       } else {
-        alert(data.message || "Failed to add member");
+        toast.error("Invite Failed", {
+          description: data.message || "Failed to add member",
+        });
       }
     } catch (err) {
       console.error("Invite error:", err);
-      alert("Server error");
+      toast.error("Server Error", {
+        description: "An unexpected error occurred while inviting the member.",
+      });
     }
   };
 
@@ -233,13 +243,14 @@ const Workforce = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-white/40 text-sm">
-              Manage your Talent & Team (AJKs)
-            </p>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+        <div>
+          <h1 className="text-3xl font-clash font-bold text-white mb-1">
+            Workforce Command
+          </h1>
+          <p className="text-white/40 text-sm font-medium">
+            Manage your Talent & Team (AJKs)
+          </p>
         </div>
 
         {/* Invite Button - Moved to Tab Controls */}
@@ -267,32 +278,46 @@ const Workforce = () => {
         </div>
       </div>
 
-      {/* Community Selector (Dropdown) */}
-      {communities.length > 1 && (
+      {/* Community Selector (Dropdown or Display Box) */}
+      {communities.length > 0 && (
         <div className="relative mb-8 z-50">
           <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0a0a0a] border border-white/10 hover:border-white/20 transition-all min-w-[280px] justify-between group"
+            onClick={() =>
+              communities.length > 1 && setIsDropdownOpen(!isDropdownOpen)
+            }
+            className={cn(
+              "flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0a0a0a] border border-white/10 hover:border-white/20 transition-all min-w-[280px] justify-between group",
+              communities.length <= 1 && "cursor-default border-white/5",
+            )}
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-violet-900/20">
                 {selectedCommunityData?.name?.charAt(0) || "C"}
               </div>
               <div className="text-left">
-                <p className="text-xs text-white/40 font-bold uppercase tracking-wider">
-                  Current Community
+                <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">
+                  Active Community
                 </p>
-                <p className="text-white font-bold text-sm truncate max-w-[200px]">
-                  {selectedCommunityData?.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-bold text-sm truncate max-w-[200px]">
+                    {selectedCommunityData?.name}
+                  </p>
+                  {communities.length > 1 && (
+                    <div className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[8px] text-white/40 font-bold">
+                      {communities.length} TOTAL
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-white/40 transition-transform duration-300",
-                isDropdownOpen && "rotate-180",
-              )}
-            />
+            {communities.length > 1 && (
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 text-white/40 transition-transform duration-300 group-hover:text-white",
+                  isDropdownOpen && "rotate-180",
+                )}
+              />
+            )}
           </button>
 
           {isDropdownOpen && (

@@ -1,21 +1,39 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Linkedin, Twitter, Globe, Sparkles } from "lucide-react";
 import Typewriter from "typewriter-effect";
 import { cn } from "@/lib/utils";
 import BlurText from "@/components/ui/BlurText";
-import { MOCK_SPEAKERS } from "@/data/mockSpeakers";
+// import { MOCK_SPEAKERS } from "@/data/mockSpeakers";
 
 const FILTERS = ["All", "Science", "Tech", "Arts", "Leadership"];
 
 const Speakers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [speakers, setSpeakers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredSpeakers = MOCK_SPEAKERS.filter((speaker) => {
+  useEffect(() => {
+    fetchSpeakers();
+  }, []);
+
+  const fetchSpeakers = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/speakers");
+      const data = await response.json();
+      setSpeakers(data.speakers || []);
+    } catch (error) {
+      console.error("Failed to fetch speakers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredSpeakers = speakers.filter((speaker) => {
     const matchesSearch =
       speaker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      speaker.expertise.toLowerCase().includes(searchTerm.toLowerCase());
+      speaker.expertise?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter =
       activeFilter === "All" || speaker.category === activeFilter;
 
@@ -24,6 +42,11 @@ const Speakers = () => {
 
   return (
     <div className="min-h-screen pt-12 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+      {loading && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+        </div>
+      )}
       {/* I. LAYOUT RESTRUCTURE (THE SPOTLIGHT HERO) */}
       <div className="flex flex-col items-center text-center mb-20 space-y-8">
         <div className="space-y-4 max-w-3xl flex flex-col items-center">
@@ -99,7 +122,7 @@ const Speakers = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {filteredSpeakers.map((speaker, idx) => (
-          <AgentCard key={speaker.id} speaker={speaker} idx={idx} />
+          <AgentCard key={speaker._id} speaker={speaker} idx={idx} />
         ))}
         {filteredSpeakers.length === 0 && (
           <div className="col-span-full text-center py-32 text-white/30 font-geist tracking-widest uppercase flex flex-col items-center gap-4">
@@ -148,7 +171,7 @@ const AgentCard = ({ speaker, idx }) => {
         <div className="absolute inset-0 pointer-events-none opacity-[0.07] z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
         <Link
-          to={`/speakers/${speaker.id}`}
+          to={`/speakers/${speaker._id}`}
           className="block h-full relative z-10"
         >
           <div className="relative aspect-[4/5] overflow-hidden">
@@ -167,9 +190,12 @@ const AgentCard = ({ speaker, idx }) => {
 
             {/* Social Buttons - Always Visible (Dimmed) */}
             <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-300">
-              <SocialBtn icon={Linkedin} href={speaker.social_links.linkedin} />
-              <SocialBtn icon={Twitter} href={speaker.social_links.twitter} />
-              <SocialBtn icon={Globe} href={speaker.social_links.website} />
+              <SocialBtn
+                icon={Linkedin}
+                href={speaker.social_links?.linkedin}
+              />
+              <SocialBtn icon={Twitter} href={speaker.social_links?.twitter} />
+              <SocialBtn icon={Globe} href={speaker.social_links?.website} />
             </div>
           </div>
 
@@ -192,9 +218,12 @@ const AgentCard = ({ speaker, idx }) => {
 
               {/* Stats Strip */}
               <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300 border-t border-white/10 pt-3 mt-1">
-                <StatItem label="TALKS" value={speaker.stats.talks} />
-                <StatItem label="MERIT" value={`+${speaker.stats.merit}`} />
-                <StatItem label="RATING" value={speaker.stats.rating} />
+                <StatItem label="TALKS" value={speaker.stats?.talks || 0} />
+                <StatItem
+                  label="MERIT"
+                  value={`+${speaker.stats?.merit || 0}`}
+                />
+                <StatItem label="RATING" value={speaker.stats?.rating || 0} />
               </div>
             </div>
           </div>

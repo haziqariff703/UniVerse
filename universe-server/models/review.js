@@ -20,6 +20,11 @@ const reviewSchema = new mongoose.Schema({
     min: 1, 
     max: 5 
   },
+  speaker_rating: { 
+    type: Number, 
+    min: 1, 
+    max: 10 
+  },
   // Detailed Atmos Metrics
   value: { type: Number, min: 1, max: 10, default: 5 },   // Merit/Career Value
   energy: { type: Number, min: 1, max: 10, default: 5 },  // Vibe/Hype

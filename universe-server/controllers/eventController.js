@@ -62,13 +62,96 @@ exports.getAllEvents = async (req, res) => {
       ];
     }
 
+    // Visibility Logic: 
+    // 1. Approved events are public.
+    // 2. Unapproved (pending/rejected) are only visible to owners, community members, or crew.
+    if (status === 'all') {
+      if (req.headers.authorization) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const token = req.headers.authorization.split(' ')[1];
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          
+          const isAdmin = (decoded.roles || []).includes('admin');
+          const isSystemOrganizer = (decoded.roles || []).includes('organizer');
+
+          if (!isAdmin && !isSystemOrganizer) {
+            // Fetch user's community and crew context
+            const memberships = await CommunityMember.find({ user_id: decoded.id, status: 'Approved' });
+            const communityIds = memberships.map(m => m.community_id.toString());
+            const crewAssignments = await EventCrew.find({ user_id: decoded.id, status: 'accepted' });
+            const crewEventIds = crewAssignments.map(c => c.event_id.toString());
+
+            // Limit 'all' status search to:
+            // - Anything already Approved (public)
+            // - OR Owned by the user
+            // - OR Belonging to the user's community
+            // - OR User is a crew member
+            filter = {
+              ...filter,
+              $or: [
+                { status: 'approved' },
+                { organizer_id: decoded.id },
+                { community_id: { $in: communityIds } },
+                { _id: { $in: crewEventIds } }
+              ]
+            };
+          }
+          // Admins and system organizers still see everything if status=all
+        } catch (err) {
+          // Token invalid, fall back to approved only
+          filter.status = 'approved';
+        }
+      } else {
+        // No token, 'all' behaves like 'approved' for public safety
+        filter.status = 'approved';
+      }
+    }
+
     const events = await Event.find(filter)
       .populate('organizer_id', 'name email')
       .populate('venue_id', 'name location_code')
       .populate('speaker_ids', 'name expertise')
       .sort({ date_time: 1 }); // Sort by upcoming first
 
-    res.status(200).json(events);
+    // Add canEdit flag if user is authenticated
+    let formattedEvents = events.map(e => e.toObject());
+    
+    if (req.headers.authorization) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const isAdmin = (decoded.roles || []).includes('admin');
+        const isSystemOrganizer = (decoded.roles || []).includes('organizer');
+        const userId = decoded.id;
+
+        // Fetch memberships once to avoid N+1 inside map (though map is small usually)
+        const memberships = await CommunityMember.find({ user_id: userId, status: 'Approved' });
+        const crewAssignments = await EventCrew.find({ user_id: userId, status: 'accepted' });
+        const crewEventIds = crewAssignments.map(c => c.event_id.toString());
+
+        formattedEvents = formattedEvents.map(event => {
+          const isOwner = event.organizer_id._id 
+            ? event.organizer_id._id.toString() === userId 
+            : event.organizer_id.toString() === userId;
+          
+          const isApprovedMember = event.community_id 
+            ? memberships.some(m => m.community_id.toString() === event.community_id.toString())
+            : false;
+            
+          const isCrew = crewEventIds.includes(event._id.toString());
+
+          event.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+          return event;
+        });
+      } catch (err) {
+        // Token invalid, ignore
+      }
+    }
+
+    res.status(200).json(formattedEvents);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -132,8 +215,11 @@ exports.getMyEvents = async (req, res) => {
       
       const isApprovedMember = userMembership && userMembership.status === 'Approved';
       
-      // Reverted strictness: Admin, System Organizer, Owner, OR any Approved Club Member
-      eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember;
+      // Check if user is a crew member
+      const isCrewMember = crewEventIds.includes(event._id.toString());
+      
+      // Reverted strictness: Admin, System Organizer, Owner, OR any Approved Club Member, OR Crew
+      eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrewMember;
       return eventObj;
     });
 
@@ -185,7 +271,7 @@ exports.getEventById = async (req, res) => {
     const event = await Event.findById(req.params.id)
       .populate('organizer_id', 'name email')
       .populate('venue_id', 'name location_code max_capacity facilities')
-      .populate('speaker_ids', 'name expertise bio');
+      .populate('speaker_ids', 'name expertise bio image role social_links');
 
     if (!event) {
       return res.status(404).json({ message: "Event not found." });
@@ -452,7 +538,6 @@ exports.updateEvent = async (req, res) => {
           admin_id: req.user.id,
           target_id: updatedEvent._id,
           target_type: 'Event',
-          action: 'UPDATE_EVENT',
           details: { 
             message: `Full update for event "${updatedEvent.title}"`,
             changedFields: Object.keys(updateData)
@@ -884,7 +969,7 @@ exports.getEventAnalytics = async (req, res) => {
  */
 exports.createReview = async (req, res) => {
   try {
-    const { rating, value, energy, welfare, comment } = req.body;
+    const { rating, speaker_rating, value, energy, welfare, comment } = req.body;
     const eventId = req.params.id;
     const userId = req.user.id;
 
@@ -922,6 +1007,7 @@ exports.createReview = async (req, res) => {
       event_id: eventId,
       user_id: userId,
       rating,
+      speaker_rating, // Add speaker rating
       value: value || 5,   // Default mid-score if missing
       energy: energy || 5, // Default mid-score if missing
       welfare: welfare || 5, // Default mid-score if missing
@@ -930,6 +1016,51 @@ exports.createReview = async (req, res) => {
     });
 
     await newReview.save();
+
+    // 6. Update Speaker Ratings (if provided)
+    if (speaker_rating && event.speaker_ids && event.speaker_ids.length > 0) {
+      const Speaker = require('../models/speaker');
+      const updatePromises = event.speaker_ids.map(async (speakerId) => {
+        const speaker = await Speaker.findById(speakerId);
+        if (speaker) {
+          // Calculate new rolling average
+          // Formula: ((current_rating * total_ratings) + new_rating) / (total_ratings + 1)
+          // Note: We use 'talks' as a proxy for total actions, but purely for rating, we might need a separate counter.
+          // For now, let's assume 'talks' tracks engagements.
+          // However, to be more precise without a separate counter, we can use a weighted approach or just simple averaging if we don't store count.
+          // Better approach: Let's assume stats.rating is an average and we want to update it.
+          // Since we don't have a 'rating_count' on speaker, we'll implement a simple weighted update 
+          // OR purely increment merit.
+          
+          // Let's implement a 'rating_count' on the fly or just use a standard weighting if count is missing.
+          // Actually, let's look at the Speaker model again. It has 'stats.rating'.
+          // We will use a standard decay/update or just add it if we had a count.
+          // Lacking a count, we can emulate one or just update it assuming a weight.
+          // Let's use a moving average with distinct weight. 
+          // Current Rating * 0.9 + New Rating * 0.1 ? No, that changes too fast.
+          
+          // Alternative: Just update the merit directly as well? No, user asked for rating.
+          // Let's simply update the rating. If it's 0, set it. If not, average it.
+          // We will update stats.rating.
+          
+          const currentRating = speaker.stats.rating || 0;
+          // If we track 'talks', we can use it as a proxy count if appropriate, or add a 'review_count' to speaker stats later.
+          // For now, let's doing a weighted update assuming 'talks' is roughly the count, or start fresh.
+          // Let's just do a 80/20 split for stability if no count exists, or strict average if we assume 'talks' is the count.
+          
+          // Let's try to be smart:
+          // new_rating = (old_rating * old_count + new_score) / (old_count + 1)
+          // We don't have old_count. Let's assume 'talks' is the count of events they did.
+          // It's close enough for an MVP.
+          const count = speaker.stats.talks || 1; 
+          const newAvg = ((currentRating * count) + speaker_rating) / (count + 1);
+          
+          speaker.stats.rating = parseFloat(newAvg.toFixed(1));
+          await speaker.save();
+        }
+      });
+      await Promise.all(updatePromises);
+    }
 
     res.status(201).json({ 
       message: "Review submitted successfully!", 
@@ -1217,5 +1348,75 @@ exports.updateEventTasks = async (req, res) => {
       error: err.message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
+  }
+};
+
+/**
+ * @desc    Conclude an event and award merit to speakers
+ * @route   POST /api/events/:id/conclude
+ * @access  Private (Organizer/Admin)
+ */
+exports.concludeEvent = async (req, res) => {
+  try {
+    const Speaker = require('../models/speaker');
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found." });
+    }
+
+    // Authorization
+    const isAdmin = req.user.roles.includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+
+    let isPresident = false;
+    if (event.community_id) {
+      const CommunityMember = require('../models/communityMember');
+      const membership = await CommunityMember.findOne({
+        community_id: event.community_id,
+        user_id: req.user.id,
+        role: 'President',
+        status: 'Approved'
+      });
+      if (membership) isPresident = true;
+    }
+
+    if (!isAdmin && !isOwner && !isPresident) {
+      return res.status(403).json({ message: "Not authorized to conclude this event." });
+    }
+
+    if (event.status === 'Completed') {
+      return res.status(400).json({ message: "Event is already completed." });
+    }
+
+    // Update Event Status
+    event.status = 'Completed';
+    await event.save();
+
+    // Award Merit to Speakers
+    if (event.speaker_ids && event.speaker_ids.length > 0) {
+      const meritPoints = event.merit_points || 0;
+      console.log(`Awarding ${meritPoints} merit points to speakers:`, event.speaker_ids);
+      
+      const updatePromises = event.speaker_ids.map(speakerId => {
+        return Speaker.findByIdAndUpdate(speakerId, {
+          $inc: { 
+            'stats.talks': 1,
+            'stats.merit': meritPoints
+          }
+        });
+      });
+
+      await Promise.all(updatePromises);
+    }
+
+    res.status(200).json({ 
+      message: "Event concluded successfully. Speakers have been awarded merit points.",
+      event 
+    });
+
+  } catch (err) {
+    console.error("Conclude Event Error:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };

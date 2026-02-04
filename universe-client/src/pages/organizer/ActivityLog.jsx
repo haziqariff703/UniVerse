@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 const CircularProgress = ({ value, color, size = 60, strokeWidth = 5 }) => {
   const radius = (size - strokeWidth) / 2;
@@ -286,7 +286,7 @@ const ActivityLog = () => {
             <Database size={24} />
           </div>
           <div>
-            <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1 flex items-center gap-3">
+            <h1 className="text-3xl font-clash font-bold text-white mb-1 flex items-center gap-3">
               Audit Log
               {eventIdFilter && (
                 <span className="text-xs px-2 py-1 rounded border border-violet-500/30 bg-violet-500/10 text-violet-400 uppercase tracking-widest font-bold">

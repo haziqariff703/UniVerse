@@ -124,7 +124,7 @@ const Finance = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
+          <h1 className="text-3xl font-clash font-bold text-white mb-1">
             Finance & Revenue
           </h1>
           <p className="text-white/40 text-sm">

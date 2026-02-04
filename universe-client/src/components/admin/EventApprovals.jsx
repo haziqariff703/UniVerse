@@ -36,7 +36,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 /**
  * EventApprovals "Command Center"
@@ -143,8 +143,7 @@ const EventApprovals = ({ onBack }) => {
       setRejectingEventId(null);
       toast.success("Event rejected successfully");
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message || "Failed to reject event");
     } finally {
       setProcessingId(null);
     }

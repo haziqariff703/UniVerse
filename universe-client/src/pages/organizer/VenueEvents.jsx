@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -22,11 +22,10 @@ import {
   Layers,
   Activity,
   User as UserIcon,
-  ChevronLeft,
-  ChevronRight,
   Monitor,
 } from "lucide-react";
 import DecryptedText from "@/components/ui/DecryptedText";
+import { getVenueStatus } from "@/lib/venueUtils";
 
 const VenueEvents = () => {
   const { id } = useParams();
@@ -35,6 +34,9 @@ const VenueEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const venueStatus = venue
+    ? getVenueStatus(venue.accessHours || "08:00 - 22:00")
+    : null;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,6 +125,17 @@ const VenueEvents = () => {
                 >
                   {venue.type || "Other"}
                 </Badge>
+                {venueStatus && (
+                  <Badge
+                    className={`text-[10px] uppercase tracking-widest ${
+                      venueStatus.isOpen
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                        : "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                    }`}
+                  >
+                    {venueStatus.status}
+                  </Badge>
+                )}
                 {venue.occupancyStatus && (
                   <Badge
                     className={`text-[10px] uppercase tracking-widest ${
@@ -137,7 +150,7 @@ const VenueEvents = () => {
                   </Badge>
                 )}
               </div>
-              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white m-0">
+              <h1 className="text-4xl lg:text-5xl font-clash font-bold tracking-tight text-white m-0">
                 <DecryptedText text={venue.name} speed={80} sequential={true} />
               </h1>
               <p className="text-slate-400 text-lg max-w-2xl">
@@ -280,105 +293,94 @@ const VenueEvents = () => {
         {/* High Density Registry Items */}
         <div className="flex flex-col gap-3">
           {filteredEvents.map((event) => (
-            <Card
+            <div
               key={event._id}
-              className="bg-zinc-950 border-white/10 hover:border-white/20 transition-all group overflow-hidden"
+              className="bg-zinc-950 border-white/10 hover:border-white/20 transition-all group overflow-hidden p-4 flex flex-col md:flex-row items-center gap-6"
             >
-              <Link
-                to={`/organizer/event/${event._id}/dashboard`}
-                className="p-4 flex flex-col md:flex-row items-center gap-6"
-              >
-                {/* Thumbnail */}
-                <div className="w-full md:w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 grayscale group-hover:grayscale-0 transition-all duration-700">
-                  <img
-                    src={
-                      event.image ||
-                      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=400"
-                    }
-                    className="w-full h-full object-cover"
-                    alt={event.title}
-                  />
-                </div>
+              {/* Thumbnail */}
+              <div className="w-full md:w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 grayscale group-hover:grayscale-0 transition-all duration-700">
+                <img
+                  src={
+                    event.image ||
+                    "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=400"
+                  }
+                  className="w-full h-full object-cover"
+                  alt={event.title}
+                />
+              </div>
 
-                {/* Information Cluster */}
-                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] font-bold uppercase tracking-widest border-white/20 text-white bg-white/5 h-6 px-2"
-                    >
-                      {event.tags?.[0] || "General"}
-                    </Badge>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      SID: {event._id.slice(-8).toUpperCase()}
+              {/* Information Cluster */}
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2.5">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-bold uppercase tracking-widest border-white/20 text-white bg-white/5 h-6 px-2"
+                  >
+                    {event.tags?.[0] || "General"}
+                  </Badge>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    SID: {event._id.slice(-8).toUpperCase()}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white group-hover:text-violet-400 transition-colors truncate">
+                  {event.title}
+                </h3>
+              </div>
+
+              {/* Technical Overview Cards */}
+              <div className="flex items-center gap-12 text-slate-300 pr-6">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
+                    Scheduled
+                  </span>
+                  <div className="flex items-center gap-2 text-white">
+                    <Calendar size={16} className="text-violet-500" />
+                    <span className="text-sm font-bold">
+                      {new Date(event.date_time).toLocaleDateString()}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-violet-400 transition-colors truncate">
-                    {event.title}
-                  </h3>
                 </div>
-
-                {/* Technical Overview Cards */}
-                <div className="flex items-center gap-12 text-slate-300 pr-6">
-                  <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
+                    Lead
+                  </span>
+                  <div className="flex items-center gap-2 text-white">
+                    <UserIcon size={16} className="text-violet-500" />
+                    <span className="text-sm font-bold">
+                      {event.organizer_id?.name?.split(" ")[0] || "Staff"}
+                    </span>
+                  </div>
+                </div>
+                <div className="hidden lg:flex flex-col w-28">
+                  <div className="flex justify-between items-center mb-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
-                      Scheduled
+                      Attendance
                     </span>
-                    <div className="flex items-center gap-2 text-white">
-                      <Calendar size={16} className="text-violet-500" />
-                      <span className="text-sm font-bold">
-                        {new Date(event.date_time).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
-                      Lead
+                    <span className="text-[11px] font-bold text-white">
+                      {Math.round(
+                        (event.current_attendees / event.capacity) * 100,
+                      )}
+                      %
                     </span>
-                    <div className="flex items-center gap-2 text-white">
-                      <UserIcon size={16} className="text-violet-500" />
-                      <span className="text-sm font-bold">
-                        {event.organizer_id?.name?.split(" ")[0] || "Staff"}
-                      </span>
-                    </div>
                   </div>
-                  <div className="hidden lg:flex flex-col w-28">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
-                        Attendance
-                      </span>
-                      <span className="text-[11px] font-bold text-white">
-                        {Math.round(
-                          (event.current_attendees / event.capacity) * 100,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden shadow-inner">
-                      <div
-                        className="h-full bg-violet-500 transition-all duration-500 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-                        style={{
-                          width: `${Math.min(100, (event.current_attendees / event.capacity) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className="h-full bg-violet-500 transition-all duration-500 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
+                      style={{
+                        width: `${Math.min(100, (event.current_attendees / event.capacity) * 100)}%`,
+                      }}
+                    />
                   </div>
                 </div>
-
-                {/* Nav Action */}
-                <div className="ml-auto flex-shrink-0 flex items-center justify-center w-9 h-9 border border-white/5 bg-white/5 group-hover:bg-violet-500 group-hover:border-violet-400 rounded-full transition-all shadow-sm">
-                  <ChevronRight
-                    size={16}
-                    className="text-slate-500 group-hover:text-white transition-transform group-hover:translate-x-0.5"
-                  />
-                </div>
-              </Link>
-            </Card>
+              </div>
+            </div>
           ))}
 
           {filteredEvents.length === 0 && (
             <div className="py-24 text-center border border-dashed border-white/10 rounded-2xl bg-zinc-950/50">
-              <Info size={32} className="mx-auto text-slate-700 mb-4" />
+              <span className="text-slate-700 mb-4 inline-block">
+                <Info size={32} />
+              </span>
               <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">
                 No sessions found in this cluster
               </p>

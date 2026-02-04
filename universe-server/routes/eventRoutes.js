@@ -22,6 +22,7 @@ router.get('/', eventController.getAllEvents);
 router.get('/:id/analytics', auth, authorize('admin', 'organizer'), eventController.getEventAnalytics);
 router.put('/:id/schedule', auth, eventController.updateEventSchedule);
 router.put('/:id/tasks', auth, eventController.updateEventTasks);
+router.post('/:id/conclude', auth, authorize('admin', 'organizer'), eventController.concludeEvent);
 router.post('/:id/reviews', auth, upload.array('photos', 3), eventController.createReview);
 router.get('/:id', eventController.getEventById);
 

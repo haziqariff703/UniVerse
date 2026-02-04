@@ -18,7 +18,12 @@ import {
   Upload,
   RefreshCw,
   Clock,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +40,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 const OrganizerSpeakers = () => {
@@ -42,6 +49,8 @@ const OrganizerSpeakers = () => {
   const [speakers, setSpeakers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSpeaker, setSelectedSpeaker] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +59,7 @@ const OrganizerSpeakers = () => {
     linkedin: "",
     twitter: "",
     proposal: null,
+    image: null,
   });
 
   useEffect(() => {
@@ -59,11 +69,18 @@ const OrganizerSpeakers = () => {
   const fetchSpeakers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/speakers");
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/speakers/organizer",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await response.json();
       setSpeakers(data.speakers || []);
     } catch (err) {
       console.error("Failed to fetch speakers:", err);
+      toast.error("Failed to load speakers");
     } finally {
       setLoading(false);
     }
@@ -74,8 +91,49 @@ const OrganizerSpeakers = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, proposal: e.target.files[0] }));
+  const handleFileChange = (e, field) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.files[0] }));
+  };
+
+  const handleEdit = (speaker) => {
+    setSelectedSpeaker(speaker);
+    setFormData({
+      name: speaker.name,
+      expertise: speaker.expertise || "",
+      bio: speaker.bio || "",
+      linkedin: speaker.social_links?.linkedin || "",
+      twitter: speaker.social_links?.twitter || "",
+      proposal: null,
+      image: null,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (speakerId) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this speaker? This action cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/speakers/${speakerId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!response.ok) throw new Error("Failed to delete speaker");
+
+      toast.success("Speaker Deleted");
+      fetchSpeakers(); // Refresh list
+    } catch (err) {
+      toast.error("Deletion Failed", { description: err.message });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -97,20 +155,40 @@ const OrganizerSpeakers = () => {
       if (formData.proposal) {
         data.append("proposal", formData.proposal);
       }
+      if (formData.image) {
+        data.append("image", formData.image);
+      }
 
-      const response = await fetch(
-        "http://localhost:5000/api/speakers/propose",
+      // Determine URL and Method based on mode
+      const url = selectedSpeaker
+        ? `http://localhost:5000/api/speakers/${selectedSpeaker._id}`
+        : "http://localhost:5000/api/speakers/propose";
+
+      const method = selectedSpeaker ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      });
+
+      if (!response.ok)
+        throw new Error(
+          selectedSpeaker
+            ? "Failed to update speaker"
+            : "Failed to submit proposal",
+        );
+
+      toast.success(
+        selectedSpeaker ? "Speaker Updated" : "Proposal Submitted",
         {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: data,
+          description: selectedSpeaker
+            ? "Speaker details updated successfully."
+            : "Speaker proposal submitted! Awaiting verification.",
         },
       );
-
-      if (!response.ok) throw new Error("Failed to submit proposal");
-
-      alert("Speaker proposal submitted! Awaiting admin verification.");
       setIsDialogOpen(false);
+      setSelectedSpeaker(null); // Reset selection
       setFormData({
         name: "",
         expertise: "",
@@ -118,9 +196,13 @@ const OrganizerSpeakers = () => {
         linkedin: "",
         twitter: "",
         proposal: null,
+        image: null,
       });
+      fetchSpeakers(); // Refresh list
     } catch (err) {
-      alert(err.message);
+      toast.error("Operation Failed", {
+        description: err.message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -138,7 +220,7 @@ const OrganizerSpeakers = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
+            <h1 className="text-3xl font-clash font-bold text-white mb-1">
               Speaker Directory
             </h1>
             <p className="text-white/40 text-sm">
@@ -163,7 +245,21 @@ const OrganizerSpeakers = () => {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-violet-600 hover:bg-violet-700 text-white gap-2 h-10">
+              <Button
+                onClick={() => {
+                  setSelectedSpeaker(null); // Reset to Add Mode
+                  setFormData({
+                    name: "",
+                    expertise: "",
+                    bio: "",
+                    linkedin: "",
+                    twitter: "",
+                    proposal: null,
+                    image: null,
+                  });
+                }}
+                className="bg-violet-600 hover:bg-violet-700 text-white gap-2 h-10"
+              >
                 <Plus size={18} />
                 <span className="hidden sm:inline">Add Speaker</span>
               </Button>
@@ -171,10 +267,14 @@ const OrganizerSpeakers = () => {
             <DialogContent className="bg-[#0f0f0f] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 text-transparent">
-                  Board New Talent
+                  {selectedSpeaker
+                    ? "Edit Speaker Details"
+                    : "Board New Talent"}
                 </DialogTitle>
                 <p className="text-white/40 text-sm">
-                  Propose a new speaker for admin verification.
+                  {selectedSpeaker
+                    ? "Update the speaker's verify profile."
+                    : "Propose a new speaker for verification."}
                 </p>
               </DialogHeader>
 
@@ -204,6 +304,37 @@ const OrganizerSpeakers = () => {
                       placeholder="e.g. Quantum Computing"
                       className="bg-white/5 border-white/10"
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-white/60">
+                    Speaker Image
+                  </Label>
+                  <div className="relative group cursor-pointer">
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "image")}
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      accept="image/*"
+                    />
+                    <div className="p-4 border border-dashed border-white/10 bg-white/5 rounded-xl flex items-center justify-center gap-3 group-hover:bg-white/10 transition-all">
+                      <div className="p-2 rounded-lg bg-violet-500/10 text-violet-400">
+                        <ImageIcon size={18} />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-xs font-bold text-white">
+                          {formData.image
+                            ? formData.image.name
+                            : selectedSpeaker && selectedSpeaker.image
+                              ? "Change Photo (Current Set)"
+                              : "Upload Photo"}
+                        </p>
+                        <p className="text-[10px] text-white/40">
+                          JPG/PNG, max 2MB
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -254,7 +385,7 @@ const OrganizerSpeakers = () => {
                   <div className="relative group cursor-pointer">
                     <input
                       type="file"
-                      onChange={handleFileChange}
+                      onChange={(e) => handleFileChange(e, "proposal")}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       accept=".pdf,.doc,.docx"
                     />
@@ -266,7 +397,9 @@ const OrganizerSpeakers = () => {
                         <p className="text-sm font-bold text-white">
                           {formData.proposal
                             ? formData.proposal.name
-                            : "Select Document"}
+                            : selectedSpeaker && selectedSpeaker.proposal_url
+                              ? "Change Document (Current Set)"
+                              : "Select Document"}
                         </p>
                         <p className="text-xs text-white/40">
                           PDF or DOC (max 10MB)
@@ -284,8 +417,10 @@ const OrganizerSpeakers = () => {
                   {submitting ? (
                     <div className="flex items-center gap-2">
                       <RefreshCw className="animate-spin" size={18} />
-                      Processing Proposal...
+                      Processing...
                     </div>
+                  ) : selectedSpeaker ? (
+                    "Update Speaker"
                   ) : (
                     "Submit for Verification"
                   )}
@@ -314,12 +449,67 @@ const OrganizerSpeakers = () => {
               key={speaker._id}
               className="group bg-[#050505] border border-white/10 rounded-3xl p-6 transition-all relative overflow-hidden flex flex-col"
             >
-              <div className="flex flex-col items-center text-center mb-6">
+              <div className="absolute top-4 right-4 z-20">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                    >
+                      <MoreHorizontal size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="bg-[#1a1a1a] border-white/10 text-white w-40"
+                  >
+                    <DropdownMenuItem
+                      className="focus:bg-white/5 focus:text-white cursor-pointer gap-2"
+                      onClick={() => {
+                        setSelectedSpeaker(speaker);
+                        setIsViewModalOpen(true);
+                      }}
+                    >
+                      <ExternalLink size={14} />
+                      <span className="text-xs font-medium">View Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="focus:bg-white/5 focus:text-white cursor-pointer gap-2"
+                      onClick={() => handleEdit(speaker)}
+                    >
+                      <Edit size={14} />
+                      <span className="text-xs font-medium">Edit Details</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="focus:bg-red-500/10 focus:text-red-400 text-red-400 cursor-pointer gap-2"
+                      onClick={() => handleDelete(speaker._id)}
+                    >
+                      <Trash2 size={14} />
+                      <span className="text-xs font-medium">Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="flex flex-col items-center text-center mb-6 pt-2">
                 <div className="relative mb-4">
-                  <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white/5 group-hover:border-violet-500/50 transition-colors bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center">
-                    <span className="text-2xl font-black text-starlight uppercase">
-                      {speaker.name?.substring(0, 2) || "S"}
-                    </span>
+                  <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white/5 group-hover:border-violet-500/50 transition-colors bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center relative">
+                    {speaker.image ? (
+                      <img
+                        src={
+                          speaker.image.startsWith("http")
+                            ? speaker.image
+                            : `http://localhost:5000/${speaker.image}`
+                        }
+                        alt={speaker.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-black text-starlight uppercase">
+                        {speaker.name?.substring(0, 2) || "S"}
+                      </span>
+                    )}
                   </div>
                   <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-4 border-[#050505]">
                     <Award size={12} />
@@ -364,9 +554,13 @@ const OrganizerSpeakers = () => {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => {
+                    setSelectedSpeaker(speaker);
+                    setIsViewModalOpen(true);
+                  }}
                   className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 gap-2"
                 >
-                  Book Speaker
+                  View Speaker
                   <ExternalLink size={12} />
                 </Button>
               </div>
@@ -386,6 +580,105 @@ const OrganizerSpeakers = () => {
           </div>
         )}
       </div>
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="bg-[#0f0f0f] border-white/10 text-white max-w-2xl">
+          {selectedSpeaker && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start gap-6">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/10 flex-shrink-0">
+                    {selectedSpeaker.image ? (
+                      <img
+                        src={
+                          selectedSpeaker.image.startsWith("http")
+                            ? selectedSpeaker.image
+                            : `http://localhost:5000/${selectedSpeaker.image}`
+                        }
+                        alt={selectedSpeaker.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                        <span className="text-2xl font-black text-white/20">
+                          {selectedSpeaker.name?.substring(0, 2) || "S"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <DialogTitle className="text-3xl font-clash font-bold text-white mb-2">
+                      {selectedSpeaker.name}
+                    </DialogTitle>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="px-3 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 text-xs font-bold uppercase tracking-wider">
+                        {selectedSpeaker.expertise}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-white/5 text-white/60 border border-white/10 text-xs font-bold uppercase tracking-wider">
+                        {selectedSpeaker.stats?.rating || "5.0"} Rating
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-4">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-white/40">
+                    About
+                  </h4>
+                  <p className="text-white/80 leading-relaxed text-sm">
+                    {selectedSpeaker.bio ||
+                      selectedSpeaker.about ||
+                      "No biography available."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">
+                      Talks Delivered
+                    </h4>
+                    <p className="text-2xl font-bold text-white">
+                      {selectedSpeaker.stats?.talks || 0}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">
+                      Merit Points
+                    </h4>
+                    <p className="text-2xl font-bold text-white">
+                      {selectedSpeaker.stats?.merit || 0}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedSpeaker.social_links && (
+                  <div className="flex gap-4 pt-4 border-t border-white/10">
+                    {selectedSpeaker.social_links.linkedin && (
+                      <a
+                        href={selectedSpeaker.social_links.linkedin}
+                        target="_blank"
+                        className="flex items-center gap-2 text-sm text-white/60 hover:text-blue-400 transition-colors"
+                      >
+                        <Linkedin size={16} /> LinkedIn
+                      </a>
+                    )}
+                    {selectedSpeaker.social_links.twitter && (
+                      <a
+                        href={selectedSpeaker.social_links.twitter}
+                        target="_blank"
+                        className="flex items-center gap-2 text-sm text-white/60 hover:text-sky-400 transition-colors"
+                      >
+                        <Twitter size={16} /> Twitter
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { School, UserCheck, FileUp, CheckCircle, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Stepper, { Step } from "@/components/Stepper";
 
@@ -62,11 +63,17 @@ const ClubProposalForm = () => {
         setIsSubmitted(true);
       } else {
         const error = await res.json();
-        alert(error.message || "Failed to submit proposal");
+        toast.error("Submission Failed", {
+          description:
+            error.message ||
+            "Failed to submit proposal. Please check your data.",
+        });
       }
     } catch (err) {
       console.error("Submission error:", err);
-      alert("Network error. Please try again.");
+      toast.error("Network Error", {
+        description: "Could not reach the server to submit your proposal.",
+      });
     }
   };
 

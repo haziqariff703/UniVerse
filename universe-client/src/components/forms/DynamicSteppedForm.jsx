@@ -18,7 +18,6 @@ const DynamicSteppedForm = ({
   submitLabel = "Publish Event",
 }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [formData, setFormData] = useState(initialData);
   const computedSchema =
     typeof schema === "function" ? schema(formData) : schema;
@@ -44,12 +43,10 @@ const DynamicSteppedForm = ({
 
   const submitForm = async () => {
     setLoading(true);
-    setError(null);
     try {
       await onSubmit(formData);
     } catch (err) {
       console.error(err);
-      setError(err.message || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -198,7 +195,7 @@ const DynamicSteppedForm = ({
               />
             )}
             <Flatpickr
-              value={formData[field.name]}
+              value={formData[field.name] || null}
               onChange={([date]) => handleSelectChange(field.name, date)}
               options={{
                 enableTime: true,
@@ -350,13 +347,6 @@ const DynamicSteppedForm = ({
       {/* Header */}
 
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden">
-        {error && (
-          <div className="m-6 p-3 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center gap-3 text-rose-400">
-            <AlertCircle size={18} />
-            <p className="text-xs font-medium">{error}</p>
-          </div>
-        )}
-
         <div className="divide-y divide-zinc-900">
           {computedSchema.steps.map((section, index) => {
             // Skip review step or steps with no fields

@@ -31,6 +31,12 @@ const ATMOS_METRICS = [
     icon: "🍱",
     desc: "Food & Facilities",
   },
+  {
+    id: "speaker_rating",
+    label: "Speaker Impact",
+    icon: "🎤",
+    desc: "Did they inspire you?",
+  },
 ];
 
 const getVibeLabel = (value) => {
@@ -55,7 +61,12 @@ const ReviewModal = ({
   onSubmit,
 }) => {
   // Use event.review if available (backend naming)
-  const [ratings, setRatings] = useState({ value: 5, energy: 5, welfare: 5 });
+  const [ratings, setRatings] = useState({
+    value: 5,
+    energy: 5,
+    welfare: 5,
+    speaker_rating: 5,
+  });
   const [comment, setComment] = useState("");
   const [photos, setPhotos] = useState([]); // Array of preview URLs or server URLs
   const [photoFiles, setPhotoFiles] = useState([]); // Array of actual File objects
@@ -71,6 +82,7 @@ const ReviewModal = ({
           value: reviewData.value || 5,
           energy: reviewData.energy || 5,
           welfare: reviewData.welfare || 5,
+          speaker_rating: reviewData.speaker_rating || 5,
         });
         setComment(reviewData.comment || "");
         // Map server paths to absolute URLs
@@ -80,7 +92,7 @@ const ReviewModal = ({
         setPhotos(serverPhotos);
       } else {
         // Reset for new submission
-        setRatings({ value: 5, energy: 5, welfare: 5 });
+        setRatings({ value: 5, energy: 5, welfare: 5, speaker_rating: 5 });
         setComment("");
         setPhotos([]);
         setPhotoFiles([]);
@@ -101,7 +113,12 @@ const ReviewModal = ({
   const calculateOverall = () => {
     return (
       Math.round(
-        ((ratings.value + ratings.energy + ratings.welfare) / 3) * 10,
+        ((ratings.value +
+          ratings.energy +
+          ratings.welfare +
+          ratings.speaker_rating) /
+          4) *
+          10,
       ) / 10
     );
   };
@@ -115,6 +132,7 @@ const ReviewModal = ({
       if (typeof onSubmit === "function") {
         await onSubmit({
           rating: finalRating,
+          speaker_rating: ratings.speaker_rating,
           value: ratings.value,
           energy: ratings.energy,
           welfare: ratings.welfare,

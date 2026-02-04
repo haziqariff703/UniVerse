@@ -13,6 +13,7 @@ import {
   Eye,
   Bell,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,7 +64,9 @@ const Broadcast = () => {
       setSending(false);
       setSubject("");
       setMessage("");
-      alert("Broadcast sent successfully!");
+      toast.success("Broadcast Sent", {
+        description: "Your message has been dispatched to all attendees.",
+      });
     }, 1500);
   };
 
@@ -73,7 +76,7 @@ const Broadcast = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
+            <h1 className="text-3xl font-clash font-bold text-white mb-1">
               Attendee Broadcast
             </h1>
             <p className="text-white/40 text-sm">

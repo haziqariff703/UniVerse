@@ -90,7 +90,7 @@ const OrganizerVenues = () => {
               Asset Registry
             </Badge>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl font-clash font-bold tracking-tight text-white">
             <DecryptedText
               text="Campus Venues"
               speed={50}

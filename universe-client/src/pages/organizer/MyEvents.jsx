@@ -80,7 +80,7 @@ const MyEvents = () => {
       {/* Header Row */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
         <div>
-          <h1 className="text-3xl font-neuemontreal font-bold text-white mb-1">
+          <h1 className="text-3xl font-clash font-bold text-white mb-1">
             Event Management
           </h1>
           <p className="text-sm font-medium text-white/40">Command Center</p>

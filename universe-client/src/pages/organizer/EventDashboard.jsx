@@ -13,7 +13,9 @@ import {
   Download,
   Share2,
   ArrowRight,
+  Gavel,
 } from "lucide-react";
+import { toast } from "sonner";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import EventTimeline from "@/components/organizer/event-dashboard/EventTimeline";
 import EventTodoList from "@/components/organizer/event-dashboard/EventTodoList";
@@ -126,6 +128,45 @@ const EventDashboard = () => {
     }
   };
 
+  const handleConcludeEvent = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to conclude this event? This will award merit points to all speakers and mark the event as completed. This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/events/${id}/conclude`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Event Concluded", {
+          description: "Merit points have been awarded to all speakers.",
+        });
+        setEvent((prev) => ({ ...prev, status: "Completed" }));
+      } else {
+        toast.error("Failed to Conclude", {
+          description: data.message || "An error occurred.",
+        });
+      }
+    } catch (error) {
+      console.error("Error concluding event:", error);
+      toast.error("Error", { description: "Network error occurred." });
+    }
+  };
+
   const recentRegistrations = registrations.slice(0, 10); // Only show top 10
 
   if (loading) {
@@ -159,6 +200,20 @@ const EventDashboard = () => {
             >
               Edit Event
             </Link>
+          )}
+          {(event?.canEdit || user?.role === "admin") &&
+            event?.status !== "Completed" && (
+              <button
+                onClick={handleConcludeEvent}
+                className="flex items-center gap-2 px-4 py-2 border border-violet-500/30 bg-violet-500/10 text-violet-400 rounded-full text-sm font-bold hover:bg-violet-500/20 transition-colors"
+              >
+                <Gavel size={16} /> Conclude Event
+              </button>
+            )}
+          {event?.status === "Completed" && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-sm font-bold">
+              <CheckCircle2 size={16} /> Event Concluded
+            </div>
           )}
           <Link
             to={`/organizer/event/${id}/scan`}
@@ -200,7 +255,7 @@ const EventDashboard = () => {
                   })}
                 </span>
               </div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">
+              <h1 className="text-xl md:text-2xl font-clash font-bold tracking-tight text-white leading-none">
                 {event.title}
               </h1>
               <div className="flex items-center gap-2.5 text-gray-400 text-xs py-0.5">

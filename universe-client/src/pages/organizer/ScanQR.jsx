@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { QrCode, CheckCircle, XCircle, Search, Camera } from "lucide-react";
+import { XCircle, Search, Camera, CheckCircle } from "lucide-react";
 import SpotlightCard from "@/components/ui/SpotlightCard";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const ScanQR = () => {
   const [manualCode, setManualCode] = useState("");
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [useCamera, setUseCamera] = useState(false);
 
   const handleScan = async (result) => {
@@ -40,6 +40,9 @@ const ScanQR = () => {
           message: data.message,
           user: data.user,
         });
+        toast.success("Check-in Successful", {
+          description: data.message,
+        });
         // Briefly disable camera to show result
         setUseCamera(false);
       } else {
@@ -47,10 +50,15 @@ const ScanQR = () => {
           success: false,
           message: data.message,
         });
+        toast.error("Check-in Failed", {
+          description: data.message,
+        });
       }
     } catch (err) {
       console.error("Check-in error:", err);
-      setError("Network error occurred.");
+      toast.error("Check-in Error", {
+        description: "Network error occurred. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -61,7 +69,6 @@ const ScanQR = () => {
     if (!manualCode) return;
 
     setLoading(true);
-    setError(null);
     setScanResult(null);
 
     try {
@@ -86,16 +93,24 @@ const ScanQR = () => {
           message: data.message,
           user: data.user,
         });
+        toast.success("Manual Entry Successful", {
+          description: data.message,
+        });
         setManualCode("");
       } else {
         setScanResult({
           success: false,
           message: data.message,
         });
+        toast.error("Manual Check-in Failed", {
+          description: data.message,
+        });
       }
     } catch (error) {
       console.error("Check-in error:", error);
-      setError("Network error occurred.");
+      toast.error("Check-in Error", {
+        description: "Network error occurred. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -104,20 +119,13 @@ const ScanQR = () => {
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto flex flex-col items-center">
       <div className="w-full text-center space-y-4 mb-10">
-        <h1 className="text-3xl font-bold font-neuemontreal text-white">
+        <h1 className="text-3xl font-clash font-bold text-white">
           Event Check-in
         </h1>
         <p className="text-gray-400">
           Scan attendee QR codes or manually enter the code below.
         </p>
       </div>
-
-      {error && (
-        <div className="w-full mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-3">
-          <XCircle size={18} />
-          {error}
-        </div>
-      )}
 
       <SpotlightCard className="w-full p-8 rounded-[2rem] border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-xl">
         <div className="flex flex-col items-center justify-center min-h-[300px] border-2 border-dashed border-white/10 rounded-2xl bg-white/5 mb-8 overflow-hidden relative">
@@ -134,9 +142,10 @@ const ScanQR = () => {
                   onScan={handleScan}
                   onError={(err) => {
                     console.error(err);
-                    setError(
-                      "Could not access camera. Please check permissions.",
-                    );
+                    toast.error("Scanner Error", {
+                      description:
+                        "Could not access camera. Please check permissions.",
+                    });
                     setUseCamera(false);
                   }}
                   styles={{
