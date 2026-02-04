@@ -65,8 +65,28 @@ const EventDashboard = () => {
         const eventRes = await fetch(`http://localhost:5000/api/events/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (eventRes.status === 403) {
+          toast.error("Access Denied", {
+            description:
+              "You do not have permission to view this event's dashboard.",
+          });
+          window.location.href = "/organizer/my-events";
+          return;
+        }
+
         const eventData = await eventRes.json();
-        if (eventRes.ok) setEvent(eventData);
+        if (eventRes.ok) {
+          if (eventData.canEdit === false && user?.role !== "admin") {
+            toast.error("Access Denied", {
+              description:
+                "You do not have permission to view this event's dashboard.",
+            });
+            window.location.href = "/organizer/my-events";
+            return;
+          }
+          setEvent(eventData);
+        }
 
         // Fetch Registrations
         const regRes = await fetch(
@@ -83,7 +103,7 @@ const EventDashboard = () => {
     };
 
     fetchDashboardData();
-  }, [id]);
+  }, [id, user?.role]);
 
   const updateSchedule = async (newSchedule) => {
     try {

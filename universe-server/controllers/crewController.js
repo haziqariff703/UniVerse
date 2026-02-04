@@ -11,13 +11,38 @@ const CommunityMember = require('../models/communityMember');
 exports.getCrewByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { type } = req.query; // optional filter: 'talent' or 'crew'
-
+    const { type } = req.query;
     let filter = { event_id: eventId };
     if (type) filter.type = type;
 
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // Authorization
+    const isAdmin = (req.user.roles || []).includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    
+    let isLeader = false;
+    if (event.community_id) {
+        const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: req.user.id,
+            status: 'Approved'
+        });
+        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+            isLeader = true;
+        }
+    }
+
+    const crewAssignment = await EventCrew.findOne({ event_id: eventId, user_id: req.user.id, status: 'accepted' });
+    const isCrew = !!crewAssignment;
+
+    if (!isAdmin && !isOwner && !isLeader && !isCrew) {
+        return res.status(403).json({ message: "Not authorized to view crew for this event" });
+    }
+
     const crew = await EventCrew.find(filter)
-      .populate('user_id', 'name email student_id') // Populate user details
+      .populate('user_id', 'name email student_id')
       .sort({ created_at: -1 });
 
     res.status(200).json(crew);
@@ -36,15 +61,39 @@ exports.updateCrewMember = async (req, res) => {
     const { id } = req.params;
     const { role, department } = req.body;
 
-    const member = await EventCrew.findByIdAndUpdate(
-      id,
-      { role, department },
-      { new: true }
-    ).populate('user_id', 'name email');
-
+    const member = await EventCrew.findById(id);
     if (!member) {
       return res.status(404).json({ message: "Crew member not found" });
     }
+
+    const event = await Event.findById(member.event_id);
+    if (!event) return res.status(404).json({ message: "Associated event not found" });
+
+    // Authorization
+    const isAdmin = (req.user.roles || []).includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    
+    let isLeader = false;
+    if (event.community_id) {
+        const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: req.user.id,
+            status: 'Approved'
+        });
+        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+            isLeader = true;
+        }
+    }
+
+    if (!isAdmin && !isOwner && !isLeader) {
+        return res.status(403).json({ message: "Not authorized to update crew" });
+    }
+
+    member.role = role;
+    member.department = department;
+    await member.save();
+    
+    await member.populate('user_id', 'name email');
 
     res.status(200).json(member);
   } catch (err) {
@@ -61,10 +110,29 @@ exports.getEligibleMembers = async (req, res) => {
   try {
     const { eventId } = req.params;
     
-    // Find the event to get its community_id
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Authorization
+    const isAdmin = (req.user.roles || []).includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    
+    let isLeader = false;
+    if (event.community_id) {
+        const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: req.user.id,
+            status: 'Approved'
+        });
+        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+            isLeader = true;
+        }
+    }
+
+    if (!isAdmin && !isOwner && !isLeader) {
+        return res.status(403).json({ message: "Not authorized to view eligible members" });
     }
 
     if (!event.community_id) {
@@ -101,12 +169,30 @@ exports.addCrewMember = async (req, res) => {
   try {
     const { event_id, user_id, temp_name, role, type, department } = req.body;
 
-    // Validation: If assigning a user, verify they are an approved community member
-    if (user_id) {
-      const event = await Event.findById(event_id);
-      if (!event) {
-        return res.status(404).json({ message: "Event not found" });
-      }
+    const event = await Event.findById(event_id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Authorization
+    const isAdmin = (req.user.roles || []).includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    
+    let isLeader = false;
+    if (event.community_id) {
+        const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: req.user.id,
+            status: 'Approved'
+        });
+        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+            isLeader = true;
+        }
+    }
+
+    if (!isAdmin && !isOwner && !isLeader) {
+        return res.status(403).json({ message: "Not authorized to add crew" });
+    }
 
       // Check if user is an approved member of the event's community
       if (event.community_id) {
@@ -128,7 +214,6 @@ exports.addCrewMember = async (req, res) => {
       if (existing) {
         return res.status(400).json({ message: "User already assigned to this event." });
       }
-    }
 
     const newCrew = new EventCrew({
       event_id,
@@ -163,7 +248,34 @@ exports.addCrewMember = async (req, res) => {
  */
 exports.removeCrewMember = async (req, res) => {
   try {
-      // Check auth logic here if strict ownership needed
+    const member = await EventCrew.findById(req.params.id);
+    if (!member) {
+      return res.status(404).json({ message: "Crew member not found" });
+    }
+
+    const event = await Event.findById(member.event_id);
+    if (!event) return res.status(404).json({ message: "Associated event not found" });
+
+    // Authorization
+    const isAdmin = (req.user.roles || []).includes('admin');
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    
+    let isLeader = false;
+    if (event.community_id) {
+        const membership = await CommunityMember.findOne({
+            community_id: event.community_id,
+            user_id: req.user.id,
+            status: 'Approved'
+        });
+        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+            isLeader = true;
+        }
+    }
+
+    if (!isAdmin && !isOwner && !isLeader) {
+        return res.status(403).json({ message: "Not authorized to remove crew" });
+    }
+
     await EventCrew.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Member removed" });
   } catch (err) {

@@ -1,6 +1,27 @@
-# Changelog
+## [Unreleased] - 2026-02-05
 
-All notable changes to this project will be documented in this file.
+### Added
+
+- **Event Completion Logic**: Updated event status logic to correctly reflect an event's completion based on its `end_time`, rather than its `start_time`. This applies to:
+  - Backend filtering in `eventController.js` (for "Past" events).
+  - Admin Dashboard statistics in `adminController.js` (for "Active Events").
+  - Frontend badges in `EventCardCompact.jsx` and `EventRoadmap.jsx`.
+- **Security Validation**: Enforced strict authorization in `getEventById` to prevent unauthorized event data access via ID swapping.
+- **Crew Access**: Expanded `getEventRegistrations` to allow Workforce (Crew) to view guest lists.
+- **Dashboard Guardrails**: Added frontend redirects and 403 handling in `EventDashboard.jsx` to protect sensitive management UI.
+
+## [Unreleased] - 2026-02-04
+
+### Added
+
+- Real-time "In Use" and "Live Vibe" occupancy indicators for venues using actual event data.
+- Schedule-based Heatmap component for venue details showing hourly availability.
+
+### Changed
+
+- Refined Venue Details page background from solid black to a premium dark gradient.
+- Updated `getLiveVenueStatus` logic to consume real-time venue events.
+- Centralized event fetching in `Venues.jsx` to optimize performance.
 
 ## [2026-02-04]
 

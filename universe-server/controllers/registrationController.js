@@ -102,9 +102,8 @@ exports.getEventRegistrations = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
     
-    // Authorization: Owner, Admin, or approved member of the hosting community
     const isOwner = event.organizer_id.toString() === req.user.id;
-    const isAdmin = req.user.roles.includes('admin');
+    const isAdmin = (req.user.roles || []).includes('admin');
     
     let isCommunityMember = false;
     if (event.community_id) {
@@ -117,7 +116,7 @@ exports.getEventRegistrations = async (req, res) => {
       if (membership) isCommunityMember = true;
     }
 
-    if (!isOwner && !isAdmin && !isCommunityMember) {
+    if (!isOwner && !isAdmin && !isCommunityMember && !isCrew) {
       return res.status(403).json({ message: "Not authorized to view these registrations." });
     }
 
@@ -322,9 +321,23 @@ exports.updateStatus = async (req, res) => {
 
     const isOwner = event.organizer_id.toString() === req.user.id;
     const isAdmin = req.user.roles.includes('admin');
-    const isStaff = req.user.roles.includes('staff');
 
-    if (!isOwner && !isAdmin && !isStaff) {
+    // Check if user is a crew member or leader who can update status
+    let isAuthorized = isOwner || isAdmin;
+    
+    if (!isAuthorized && event.community_id) {
+       const CommunityMember = require('../models/communityMember');
+       const membership = await CommunityMember.findOne({
+          community_id: event.community_id,
+          user_id: req.user.id,
+          status: 'Approved'
+       });
+       if (membership && ['President', 'Vice President', 'High Committee', 'Member'].includes(membership.role)) {
+          isAuthorized = true;
+       }
+    }
+
+    if (!isAuthorized) {
       return res.status(403).json({ message: "Not authorized to update this registration." });
     }
 

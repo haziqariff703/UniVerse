@@ -51,7 +51,11 @@ exports.getAllEvents = async (req, res) => {
     if (upcoming === 'true') {
       filter.date_time = { $gte: new Date() };
     } else if (upcoming === 'false') {
-      filter.date_time = { $lt: new Date() };
+      // Past events are those where end_time (or date_time fallback) is in the past
+      filter.$or = [
+        { end_time: { $lt: new Date() } },
+        { end_time: { $exists: false }, date_time: { $lt: new Date() } }
+      ];
     }
 
     // Search filter
@@ -73,9 +77,8 @@ exports.getAllEvents = async (req, res) => {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           
           const isAdmin = (decoded.roles || []).includes('admin');
-          const isSystemOrganizer = (decoded.roles || []).includes('organizer');
 
-          if (!isAdmin && !isSystemOrganizer) {
+          if (!isAdmin) {
             // Fetch user's community and crew context
             const memberships = await CommunityMember.find({ user_id: decoded.id, status: 'Approved' });
             const communityIds = memberships.map(m => m.community_id.toString());
@@ -124,7 +127,6 @@ exports.getAllEvents = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         const isAdmin = (decoded.roles || []).includes('admin');
-        const isSystemOrganizer = (decoded.roles || []).includes('organizer');
         const userId = decoded.id;
 
         // Fetch memberships once to avoid N+1 inside map (though map is small usually)
@@ -143,7 +145,7 @@ exports.getAllEvents = async (req, res) => {
             
           const isCrew = crewEventIds.includes(event._id.toString());
 
-          event.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+          event.canEdit = isAdmin || isOwner || isApprovedMember || isCrew;
           return event;
         });
       } catch (err) {
@@ -200,7 +202,6 @@ exports.getMyEvents = async (req, res) => {
       .sort({ date_time: -1 });
 
     const isAdmin = req.user.roles.includes('admin');
-    const isSystemOrganizer = req.user.roles.includes('organizer');
 
     // Map to plain objects and add canEdit flag
     const formattedEvents = events.map(event => {
@@ -218,8 +219,7 @@ exports.getMyEvents = async (req, res) => {
       // Check if user is a crew member
       const isCrewMember = crewEventIds.includes(event._id.toString());
       
-      // Reverted strictness: Admin, System Organizer, Owner, OR any Approved Club Member, OR Crew
-      eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrewMember;
+      eventObj.canEdit = isAdmin || isOwner || isApprovedMember || isCrewMember;
       return eventObj;
     });
 
@@ -288,7 +288,6 @@ exports.getEventById = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         const isAdmin = (decoded.roles || []).includes('admin');
-        const isSystemOrganizer = (decoded.roles || []).includes('organizer');
         const isOwner = event.organizer_id._id 
           ? event.organizer_id._id.toString() === decoded.id 
           : event.organizer_id.toString() === decoded.id;
@@ -313,9 +312,23 @@ exports.getEventById = async (req, res) => {
         });
         const isCrew = !!crewMember;
 
-        eventObj.canEdit = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+        const canViewSensitive = isAdmin || isOwner || isApprovedMember || isCrew;
+        eventObj.canEdit = canViewSensitive;
+
+        // Security Validation: If event is not approved, only authorized users can see it
+        if (event.status !== 'approved' && !canViewSensitive) {
+          return res.status(403).json({ message: "Not authorized to view this event." });
+        }
       } catch (err) {
-        // Token invalid or expired, ignore canEdit
+        // Token invalid or expired, if event is not approved, reject access
+        if (event.status !== 'approved') {
+          return res.status(403).json({ message: "Unauthorized access to non-public event." });
+        }
+      }
+    } else {
+      // No token, if event is not approved, reject access
+      if (event.status !== 'approved') {
+        return res.status(403).json({ message: "Unauthorized access to non-public event." });
       }
     }
 
@@ -416,9 +429,8 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    // Authorization: Admin, System Organizer, Owner, or any Approved Community Member
+    // Authorization: Admin, Owner, or any Approved Community Member
     const isAdmin = req.user.roles.includes('admin');
-    const isSystemOrganizer = req.user.roles.includes('organizer');
     const isOwner = event.organizer_id.toString() === req.user.id;
     
     let isApprovedMember = false;
@@ -443,8 +455,8 @@ exports.updateEvent = async (req, res) => {
     });
     const isCrew = !!crewMember;
 
-    // Authorization: Allow if Admin, Organizer, Owner, Approved Member, OR Crew
-    const canUpdate = isAdmin || isSystemOrganizer || isOwner || isApprovedMember || isCrew;
+    // Authorization: Allow if Admin, Owner, Approved Member, OR Crew
+    const canUpdate = isAdmin || isOwner || isApprovedMember || isCrew;
 
     if (!canUpdate) {
       return res.status(403).json({ message: "Not authorized to update this event." });

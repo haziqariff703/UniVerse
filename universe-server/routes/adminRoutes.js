@@ -48,9 +48,11 @@ router.get('/reviews', auth, authorize('admin'), adminController.getAllReviews);
 router.delete('/reviews/:id', auth, authorize('admin'), adminController.deleteReview);
 
 // Notification Management
-router.get('/notifications', auth, authorize('admin'), adminController.getAllNotifications);
-router.post('/notifications', auth, authorize('admin'), adminController.createNotification);
-router.delete('/notifications/:id', auth, authorize('admin'), adminController.deleteNotification);
+const notificationController = require('../controllers/notificationController');
+router.get('/notifications', auth, authorize('admin'), notificationController.getAdminBroadcasts);
+router.post('/notifications', auth, authorize('admin'), notificationController.createAdminBroadcast);
+router.delete('/notifications/:id', auth, authorize('admin'), notificationController.deleteBroadcast);
+
 
 // Category Management
 router.get('/categories', auth, authorize('admin'), adminController.getAllCategories);

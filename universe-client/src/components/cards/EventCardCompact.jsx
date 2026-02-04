@@ -15,7 +15,8 @@ const API_BASE = "http://localhost:5000";
 
 const EventCardCompact = ({ event }) => {
   const date = new Date(event.date_time);
-  const isPast = date < new Date();
+  const endDate = event.end_time ? new Date(event.end_time) : date;
+  const isPast = endDate < new Date();
 
   // Calculate fill percentage
   const fillPercentage =

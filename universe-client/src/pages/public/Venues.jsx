@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import VenueLandscapeCard from "@/components/venues/VenueLandscapeCard";
 import { MOCK_VENUES } from "@/data/mockVenues";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import TrueFocus from "@/components/ui/TrueFocus";
 import { VIBE_TAGS } from "@/data/liveVenueStatus";
@@ -18,15 +18,6 @@ const containerVariants = {
     transition: {
       staggerChildren: 0.1,
     },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
   },
 };
 
@@ -51,13 +42,27 @@ const Venues = () => {
 
     const fetchVenues = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/venues`);
-        if (res.ok) {
-          const data = await res.json();
-          setVenues(data);
+        const [venuesRes, eventsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/venues`),
+          fetch(`${API_BASE}/api/events?status=approved`),
+        ]);
+
+        if (venuesRes.ok && eventsRes.ok) {
+          const venuesData = await venuesRes.json();
+          const eventsData = await eventsRes.json();
+
+          // Attach relevant events to each venue
+          const venuesWithEvents = venuesData.map((v) => ({
+            ...v,
+            events: eventsData.filter(
+              (e) => e.venue_id?._id === v._id || e.venue_id === v._id,
+            ),
+          }));
+
+          setVenues(venuesWithEvents);
         }
       } catch (err) {
-        console.error("Failed to fetch venues:", err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
