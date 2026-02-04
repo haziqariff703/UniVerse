@@ -16,10 +16,13 @@ import {
   Heart,
   Menu,
   Rocket,
+  Info,
 } from "lucide-react";
 // import StudentSidebar from "@/components/layout/StudentSidebar"; // REMOVED
 import MissionHistoryCard from "@/components/student/MissionHistoryCard";
 import ReviewModal from "@/components/common/ReviewModal";
+import RankAscension from "@/components/profile/RankAscension";
+import { calculateRank } from "@/utils/rankSystem";
 import { PAST_EVENTS } from "@/data/mockEvents";
 
 const StudentDashboard = ({ user }) => {
@@ -97,8 +100,13 @@ const StudentDashboard = ({ user }) => {
 
   // Merit Data
   const meritPoints = profile?.current_merit || 0;
-  const nextRank = profile?.merit_goal || 500;
-  const meritProgress = (meritPoints / nextRank) * 100;
+  // Calculate dynamic rank info
+  const {
+    currentRank,
+    nextRank,
+    progress: meritProgress,
+  } = calculateRank(meritPoints);
+
   const circleRadius = 36;
   const circleCircumference = 2 * Math.PI * circleRadius;
 
@@ -318,14 +326,21 @@ const StudentDashboard = ({ user }) => {
           className="p-4 pl-6 rounded-[2.5rem] bg-gradient-to-br from-black/80 to-blue-950/30 border border-white/10 backdrop-blur-3xl hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center justify-between group"
         >
           <div>
-            <span className="text-slate-400 text-xs font-mono uppercase tracking-widest block mb-1">
-              Merit Status
-            </span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-slate-400 text-xs font-mono uppercase tracking-widest block">
+                Merit Status
+              </span>
+              <RankAscension currentXP={meritPoints}>
+                <div className="p-1 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                  <Info className="w-3 h-3" />
+                </div>
+              </RankAscension>
+            </div>
             <p className="text-2xl font-bold font-clash text-white mb-2 group-hover:text-blue-400 transition-colors">
-              Rising Star
+              {currentRank.name}
             </p>
             <span className="text-[10px] text-blue-400 font-mono bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/20">
-              {meritPoints}/{nextRank} XP
+              {meritPoints} / {nextRank ? nextRank.minXp : "MAX"} XP
             </span>
           </div>
 

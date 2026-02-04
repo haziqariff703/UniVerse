@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-02-05]
+
+### Added
+
+- **Rank Ascension "The Living Roadmap"**: Gamified the Profile page with a new Hero Rank Card and interactive Ascension Map modal.
+- **Dashboard Integration**: Added an interactable Info icon to the "Merit Status" card on the Student Dashboard to view Ascension Status.
+- **Merit Synchronization**: Refactored rank logic into a shared utility (`rankSystem.js`) to ensure the Dashboard and Profile page display identical Rank and XP progress.
+- **Modal Positioning**: Fixed the Ascension Map modal to always render in the center of the viewport (using Portals) instead of being constrained by the dashboard card.
+
+### Fixed
+
+- **Merit System Integration**: Connected the frontend XP display to the backend's real `current_merit` data. Verified that points are awarded automatically upon event check-in.
+
+- **Dependency Resolution**: Resolved "Failed to resolve import `sonner`" error by installing the missing package with `--legacy-peer-deps` to handle React 19 compatibility.
+- **API Path Configuration**: Fixed hardcoded `localhost:5000` URLs in `App.jsx` to use relative paths (`/api`) that work with the Vite proxy configuration.
+
 ## [2026-02-04]
 
 ### Added

@@ -100,6 +100,18 @@ const userSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  assets: {
+    type: [
+      {
+        name: String,
+        url: String,
+        type: String,
+        size: String,
+        date: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  },
 
   created_at: {
     type: Date,
