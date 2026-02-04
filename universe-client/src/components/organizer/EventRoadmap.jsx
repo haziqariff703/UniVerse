@@ -18,7 +18,9 @@ const EventRoadmap = ({ events, readOnly = false }) => {
 
   // Transform events for FullCalendar
   const calendarEvents = events.map((event) => {
-    const isPast = new Date(event.date_time) < new Date();
+    const date = new Date(event.date_time);
+    const endDate = event.end_time ? new Date(event.end_time) : date;
+    const isPast = endDate < new Date();
 
     // Fix image URL mapping - ensure full path if it's a relative path from the server
     const imageUrl = event.image

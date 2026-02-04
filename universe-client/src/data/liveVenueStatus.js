@@ -1,48 +1,48 @@
 /**
- * Logic for simulating live venue status, overcrowding, and smart timers.
+ * Logic for calculating live venue status, overcrowding, and smart timers based on real event data.
  */
 
-export const getLiveVenueStatus = (venue) => {
+export const getLiveVenueStatus = (venue, venueEvents = []) => {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  
+  // Filter for approved events that are happening today or relevant to the "live" status
+  // venueEvents should already be pre-filtered for the specific venue and status 'approved'
+  
+  const currentTime = now.getTime();
 
-  // Simulated Booking Array (Mocking dynamic schedule)
-  // For production, this would come from the database
-  const bookings = [
-    { start: "08:00", end: "10:00" },
-    { start: "11:00", end: "13:00" },
-    { start: "14:00", end: "17:00" },
-    { start: "20:00", end: "22:00" },
-  ];
+  // Find if currently booked (active event)
+  const activeEvent = venueEvents.find(event => {
+    const startTime = new Date(event.date_time).getTime();
+    const endTime = new Date(event.end_time || (startTime + (event.duration_minutes || 60) * 60000)).getTime();
+    return currentTime >= startTime && currentTime < endTime;
+  });
 
-  const currentTimeStr = `${currentHour.toString().padStart(2, "0")}:${currentMinute.toString().padStart(2, "0")}`;
-
-  // Find if currently booked
-  const activeBooking = bookings.find(
-    (b) => currentTimeStr >= b.start && currentTimeStr < b.end,
-  );
-
-  if (activeBooking) {
+  if (activeEvent) {
+    const endTime = new Date(activeEvent.end_time || (new Date(activeEvent.date_time).getTime() + (activeEvent.duration_minutes || 60) * 60000));
     return {
       isOccupied: true,
       status: "In Use",
-      timerLabel: "Closing in:",
-      timeRemaining: calculateTimeDiff(currentTimeStr, activeBooking.end),
-      occupancy: 90 + Math.floor(Math.random() * 10), // High occupancy if booked
+      timerLabel: "Ends in:",
+      timeRemaining: calculateTimeDiff(now, endTime),
+      occupancy: Math.min(100, Math.round((activeEvent.current_attendees / activeEvent.capacity) * 100)) || 85,
+      currentEvent: activeEvent.title
     };
   }
 
-  // Find next booking
-  const nextBooking = bookings.find((b) => b.start > currentTimeStr);
+  // Find next booking today
+  const todayEnd = new Date(now).setHours(23, 59, 59, 999);
+  const nextEvent = venueEvents
+    .filter(event => new Date(event.date_time).getTime() > currentTime && new Date(event.date_time).getTime() <= todayEnd)
+    .sort((a, b) => new Date(a.date_time) - new Date(b.date_time))[0];
 
-  if (nextBooking) {
+  if (nextEvent) {
+    const startTime = new Date(nextEvent.date_time);
     return {
       isOccupied: false,
       status: "Available",
-      timerLabel: "Free in:",
-      timeRemaining: calculateTimeDiff(currentTimeStr, nextBooking.start),
-      occupancy: venue.liveOccupancy || 15,
+      timerLabel: "Next Event in:",
+      timeRemaining: calculateTimeDiff(now, startTime),
+      occupancy: venue.liveOccupancy || 0,
     };
   }
 
@@ -51,16 +51,15 @@ export const getLiveVenueStatus = (venue) => {
     status: "Available",
     timerLabel: "Free All Night",
     timeRemaining: "",
-    occupancy: 5,
+    occupancy: venue.liveOccupancy || 0,
   };
 };
 
 const calculateTimeDiff = (start, end) => {
-  const [sH, sM] = start.split(":").map(Number);
-  const [eH, eM] = end.split(":").map(Number);
-
-  let diffMin = eH * 60 + eM - (sH * 60 + sM);
-  if (diffMin < 0) diffMin += 24 * 60; // Handle overnight
+  const diffMs = end - start;
+  const diffMin = Math.floor(diffMs / 60000);
+  
+  if (diffMin <= 0) return "0m";
 
   const hours = Math.floor(diffMin / 60);
   const minutes = diffMin % 60;

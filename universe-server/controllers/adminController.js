@@ -25,7 +25,13 @@ exports.getDashboardStats = async (req, res) => {
       User.countDocuments(),
       Event.countDocuments(),
       Registration.countDocuments(),
-      Event.countDocuments({ date_time: { $gte: new Date() }, status: 'approved' }),
+      Event.countDocuments({ 
+        $or: [
+          { end_time: { $gte: new Date() } },
+          { end_time: { $exists: false }, date_time: { $gte: new Date() } }
+        ], 
+        status: 'approved' 
+      }),
       Event.countDocuments({ status: 'pending' }),
       User.countDocuments({ role: 'student', organizerRequest: true }),
       Speaker.countDocuments({ status: 'pending' })
@@ -294,10 +300,12 @@ exports.approveEvent = async (req, res) => {
     if (event) {
       // Create notification
       await Notification.create({
-        user_id: event.organizer_id,
+        recipient_id: event.organizer_id,
+        title: "Event Approved",
         message: `Your event "${event.title}" has been approved!`,
         type: 'success'
       });
+
 
       await AuditLog.create({
         admin_id: req.user.id,
@@ -341,10 +349,12 @@ exports.rejectEvent = async (req, res) => {
     if (event) {
       // Create notification
       await Notification.create({
-        user_id: event.organizer_id,
+        recipient_id: event.organizer_id,
+        title: "Event Rejected",
         message: `Your event "${event.title}" has been rejected. Reason: ${reason || 'No reason provided'}`,
         type: 'alert'
       });
+
 
       await AuditLog.create({
         admin_id: req.user.id,
@@ -459,10 +469,12 @@ exports.approveOrganizer = async (req, res) => {
 
       // Create notification
       await Notification.create({
-        user_id: user._id,
+        recipient_id: user._id,
+        title: "Organizer Approved",
         message: 'Your request to become an organizer has been approved! You can now access the Organizer Suite.',
         type: 'success'
       });
+
 
       await AuditLog.create({
         admin_id: req.user.id,
@@ -503,10 +515,12 @@ exports.rejectOrganizer = async (req, res) => {
     if (user) {
       // Create notification (primary way to inform user of rejection reason)
       await Notification.create({
-        user_id: user._id,
+        recipient_id: user._id,
+        title: "Organizer Request Rejected",
         message: `Your request to become an organizer has been rejected. Reason: ${reason || 'No reason provided'}`,
         type: 'alert'
       });
+
 
       await AuditLog.create({
         admin_id: req.user.id,
@@ -1071,91 +1085,6 @@ exports.deleteCategory = async (req, res) => {
   }
 };
 
-// ==================== NOTIFICATION MANAGEMENT ====================
-
-// Notification model already imported at top
-
-/**
- * Get System Notifications
- * @route GET /api/admin/notifications
- */
-exports.getAllNotifications = async (req, res) => {
-  try {
-    const notifications = await Notification.find()
-      .populate('user_id', 'name')
-      .sort({ created_at: -1 })
-      .limit(50); // Limit to last 50 for performance
-
-    res.json({ notifications });
-  } catch (error) {
-    console.error('Get notifications error:', error);
-    res.status(500).json({ message: 'Failed to fetch notifications' });
-  }
-};
-
-/**
- * Create Broadcast Notification
- * @route POST /api/admin/notifications
- */
-exports.createNotification = async (req, res) => {
-  try {
-    const { message, type, target_role } = req.body;
-
-    if (!message) {
-      return res.status(400).json({ message: 'Message is required' });
-    }
-
-    // Find target users
-    const query = target_role && target_role !== 'all' ? { role: target_role } : {};
-    const users = await User.find(query).select('_id');
-
-    if (users.length === 0) {
-      return res.status(404).json({ message: 'No users found for this target' });
-    }
-
-    // Create notifications in bulk
-    const notifications = users.map(user => ({
-      user_id: user._id,
-      message,
-      type: type || 'info',
-      created_at: new Date()
-    }));
-
-    await Notification.insertMany(notifications);
-
-    await AuditLog.create({
-      admin_id: req.user.id,
-      action: 'BROADCAST_NOTIFICATION',
-      target_type: 'System',
-      target_id: req.user.id,
-      details: { message, recipient_count: users.length },
-      ip_address: req.ip
-    });
-
-    res.status(201).json({ 
-      message: `Notification sent to ${users.length} users`,
-      count: users.length 
-    });
-  } catch (error) {
-    console.error('Broadcast notification error:', error);
-    res.status(500).json({ message: 'Failed to send notifications' });
-  }
-};
-
-/**
- * Delete Notification (Cleanup)
- * @route DELETE /api/admin/notifications/:id
- */
-exports.deleteNotification = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await Notification.findByIdAndDelete(id);
-    res.json({ message: 'Notification deleted' });
-  } catch (error) {
-    console.error('Delete notification error:', error);
-    res.status(500).json({ message: 'Failed to delete notification' });
-  }
-};
 
 /**
  * Create User Manually

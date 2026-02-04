@@ -30,44 +30,91 @@ const Broadcast = () => {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState([]);
+  const [targetAudience, setTargetAudience] = useState("attendees");
 
-  const history = [
-    {
-      id: 1,
-      subject: "Welcome to Tech Summit!",
-      event: "Tech Innovation Summit",
-      sent_to: 124,
-      date: "24 Jan, 2024",
-      status: "delivered",
-    },
-    {
-      id: 2,
-      subject: "Venue Change Notification",
-      event: "Startup Pitch Night",
-      sent_to: 85,
-      date: "20 Jan, 2024",
-      status: "delivered",
-    },
-    {
-      id: 3,
-      subject: "Reminder: Event starts in 1 hour",
-      event: "AI Workshop",
-      sent_to: 42,
-      date: "15 Jan, 2024",
-      status: "delivered",
-    },
-  ];
+  React.useEffect(() => {
+    fetchMyEvents();
+    fetchHistory();
+  }, []);
 
-  const handleSend = () => {
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/notifications/organizer",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch history");
+      const data = await response.json();
+      setHistory(data.broadcasts || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchMyEvents = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/events/my-events",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch events");
+      const data = await response.json();
+      setEvents(data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    try {
+      setSending(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/notifications/organizer",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            event_id: targetEvent,
+            subject,
+            message,
+            target_audience: targetAudience,
+          }),
+        },
+      );
+
+      if (!response.ok) throw new Error("Failed to send broadcast");
+
+      const data = await response.json();
+
+      toast.success("Broadcast Sent", {
+        description: data.message,
+      });
+
       setSubject("");
       setMessage("");
-      toast.success("Broadcast Sent", {
-        description: "Your message has been dispatched to all attendees.",
-      });
-    }, 1500);
+      fetchHistory();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send broadcast");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -80,7 +127,7 @@ const Broadcast = () => {
               Attendee Broadcast
             </h1>
             <p className="text-white/40 text-sm">
-              Send mass messages to your event attendees
+              Communicate with your attendees, workforce, or the student body
             </p>
           </div>
         </div>
@@ -106,36 +153,73 @@ const Broadcast = () => {
                       <SelectValue placeholder="Choose an event" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0f0f0f] border-white/10 text-white">
-                      <SelectItem value="tech-summit">
-                        Tech Innovation Summit
+                      {loading ? (
+                        <SelectItem value="loading" disabled>
+                          Loading events...
+                        </SelectItem>
+                      ) : events.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No events found (Create an event first)
+                        </SelectItem>
+                      ) : (
+                        events.map((event) => (
+                          <SelectItem key={event._id} value={event._id}>
+                            {event.title}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {events.length === 0 && !loading && (
+                    <p className="text-[10px] text-amber-400 mt-1">
+                      You need to be an organizer or owner of at least one event
+                      to broadcast.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                    Target Audience
+                  </label>
+                  <Select
+                    value={targetAudience}
+                    onValueChange={setTargetAudience}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white h-12">
+                      <SelectValue placeholder="Select Audience" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0f0f0f] border-white/10 text-white">
+                      <SelectItem value="attendees">Event Attendees</SelectItem>
+                      <SelectItem value="workforce">
+                        Event Workforce (Crew)
                       </SelectItem>
-                      <SelectItem value="ai-workshop">AI Workshop</SelectItem>
-                      <SelectItem value="pitch-night">
-                        Startup Pitch Night
+                      <SelectItem value="students">
+                        All Students (General Announcement)
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
-                    Channel
-                  </label>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-violet-500/10 border-violet-500/50 text-violet-400 h-12 gap-2"
-                    >
-                      <Mail size={16} />
-                      Email
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-white/5 border-white/10 text-white/40 h-12 gap-2 cursor-not-allowed"
-                    >
-                      <Bell size={16} />
-                      In-app
-                    </Button>
-                  </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                  Channel
+                </label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-violet-500/10 border-violet-500/50 text-violet-400 h-12 gap-2"
+                  >
+                    <Mail size={16} />
+                    Email
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-white/5 border-white/10 text-white/40 h-12 gap-2 cursor-not-allowed"
+                  >
+                    <Bell size={16} />
+                    In-app
+                  </Button>
                 </div>
               </div>
 
@@ -143,6 +227,7 @@ const Broadcast = () => {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
                   Subject Line
                 </label>
+
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -166,10 +251,21 @@ const Broadcast = () => {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Targeting ~345 verified attendees
+                  Targeting{" "}
+                  {targetAudience === "students"
+                    ? "all registered students"
+                    : targetAudience === "workforce"
+                      ? "event crew & AJK members"
+                      : "verified event attendees"}
                 </div>
+
                 <Button
-                  disabled={!targetEvent || !subject || !message || sending}
+                  disabled={
+                    (targetAudience !== "students" && !targetEvent) ||
+                    !subject ||
+                    !message ||
+                    sending
+                  }
                   onClick={handleSend}
                   className="w-full md:w-auto bg-violet-600 hover:bg-violet-700 text-white px-8 h-12 gap-2 transition-all active:scale-95"
                 >

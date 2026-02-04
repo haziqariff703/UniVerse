@@ -15,6 +15,8 @@ const registrationRoutes = require("./routes/registrationRoutes");
 const venueRoutes = require("./routes/venueRoutes");
 const speakerRoutes = require("./routes/speakerRoutes");
 const communityRoutes = require("./routes/communityRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+
 
 // Middleware
 app.use(cors());
@@ -35,6 +37,8 @@ app.use("/api/communities", communityRoutes);
 app.use("/api/proposals", require("./routes/clubProposalRoutes"));
 app.use("/api/crew", require("./routes/crewRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/notifications", notificationRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("UniVerse Backend is Online and Optimized! 🚀");

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Users,
@@ -50,7 +50,10 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
 
   const [isFavorited, setIsFavorited] = React.useState(false);
   const [showMap, setShowMap] = useState(false);
-  const liveStatus = React.useMemo(() => getLiveVenueStatus(venue), [venue]);
+  const liveStatus = React.useMemo(
+    () => getLiveVenueStatus(venue, venue.events || []),
+    [venue],
+  );
   const venueStatus = React.useMemo(
     () => getVenueStatus(venue.accessHours || "08:00 - 22:00"),
     [venue.accessHours],

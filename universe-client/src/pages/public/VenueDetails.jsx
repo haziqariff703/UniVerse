@@ -1,5 +1,3 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import {
   Users,
   MapPin,
@@ -7,7 +5,6 @@ import {
   Calendar,
   ChevronRight,
   ShieldCheck,
-  Info,
   Layers,
   Sparkles,
   ArrowLeft,
@@ -15,21 +12,22 @@ import {
   Heart,
   Navigation,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import SpotlightCard from "@/components/ui/SpotlightCard";
 import { Badge } from "@/components/ui/badge";
-import useMalaysiaTime from "@/hooks/useMalaysiaTime";
 import { getVenueStatus } from "@/lib/venueUtils";
+import VenueHeatmap from "@/components/venues/VenueHeatmap";
+import { cn } from "@/lib/utils";
+import { useParams, useNavigate } from "react-router-dom"; // Added useParams, useNavigate
+import { useState, useEffect } from "react"; // Added useState, useEffect
 
 const VenueDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [venue, setVenue] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [user, setUser] = useState(null);
-  const { time: malaysianTime } = useMalaysiaTime();
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const venueStatus = venue
     ? getVenueStatus(venue.accessHours || "08:00 - 22:00")
     : null;
@@ -59,15 +57,12 @@ const VenueDetails = () => {
       }
     };
 
-    const userData = localStorage.getItem("user");
-    if (userData) setUser(JSON.parse(userData));
-
     fetchVenueDetails();
   }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030303] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="relative">
           <div className="w-16 h-16 border-2 border-fuchsia-500/20 rounded-full animate-ping" />
           <div className="absolute inset-0 w-16 h-16 border-t-2 border-fuchsia-500 rounded-full animate-spin" />
@@ -78,7 +73,7 @@ const VenueDetails = () => {
 
   if (!venue) {
     return (
-      <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="w-20 h-20 bg-zinc-900 rounded-3xl flex items-center justify-center mb-6 border border-white/5 shadow-2xl">
           <Info className="w-10 h-10 text-zinc-500" />
         </div>
@@ -105,7 +100,7 @@ const VenueDetails = () => {
     venue.glowColor === "cyan" ? "border-cyan-500/30" : "border-fuchsia-500/30";
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white selection:bg-fuchsia-500/30">
+    <div className="min-h-screen bg-slate-950 bg-gradient-to-b from-slate-950 via-slate-950/95 to-slate-900 text-white selection:bg-fuchsia-500/30">
       {/* 1. CINEMATIC HERO SECTION */}
       <div className="relative h-[65vh] md:h-[75vh] w-full overflow-hidden">
         {/* Background Image with Parallax-esque feel */}
@@ -118,7 +113,7 @@ const VenueDetails = () => {
         />
 
         {/* Sophisticated Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#030303]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-slate-950" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
 
         {/* Floating Controls */}
@@ -402,10 +397,15 @@ const VenueDetails = () => {
 
                   <div className="mt-12 pt-8 border-t border-white/5 space-y-4">
                     <Button
-                      onClick={() => navigate("/venues")}
-                      className="w-full h-14 bg-white text-black hover:bg-zinc-200 rounded-2xl font-clash font-bold text-sm uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      onClick={() => setShowHeatmap(!showHeatmap)}
+                      className={cn(
+                        "w-full h-14 rounded-2xl font-clash font-bold text-sm uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]",
+                        showHeatmap
+                          ? "bg-fuchsia-600 text-white hover:bg-fuchsia-500"
+                          : "bg-white text-black hover:bg-zinc-200",
+                      )}
                     >
-                      Check Live Density
+                      {showHeatmap ? "Hide Live Density" : "Check Live Density"}
                     </Button>
                     <button className="w-full h-14 bg-zinc-900 text-white border border-white/10 hover:bg-zinc-800 rounded-2xl font-clash font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all">
                       <Navigation className="w-4 h-4 text-fuchsia-500" />
@@ -424,6 +424,13 @@ const VenueDetails = () => {
                   Verified Safe Zone • Security Monitored
                 </p>
               </div>
+
+              {/* Heatmap Overlay Integration */}
+              <AnimatePresence>
+                {showHeatmap && (
+                  <VenueHeatmap venue={venue} events={venue.upcomingEvents} />
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

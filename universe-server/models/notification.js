@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  user_id: { 
+  recipient_id: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
+  },
+  title: {
+    type: String,
+    required: true
   },
   message: { 
     type: String, 
@@ -12,12 +16,17 @@ const notificationSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ['info', 'alert', 'success'], // Optional: helps categorize notifications
+    enum: ['info', 'alert', 'success'],
     default: 'info' 
   },
-  is_read: { 
+  read: { 
     type: Boolean, 
     default: false 
+  },
+  related_event_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event',
+    default: null
   },
   created_at: { 
     type: Date, 
