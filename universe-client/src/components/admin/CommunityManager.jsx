@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { FileText } from "lucide-react";
+import { swalConfirm } from "@/lib/swalConfig";
 
 const API_BASE = "http://localhost:5000";
 
@@ -251,12 +252,16 @@ const CommunityManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (
-      !confirm(
-        "Are you sure? This will permanently de-register this society from the system.",
-      )
-    )
-      return;
+    const result = await swalConfirm({
+      title: "De-register Society?",
+      text: "This action cannot be undone. This will permanently de-register this society from the system.",
+      confirmButtonText: "Yes, De-register",
+      confirmButtonColor: "#ef4444",
+      icon: "warning",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -268,12 +273,14 @@ const CommunityManager = () => {
       );
       if (response.ok) {
         fetchCommunities();
+        toast.success("Community deleted successfully");
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || "Failed to delete community");
       }
     } catch (error) {
       console.error("Error deleting community:", error);
+      toast.error("Failed to delete community");
     }
   };
 

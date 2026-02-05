@@ -13,7 +13,7 @@ import {
   TrendingUp,
   MoreVertical,
   Eye,
-  FileText,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,7 +30,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
+import { swalConfirm } from "@/lib/swalConfig";
 
 /**
  * KPI Card Component
@@ -96,7 +98,7 @@ const ReviewsList = () => {
 
   const fetchReviews = useCallback(async () => {
     try {
-      setLoading(true);
+      // I'll add the button context in the next view
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: currentPage,
@@ -120,17 +122,37 @@ const ReviewsList = () => {
     }
   }, [currentPage, itemsPerPage]);
 
+  const handleExport = () => {
+    if (reviews.length === 0) {
+      toast.error("No reviews available to export");
+      return;
+    }
+
+    const exportData = reviews.map((r) => ({
+      Event: r.event_id?.title || "N/A",
+      Reviewer: r.user_id?.name || "N/A",
+      Rating: r.rating,
+      Comment: r.comment,
+      Date: new Date(r.createdAt).toLocaleDateString(),
+    }));
+
+    downloadCSV(exportData, "UniVerse_Reviews_Registry");
+    toast.success("Reviews exported successfully");
+  };
+
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
 
   const handleDelete = async (id) => {
-    if (
-      !confirm(
-        "Are you sure you want to permanently strip this review from the system?",
-      )
-    )
-      return;
+    const result = await swalConfirm({
+      title: "Delete Review?",
+      text: "Are you sure you want to permanently strip this review from the system?",
+      confirmButtonText: "Yes, Delete",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (!result.isConfirmed) return;
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -184,23 +206,6 @@ const ReviewsList = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = filteredReviews.map((review) => ({
-                Reviewer: review.user_id?.name || "Anonymous",
-                Event: review.event_id?.title || "N/A",
-                Rating: review.rating,
-                Comment: review.comment,
-                Date: new Date(review.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "reviews_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchReviews}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -294,7 +299,7 @@ const ReviewsList = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
@@ -302,6 +307,14 @@ const ReviewsList = () => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

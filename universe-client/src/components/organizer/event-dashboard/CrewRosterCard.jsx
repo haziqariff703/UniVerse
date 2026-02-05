@@ -27,7 +27,10 @@ const CrewRosterCard = ({
 
   const fetchCrew = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (res.ok) setCrew(data || []);
     } catch (err) {

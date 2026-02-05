@@ -10,19 +10,13 @@
 - **Improved**: Real-time membership intelligence on the Communities page with API-driven state synchronization.
 - **Improved**: Restored essential `motion` imports and fixed syntax errors in public exploration pages.
 - **Changed**: Standardized admin notifications by transitioning from native `alert()` to `sonner` toasts across `CommunityManager`, `NotificationsManager`, `SpeakersList`, `SystemSettings`, and others for a consistent UI.
-- **Added**: Standardized "Export CSV" functionality across all 12 admin list and approval components.
-- **Improved**: Consistent button placement, styling (dashed border, zinc-based colors), and icons for all admin reporting tools.
-- **Fixed**: Standardized image path handling across all modules (Communities, Speakers, Venues, Events) to use relative paths.
-- **Fixed**: Migrated existing community and speaker data to resolve broken image links.
-- **Fixed**: Resolved `ReferenceError: motion is not defined` in `Communities.jsx` caused by an accidental import removal.
-- **Fixed**: Resolved duplicate image rendering in `Communities.jsx` by ensuring unique React keys (stringified IDs) and category-specific fallback placeholders.
-- **Changed**: Improved community detailed view to show banners in "full image" mode using `object-contain` and blurred backdrop.
-- **Fixed**: Resolved global image preview collision in `CommunityManager.jsx` where one upload affected all listed communities.
-- **Added**: Real-time visual image previews (logo & banner) in the Community Admin edit modal.
-- **Added**: Real-time image preview for logo and banner uploads in the Admin Panel.
-- **Added**: Enhanced image rendering logic to handle both absolute and relative paths consistently.
-- **Fixed**: Community logo and banner rendering by standardizing paths to `/public/uploads/assets/` and prepending `API_BASE` on the frontend. (2026-02-05)
-- **Fixed**: Removed broken PDF export in `UsersList.jsx` and resolved multiple duplicate import issues across admin components. (2026-02-05)
+- **Improved**: Standardized Admin "Command Center" UI across all 12 operational modules (Events, Organizers, Speakers, Reviews, Audit Logs, Categories, Venues).
+- **Added**: Centralized "Export CSV" buttons integrated into the control toolbar for all admin list views.
+- **Changed**: Transitioned from legacy custom modals to **SweetAlert2 (swalConfirm)** with integrated feedback inputs for administrative approvals/rejections in `EventApprovals` and `OrganizerApprovals`.
+- **Fixed**: Critical `ReferenceError: FileDown is not defined` and missing `toast` import in `VenueManager.jsx`.
+- **Fixed**: Resolved duplicate state declarations (`searchQuery`) and restored accidental deletions of core state in `EventApprovals.jsx`.
+- **Fixed**: Cleared persistent lint errors regarding duplicate CSS classes (`text-sm`/`text-xs`) and unused variables (`motion`, `Icon`) across the administrative suite.
+- **Improved**: Restored code integrity in `SpeakerApprovals.jsx` by removing unused imports and standardizing the search-cluster layout.
 
 ## [2026-02-04]
 

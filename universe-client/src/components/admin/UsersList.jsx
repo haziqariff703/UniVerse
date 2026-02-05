@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { swalConfirm } from "@/lib/swalConfig";
 
 /**
  * UsersList "Command Center"
@@ -115,7 +116,16 @@ const UsersList = ({ onBack }) => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    const result = await swalConfirm({
+      title: "Delete User Account?",
+      text: "This action cannot be undone. The user will lose all access immediately.",
+      confirmButtonText: "Yes, Delete User",
+      confirmButtonColor: "#ef4444",
+      icon: "warning",
+    });
+
+    if (!result.isConfirmed) return;
+
     setDeleteProcessing(userId);
 
     try {

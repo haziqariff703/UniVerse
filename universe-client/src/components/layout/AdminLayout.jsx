@@ -12,9 +12,69 @@ import {
   Mic2,
   ArrowRight,
   RotateCw,
+  Menu,
+  Rocket,
 } from "lucide-react";
+
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { useRef } from "react";
+
 import useMalaysiaTime from "@/hooks/useMalaysiaTime";
 import SidePeek from "../admin/dashboard/SidePeek";
+import { swalConfirm } from "@/lib/swalConfig";
+
+const FooterLogo = () => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+
+  useGSAP(
+    () => {
+      const tl = gsap.timeline({ paused: true });
+
+      tl.to(containerRef.current, {
+        rotation: 360,
+        duration: 0.8,
+        ease: "back.out(1.7)",
+      }).to(
+        textRef.current,
+        {
+          backgroundPosition: "200% center",
+          duration: 1,
+          ease: "none",
+        },
+        "<",
+      );
+
+      const el = containerRef.current.parentElement;
+      el.addEventListener("mouseenter", () => tl.play());
+      el.addEventListener("mouseleave", () => tl.reverse());
+
+      return () => {
+        el.removeEventListener("mouseenter", () => tl.play());
+        el.removeEventListener("mouseleave", () => tl.reverse());
+      };
+    },
+    { scope: containerRef },
+  );
+
+  return (
+    <div className="flex items-center gap-2 cursor-pointer group">
+      <div
+        ref={containerRef}
+        className="h-6 w-6 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20"
+      >
+        <Rocket size={14} className="text-white fill-white/20" />
+      </div>
+      <span
+        ref={textRef}
+        className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-violet-400 to-white bg-[size:200%_auto]"
+      >
+        UniVerse Admin Console
+      </span>
+    </div>
+  );
+};
 
 const AdminLayout = ({ ...props }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -66,8 +126,16 @@ const AdminLayout = ({ ...props }) => {
   };
   const user = getSafeUser();
 
-  const handleLogout = () => {
-    if (confirm("Logout?")) {
+  const handleLogout = async () => {
+    const result = await swalConfirm({
+      title: "Logout?",
+      text: "Are you sure you want to end your administrative session?",
+      confirmButtonText: "Logout",
+      confirmButtonColor: "#ef4444",
+      icon: "warning",
+    });
+
+    if (result.isConfirmed) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/login");
@@ -101,9 +169,14 @@ const AdminLayout = ({ ...props }) => {
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#0A0A0A]">
-        {/* Global Admin Header */}
         <header className="h-20 border-b border-white/5 bg-[#0e0e12]/50 backdrop-blur-xl sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-2 -ml-2 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              <Menu size={20} />
+            </button>
             <h1 className="text-xl font-black text-white uppercase tracking-tight hidden sm:block">
               {getPageTitle()}
             </h1>
@@ -120,17 +193,6 @@ const AdminLayout = ({ ...props }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Search workspace..."
-                className="bg-[#13131a] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-300 focus:outline-none focus:border-violet-500 transition-colors w-64"
-              />
-            </div>
             <button
               onClick={() => setIsAlertsOpen(true)}
               className="p-2 rounded-xl border border-white/10 bg-[#13131a] text-gray-400 hover:text-white transition-colors relative"
@@ -267,6 +329,17 @@ const AdminLayout = ({ ...props }) => {
         <div className="flex-1 p-8">
           <Outlet />
         </div>
+
+        {/* Admin Footer */}
+        <footer className="border-t border-white/5 bg-[#0e0e12] px-8 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <FooterLogo />
+            <p className="text-xs text-starlight/40 font-medium">
+              &copy; {new Date().getFullYear()} UniVerse Event Management
+              System. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </main>
     </div>
   );

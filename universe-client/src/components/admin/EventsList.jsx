@@ -18,6 +18,7 @@ import {
   Clock,
   MoreVertical,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
 
 const KpiCard = ({
@@ -152,6 +154,26 @@ const EventsList = () => {
     e.preventDefault();
     setCurrentPage(1);
     fetchEvents();
+  };
+
+  const handleExport = () => {
+    if (events.length === 0) {
+      toast.error("No events to export");
+      return;
+    }
+
+    const exportData = events.map((e) => ({
+      Title: e.title,
+      Organizer: e.organizer_id?.name || "N/A",
+      Category: e.category,
+      Status: e.status,
+      Date: new Date(e.date_time).toLocaleDateString(),
+      Capacity: e.capacity,
+      "Ticket Price": e.ticket_price === 0 ? "Free" : `RM ${e.ticket_price}`,
+    }));
+
+    downloadCSV(exportData, "UniVerse_Events_Registry");
+    toast.success("Events registry exported successfully");
   };
 
   const getStatusBadge = (status) => {
@@ -301,7 +323,7 @@ const EventsList = () => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
             >
               <option value="all">All Status</option>
               <option value="approved">Approved</option>
@@ -321,7 +343,7 @@ const EventsList = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
@@ -329,6 +351,14 @@ const EventsList = () => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

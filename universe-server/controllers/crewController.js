@@ -29,7 +29,7 @@ exports.getCrewByEvent = async (req, res) => {
             user_id: req.user.id,
             status: 'Approved'
         });
-        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+        if (membership && ['President', 'Secretary', 'Treasurer', 'Advisor'].includes(membership.role)) {
             isLeader = true;
         }
     }
@@ -80,7 +80,7 @@ exports.updateCrewMember = async (req, res) => {
             user_id: req.user.id,
             status: 'Approved'
         });
-        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+        if (membership && ['President', 'Secretary', 'Treasurer', 'Advisor'].includes(membership.role)) {
             isLeader = true;
         }
     }
@@ -126,7 +126,7 @@ exports.getEligibleMembers = async (req, res) => {
             user_id: req.user.id,
             status: 'Approved'
         });
-        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+        if (membership && ['President', 'Secretary', 'Treasurer', 'Advisor'].includes(membership.role)) {
             isLeader = true;
         }
     }
@@ -185,7 +185,7 @@ exports.addCrewMember = async (req, res) => {
             user_id: req.user.id,
             status: 'Approved'
         });
-        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+        if (membership && ['President', 'Secretary', 'Treasurer', 'Advisor'].includes(membership.role)) {
             isLeader = true;
         }
     }
@@ -267,7 +267,7 @@ exports.removeCrewMember = async (req, res) => {
             user_id: req.user.id,
             status: 'Approved'
         });
-        if (membership && ['President', 'Vice President', 'High Committee'].includes(membership.role)) {
+        if (membership && ['President', 'Secretary', 'Treasurer', 'Advisor'].includes(membership.role)) {
             isLeader = true;
         }
     }

@@ -18,9 +18,10 @@ import {
   RefreshCw,
   X,
   TrendingUp,
-  FileDown,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
 
 const KpiCard = ({
@@ -114,15 +115,38 @@ const AuditLogList = () => {
       if (!response.ok) throw new Error("Failed to fetch logs");
 
       const data = await response.json();
-      setLogs(data.logs);
-      setPagination(data.pagination);
-      if (data.stats) setStats(data.stats);
+      setLogs(data.logs || []);
+      setStats(data.stats || { totalLogs: 0 });
+      setPagination({
+        currentPage: data.pagination.currentPage,
+        totalPages: data.pagination.totalPages,
+        totalLogs: data.pagination.totalLogs,
+      });
     } catch (error) {
-      console.error("Error fetching audit logs:", error);
+      console.error("Error fetching logs:", error);
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, filters]);
+  }, [filters, pagination.currentPage]);
+
+  const handleExport = () => {
+    if (logs.length === 0) {
+      toast.error("No logs available to export");
+      return;
+    }
+
+    const exportData = logs.map((l) => ({
+      Timestamp: new Date(l.createdAt).toLocaleString(),
+      Admin: l.admin_id?.name || "System",
+      Action: l.action,
+      Target: l.target_type,
+      Details: JSON.stringify(l.details),
+      IP: l.ip_address || "N/A",
+    }));
+
+    downloadCSV(exportData, "UniVerse_Security_Audit_Log");
+    toast.success("Audit log exported successfully");
+  };
 
   useEffect(() => {
     fetchLogs();
@@ -213,23 +237,6 @@ const AuditLogList = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = logs.map((log) => ({
-                Action: log.action,
-                Target: log.target_type,
-                Admin: log.admin_id?.name || "System",
-                Details: JSON.stringify(log.details || {}),
-                Date: new Date(log.created_at).toLocaleString(),
-              }));
-              downloadCSV(exportData, "audit_logs_report");
-            }}
-          >
-            <FileDown className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchLogs}
             disabled={loading}
@@ -349,6 +356,14 @@ const AuditLogList = () => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={18} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

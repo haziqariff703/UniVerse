@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
+import { swalConfirm } from "@/lib/swalConfig";
 
 /**
  * EventApprovals "Command Center"
@@ -54,11 +55,6 @@ const EventApprovals = ({ onBack }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterCategory, setFilterCategory] = useState("all");
-
-  // Rejection Modal State
-  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [rejectingEventId, setRejectingEventId] = useState(null);
 
   // Details Modal State
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -98,6 +94,15 @@ const EventApprovals = ({ onBack }) => {
   }, [fetchPendingEvents]);
 
   const handleApprove = async (id) => {
+    const result = await swalConfirm({
+      title: "Approve Event?",
+      text: "This will publish the event and make it visible to all users.",
+      confirmButtonText: "Yes, Approve",
+      confirmButtonColor: "#10b981",
+    });
+
+    if (!result.isConfirmed) return;
+
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
@@ -119,31 +124,26 @@ const EventApprovals = ({ onBack }) => {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectingEventId) return;
-
-    setProcessingId(rejectingEventId);
+  const handleReject = async (id, reason) => {
+    setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/events/${rejectingEventId}/reject`,
+        `http://localhost:5000/api/admin/events/${id}/reject`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ reason: rejectionReason }),
+          body: JSON.stringify({ reason }),
         },
       );
 
       if (!response.ok) throw new Error("Failed to reject event");
 
-      setEvents(events.filter((e) => e._id !== rejectingEventId));
-      setRejectionModalOpen(false);
-      setRejectionReason("");
-      setRejectingEventId(null);
-      toast.success("Event rejected successfully");
+      setEvents(events.filter((e) => e._id !== id));
+      toast.success("Event proposal terminated successfully");
     } catch (err) {
       toast.error(err.message || "Failed to reject event");
     } finally {
@@ -151,9 +151,28 @@ const EventApprovals = ({ onBack }) => {
     }
   };
 
-  const openRejectionModal = (id) => {
-    setRejectingEventId(id);
-    setRejectionModalOpen(true);
+  const openRejectionModal = async (id) => {
+    const result = await swalConfirm({
+      title: "Reject Event Proposal?",
+      text: "Please provide a justification for this procedural rejection. The organizer will be notified of this reason.",
+      input: "textarea",
+      inputPlaceholder: "Enter rejection reason here...",
+      inputAttributes: {
+        "aria-label": "Enter rejection reason",
+      },
+      showCancelButton: true,
+      confirmButtonText: "Terminate Proposal",
+      confirmButtonColor: "#ef4444",
+      inputValidator: (value) => {
+        if (!value) {
+          return "You must provide a justification for auditing purposes.";
+        }
+      },
+    });
+
+    if (result.isConfirmed) {
+      handleReject(id, result.value);
+    }
   };
 
   const formatDate = (date) => {
@@ -224,23 +243,6 @@ const EventApprovals = ({ onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = events.map((event) => ({
-                Title: event.title,
-                Organizer: event.organizer_id?.name || "N/A",
-                Date: new Date(event.date_time).toLocaleDateString(),
-                Type: event.event_type,
-                Status: event.status,
-              }));
-              downloadCSV(exportData, "pending_events_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchPendingEvents}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -315,7 +317,7 @@ const EventApprovals = ({ onBack }) => {
                 setFilterCategory(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
             >
               <option value="all">All Categories</option>
               <option value="technology">Technology</option>
@@ -335,14 +337,31 @@ const EventApprovals = ({ onBack }) => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
               <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={() => {
+              const exportData = events.map((event) => ({
+                Title: event.title,
+                Organizer: event.organizer_id?.name || "N/A",
+                Date: new Date(event.date_time).toLocaleDateString(),
+                Type: event.event_type,
+                Status: event.status,
+              }));
+              downloadCSV(exportData, "UniVerse_Pending_Events");
+              toast.success("Pending events list exported successfully");
+            }}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
@@ -801,54 +820,6 @@ const EventApprovals = ({ onBack }) => {
                       </button>
                     </div>
                   )}
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Rejection Modal */}
-            <Dialog
-              open={rejectionModalOpen}
-              onOpenChange={setRejectionModalOpen}
-            >
-              <DialogContent className="glass-panel border-white/10 text-starlight max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                    <AlertTriangle className="text-rose-400" size={20} />
-                    Event Rejection Feedback
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                  <p className="text-sm text-starlight/60 leading-relaxed">
-                    Please provide a reason for rejecting this event proposal.
-                    This feedback will be sent as a notification to the
-                    organizer.
-                  </p>
-                  <Textarea
-                    placeholder="e.g., Missing security plan, venue conflict, etc."
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    className="bg-black/40 border-white/5 min-h-[120px] focus:border-rose-500/50"
-                  />
-                </div>
-                <DialogFooter className="gap-3">
-                  <button
-                    onClick={() => setRejectionModalOpen(false)}
-                    className="px-6 py-2 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 transition-all"
-                  >
-                    Wait, Cancel
-                  </button>
-                  <button
-                    onClick={handleReject}
-                    disabled={!rejectionReason.trim() || processingId}
-                    className="px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold transition-all shadow-lg hover:shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {processingId ? (
-                      <RefreshCw size={14} className="animate-spin" />
-                    ) : (
-                      <X size={14} />
-                    )}
-                    Confirm Rejection
-                  </button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

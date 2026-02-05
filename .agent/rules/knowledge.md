@@ -99,6 +99,15 @@ The `getLiveVenueStatus` engine transitions venues from static "Office Hours" vi
 - **Dynamic Capacity Tracking**: Calculates real-time occupancy percentages (`(attendees / capacity) * 100`) to provide "Live Vibe" signals (e.g., "Full House", "Vibing", "Chilled").
 - **Sequential Timer Logic**: Automatically switches between an "Ends in" timer for active events and a "Next Event in" countdown for transition periods.
 
+## 10. Administrative Moderation & Rejection Architecture (Auditing)
+
+The admin platform utilizes a **Stateless Modal-to-Action** pattern to ensure procedural accountability.
+
+- **SweetAlert2 Integration**: Replaces state-heavy custom modals with lightweight, promise-based `swalConfirm` dialogs.
+- **Justified Rejection Flow**: Rejections are prohibited without documented justification. The system uses SweetAlert2's `input: "textarea"` with a required validator to capture administrative feedback.
+- **Atomic State Transitions**: Successive UI updates (removing items from the view) are only executed upon successful REST completion, preventing desynchronization between the frontend list and the backend source of truth.
+- **Standardized Export Cluster**: All administrative list views utilize a **Modular Export Pattern**. The "Export CSV" tool is physically separated from high-level CRUD (Add/Edit) buttons and placed within the **Filtered Control Matrix** to signal its role as a reporting tool rather than an operational trigger.
+
 ### B. Venue Pulse Heatmap
 
 The Heatmap component provides a visual "Registry" of a venue's daily availability.

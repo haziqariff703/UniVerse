@@ -17,6 +17,7 @@ import {
   Award,
   MoreVertical,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,8 +30,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
+import { swalConfirm } from "@/lib/swalConfig";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
 /**
  * KPI Card Component
@@ -127,12 +129,17 @@ const SpeakerApprovals = () => {
   }, [fetchPendingSpeakers]);
 
   const handleAction = async (id, action) => {
-    const message =
-      action === "approve"
+    const isApprove = action === "approve";
+    const result = await swalConfirm({
+      title: isApprove ? "Approve Speaker?" : "Reject Proposal?",
+      text: isApprove
         ? "Are you sure you want to APPROVE and promote this speaker to the global registry?"
-        : "Are you sure you want to REJECT and delete this speaker proposal?";
+        : "Are you sure you want to REJECT and delete this speaker proposal?",
+      confirmButtonText: isApprove ? "Yes, Approve" : "Yes, Reject",
+      confirmButtonColor: isApprove ? "#10b981" : "#ef4444",
+    });
 
-    if (!confirm(message)) return;
+    if (!result.isConfirmed) return;
 
     setProcessingId(id);
     try {
@@ -177,23 +184,6 @@ const SpeakerApprovals = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = speakers.map((s) => ({
-                Name: s.name,
-                Email: s.email,
-                Expertise: s.expertise,
-                Bio: s.bio || "",
-                Applied_Date: new Date(s.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "pending_speakers_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchPendingSpeakers}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -251,7 +241,7 @@ const SpeakerApprovals = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold text-xs"
+              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold text-xs"
             />
           </div>
 
@@ -265,7 +255,7 @@ const SpeakerApprovals = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
@@ -273,6 +263,24 @@ const SpeakerApprovals = () => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={() => {
+              const exportData = speakers.map((s) => ({
+                Name: s.name,
+                Email: s.email,
+                Expertise: s.expertise,
+                Bio: s.bio || "",
+                Applied_Date: new Date(s.created_at).toLocaleDateString(),
+              }));
+              downloadCSV(exportData, "UniVerse_Speaker_Proposals");
+              toast.success("Speaker proposals exported successfully");
+            }}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

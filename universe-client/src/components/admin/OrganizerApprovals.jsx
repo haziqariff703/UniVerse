@@ -11,6 +11,7 @@ import {
   AlertCircle,
   MoreVertical,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,9 +29,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
+import { swalConfirm } from "@/lib/swalConfig";
 
 const KpiCard = ({
   title,
@@ -93,11 +94,6 @@ const OrganizerApprovals = () => {
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
 
-  // Rejection Modal State
-  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [rejectingOrgId, setRejectingOrgId] = useState(null);
-
   const fetchPendingOrganizers = useCallback(async () => {
     setLoading(true);
     try {
@@ -137,8 +133,14 @@ const OrganizerApprovals = () => {
   };
 
   const handleApprove = async (id) => {
-    if (!confirm("Are you sure you want to approve this organizer request?"))
-      return;
+    const result = await swalConfirm({
+      title: "Approve Organizer?",
+      text: "Are you sure you want to approve this organizer request?",
+      confirmButtonText: "Yes, Approve",
+      confirmButtonColor: "#10b981",
+    });
+
+    if (!result.isConfirmed) return;
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
@@ -161,31 +163,26 @@ const OrganizerApprovals = () => {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectingOrgId) return;
-
-    setProcessingId(rejectingOrgId);
+  const handleReject = async (id, reason) => {
+    setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/organizers/${rejectingOrgId}/reject`,
+        `http://localhost:5000/api/admin/organizers/${id}/reject`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ reason: rejectionReason }),
+          body: JSON.stringify({ reason }),
         },
       );
 
       if (!response.ok) throw new Error("Failed to reject organizer");
 
-      setOrganizers(organizers.filter((o) => o._id !== rejectingOrgId));
-      setRejectionModalOpen(false);
-      setRejectionReason("");
-      setRejectingOrgId(null);
-      toast.success("Organizer request rejected");
+      setOrganizers(organizers.filter((o) => o._id !== id));
+      toast.success("Organizer request rejected successfully");
     } catch (err) {
       toast.error(err.message || "Failed to reject organizer");
     } finally {
@@ -193,9 +190,25 @@ const OrganizerApprovals = () => {
     }
   };
 
-  const openRejectionModal = (id) => {
-    setRejectingOrgId(id);
-    setRejectionModalOpen(true);
+  const openRejectionModal = async (id) => {
+    const result = await swalConfirm({
+      title: "Reject Organizer Request?",
+      text: "Please provide a valid reason for this rejection. The applicant will be notified.",
+      input: "textarea",
+      inputPlaceholder: "Enter rejection reason here...",
+      showCancelButton: true,
+      confirmButtonText: "Confirm Rejection",
+      confirmButtonColor: "#ef4444",
+      inputValidator: (value) => {
+        if (!value) {
+          return "Rejection requires a documented reason.";
+        }
+      },
+    });
+
+    if (result.isConfirmed) {
+      handleReject(id, result.value);
+    }
   };
 
   return (
@@ -210,22 +223,6 @@ const OrganizerApprovals = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = organizers.map((org) => ({
-                Name: org.name,
-                Email: org.email,
-                Bio: org.bio || "",
-                Applied_Date: new Date(org.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "pending_organizers_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchPendingOrganizers}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -276,7 +273,7 @@ const OrganizerApprovals = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
+              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
             />
           </div>
 
@@ -290,14 +287,30 @@ const OrganizerApprovals = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
               <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={() => {
+              const exportData = organizers.map((org) => ({
+                Name: org.name,
+                Email: org.email,
+                Bio: org.bio || "",
+                Applied_Date: new Date(org.created_at).toLocaleDateString(),
+              }));
+              downloadCSV(exportData, "UniVerse_Pending_Organizers");
+              toast.success("Pending organizers list exported successfully");
+            }}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <Download size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
@@ -623,49 +636,6 @@ const OrganizerApprovals = () => {
               className="w-full px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-all shadow-lg shadow-violet-500/20"
             >
               Close Review
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={rejectionModalOpen} onOpenChange={setRejectionModalOpen}>
-        <DialogContent className="glass-panel border-white/10 text-starlight max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <AlertCircle className="text-rose-400" size={20} />
-              Organizer Rejection Feedback
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <p className="text-sm text-starlight/60 leading-relaxed">
-              Please provide a reason for rejecting this candidate. This
-              feedback will be sent as a notification to the student.
-            </p>
-            <Textarea
-              placeholder="e.g., Invalid ID card, insufficient proposal details, etc."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="bg-black/40 border-white/5 min-h-[120px] focus:border-rose-500/50"
-            />
-          </div>
-          <DialogFooter className="gap-3">
-            <button
-              onClick={() => setRejectionModalOpen(false)}
-              className="px-6 py-2 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleReject}
-              disabled={!rejectionReason.trim() || processingId}
-              className="px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold transition-all shadow-lg hover:shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
-            >
-              {processingId ? (
-                <RefreshCw size={14} className="animate-spin" />
-              ) : (
-                <X size={14} />
-              )}
-              Confirm Rejection
             </button>
           </DialogFooter>
         </DialogContent>

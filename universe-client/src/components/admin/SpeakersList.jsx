@@ -17,6 +17,7 @@ import {
   Zap,
   ShieldCheck,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -37,6 +38,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
+import { FileText } from "lucide-react";
+import { swalConfirm } from "@/lib/swalConfig";
 
 const KpiCard = ({
   title,
@@ -155,6 +159,26 @@ const SpeakersList = () => {
     }
   }, [currentPage, itemsPerPage, searchQuery]);
 
+  const handleExport = () => {
+    if (speakers.length === 0) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    const exportData = speakers.map((s) => ({
+      Name: s.name,
+      Role: s.role,
+      Expertise: s.expertise,
+      Category: s.category,
+      Bio: s.bio,
+      Email: s.email,
+      "Social Links": Object.values(s.social_links || {}).join(", "),
+    }));
+
+    downloadCSV(exportData, "UniVerse_Talent_Registry");
+    toast.success("Talent registry exported successfully");
+  };
+
   useEffect(() => {
     fetchSpeakers();
   }, [fetchSpeakers]);
@@ -202,7 +226,16 @@ const SpeakersList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this speaker?")) return;
+    const result = await swalConfirm({
+      title: "Delete Speaker?",
+      text: "This action cannot be undone. The speaker will be removed from the registry.",
+      confirmButtonText: "Yes, Delete Speaker",
+      confirmButtonColor: "#ef4444",
+      icon: "warning",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const token = localStorage.getItem("token");
       await fetch(`http://localhost:5000/api/admin/speakers/${id}`, {
@@ -210,8 +243,10 @@ const SpeakersList = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchSpeakers();
+      toast.success("Speaker deleted successfully");
     } catch (error) {
       console.error("Error deleting speaker:", error);
+      toast.error("Failed to delete speaker");
     }
   };
 
@@ -354,7 +389,7 @@ const SpeakersList = () => {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10 font-bold text-xs"
+            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10 font-bold text-xs"
           />
         </div>
 
@@ -368,7 +403,7 @@ const SpeakersList = () => {
               setItemsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
           >
             <option value={10}>10 Entries</option>
             <option value={25}>25 Entries</option>
@@ -376,6 +411,14 @@ const SpeakersList = () => {
             <option value={100}>100 Entries</option>
           </select>
         </div>
+
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+        >
+          <Download size={16} className="text-violet-400" />
+          <span>Export CSV</span>
+        </button>
       </div>
 
       {/* 4. Registry Implementation */}

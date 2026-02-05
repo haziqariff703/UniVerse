@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { swalConfirm } from "@/lib/swalConfig";
 import {
   X,
   UserPlus,
@@ -19,7 +20,10 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
 
   const fetchRoster = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (res.ok) setCrew(data || []);
     } catch (err) {
@@ -86,7 +90,14 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
   };
 
   const handleRemove = async (crewId) => {
-    if (!window.confirm("Remove this member from the crew?")) return;
+    const result = await swalConfirm({
+      title: "Remove Member?",
+      text: "Are you sure you want to remove this member from the crew?",
+      confirmButtonText: "Yes, Remove",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (!result.isConfirmed) return;
     setProcessing(crewId);
     try {
       const token = localStorage.getItem("token");

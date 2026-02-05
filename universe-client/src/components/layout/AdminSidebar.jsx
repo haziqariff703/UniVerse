@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 
 import {
   LayoutDashboard,
@@ -146,7 +145,7 @@ const SidebarGroup = ({
   );
 };
 
-const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
+const AdminSidebar = ({ collapsed, handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -160,19 +159,9 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
     >
       <div className="h-20 flex items-center px-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Rocket className="text-violet-500 w-8 h-8 flex-shrink-0" />
-          </motion.div>
+          <Rocket className="text-violet-500 w-8 h-8 flex-shrink-0" />
           {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="overflow-hidden whitespace-nowrap"
-            >
+            <div className="overflow-hidden whitespace-nowrap">
               <GradientText
                 colors={["#7c3aed", "#a78bfa", "#7c3aed"]}
                 className="text-xl font-bold font-neuemontreal"
@@ -180,7 +169,7 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
               >
                 UniVerse
               </GradientText>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>
@@ -317,18 +306,6 @@ const AdminSidebar = ({ collapsed, setCollapsed, handleLogout }) => {
           onClick={handleLogout}
           collapsed={collapsed}
         />
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center py-2 text-gray-500 hover:text-white transition-colors"
-        >
-          {collapsed ? (
-            <ChevronRight size={20} />
-          ) : (
-            <div className="flex items-center gap-2 text-xs font-medium">
-              <ChevronLeft size={14} /> Collapse Sidebar
-            </div>
-          )}
-        </button>
       </div>
     </aside>
   );

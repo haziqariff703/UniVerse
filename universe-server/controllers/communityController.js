@@ -155,23 +155,20 @@ exports.updateMemberStatus = async (req, res) => {
       return res.status(404).json({ message: "Membership record not found." });
     }
 
-    // Authorization check: User must be an owner/President of the community, an Admin, or an Association member
+    // Authorization check: User must be an owner/President/Admin
     const community = await Community.findById(member.community_id);
 
-    let isMember = false;
-    if (req.user.roles.includes("association")) {
-      const membership = await CommunityMember.findOne({
-        community_id: member.community_id,
-        user_id: req.user.id,
-        status: "Approved",
-      });
-      if (membership) isMember = true;
-    }
+    // Check if user is an approved executive (President) of this community
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id: member.community_id,
+      user_id: req.user.id,
+      status: "Approved"
+    });
 
     const isAuthorized =
       community?.owner_id.toString() === req.user.id ||
       req.user.roles.includes("admin") ||
-      isMember;
+      currentUserMembership?.role === "President";
 
     if (!community || !isAuthorized) {
       return res
@@ -233,17 +230,30 @@ exports.getCommunityApplicants = async (req, res) => {
     const isOwner = community.owner_id.toString() === req.user.id;
     const isAdmin = req.user.roles.includes("admin");
 
-    let isMember = false;
-    if (!isOwner && !isAdmin) {
-      const membership = await CommunityMember.findOne({
-        community_id,
-        user_id: req.user.id,
-        status: "Approved",
-      });
-      if (membership) isMember = true;
-    }
+    // Check if user is an approved workforce member (Organizer level)
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id,
+      user_id: req.user.id,
+      status: "Approved",
+    });
 
-    if (!isOwner && !isAdmin && !isMember) {
+    const allowedRoles = [
+      "President",
+      "Vice President",
+      "Secretary",
+      "Treasurer",
+      "Committee",
+      "High Council",
+      "AJK",
+      "Advisor",
+    ];
+
+    if (
+      !isOwner &&
+      !isAdmin &&
+      (!currentUserMembership ||
+        !allowedRoles.includes(currentUserMembership.role))
+    ) {
       return res.status(403).json({ message: "Not authorized." });
     }
 
@@ -280,18 +290,14 @@ exports.addMember = async (req, res) => {
     const isOwner = community.owner_id.toString() === req.user.id;
     const isAdmin = req.user.roles.includes("admin");
 
-    // Check if user is an approved Association member
-    let isAssociationMember = false;
-    if (req.user.roles.includes("association")) {
-      const callerMembership = await CommunityMember.findOne({
-        community_id,
-        user_id: req.user.id,
-        status: "Approved",
-      });
-      if (callerMembership) isAssociationMember = true;
-    }
+    // Check if user is an approved executive (President) of this community
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id,
+      user_id: req.user.id,
+      status: "Approved"
+    });
 
-    if (!isOwner && !isAdmin && !isAssociationMember) {
+    if (!isOwner && !isAdmin && currentUserMembership?.role !== "President") {
       return res
         .status(403)
         .json({ message: "Not authorized to add members." });

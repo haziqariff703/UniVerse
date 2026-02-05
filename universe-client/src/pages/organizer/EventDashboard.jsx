@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { swalConfirm } from "@/lib/swalConfig";
 import { useParams, Link } from "react-router-dom";
 import {
   Users,
@@ -149,13 +150,14 @@ const EventDashboard = () => {
   };
 
   const handleConcludeEvent = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to conclude this event? This will award merit points to all speakers and mark the event as completed. This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+    const result = await swalConfirm({
+      title: "Conclude Event?",
+      text: "Are you sure you want to conclude this event? This will award merit points to all speakers and mark the event as completed. This action cannot be undone.",
+      confirmButtonText: "Yes, Conclude It",
+      confirmButtonColor: "#7c3aed",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const token = localStorage.getItem("token");

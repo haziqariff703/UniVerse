@@ -4,13 +4,14 @@ import {
   RefreshCw,
   Eye,
   Briefcase,
+  FileText,
   Calendar,
   Mail,
   Shield,
-  FileText,
   MoreVertical,
   Users,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -22,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
 const KpiCard = ({
   title,
@@ -122,6 +124,24 @@ const OrganizersList = () => {
     // fetchOrganizers triggers via dependency
   };
 
+  const handleExport = () => {
+    if (organizers.length === 0) {
+      toast.error("No organizers available to export");
+      return;
+    }
+
+    const exportData = organizers.map((o) => ({
+      Name: o.name,
+      Email: o.email,
+      Joined: new Date(o.createdAt).toLocaleDateString(),
+      "Events Count": o.events_count || 0,
+      Status: o.status || "active",
+    }));
+
+    downloadCSV(exportData, "UniVerse_Organizers_Registry");
+    toast.success("Organizers registry exported successfully");
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* 1. Dashboard Header */}
@@ -148,7 +168,7 @@ const OrganizersList = () => {
               downloadCSV(exportData, "organizers_report");
             }}
           >
-            <FileText className="h-4 w-4" />
+            <Download className="h-4 w-4" />
             Export CSV
           </Button>
           <button
@@ -224,7 +244,7 @@ const OrganizersList = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
             >
               <option value={10}>10 Entries</option>
               <option value={25}>25 Entries</option>
@@ -232,6 +252,14 @@ const OrganizersList = () => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <FileText size={16} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

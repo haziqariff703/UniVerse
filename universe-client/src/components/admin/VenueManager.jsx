@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { swalConfirm } from "@/lib/swalConfig";
 import {
   MapPin,
   Plus,
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 /**
  * Common facilities usually available on campus.
@@ -121,6 +123,25 @@ const VenueManager = ({ onBack }) => {
       setLoading(false);
     }
   }, [currentPage, itemsPerPage, searchQuery, filterFacility]);
+
+  const handleExport = () => {
+    if (venues.length === 0) {
+      toast.error("No venues available to export");
+      return;
+    }
+
+    const exportData = venues.map((v) => ({
+      Name: v.name,
+      Code: v.location_code,
+      Type: v.type,
+      Capacity: v.max_capacity,
+      Status: v.occupancyStatus,
+      Facilities: Array.isArray(v.facilities) ? v.facilities.join(", ") : "N/A",
+    }));
+
+    downloadCSV(exportData, "UniVerse_Venues_Portfolio");
+    toast.success("Venues portfolio exported successfully");
+  };
 
   useEffect(() => {
     fetchVenues();
@@ -312,7 +333,14 @@ const VenueManager = ({ onBack }) => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this venue?")) return;
+    const result = await swalConfirm({
+      title: "Decommission Venue?",
+      text: "Are you sure you want to decommission this venue? This cannot be undone.",
+      confirmButtonText: "Yes, Decommission",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -364,23 +392,6 @@ const VenueManager = ({ onBack }) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = venues.map((venue) => ({
-                Name: venue.name,
-                Location: venue.location_code,
-                Capacity: venue.max_capacity,
-                Type: venue.type,
-                Status: venue.occupancyStatus,
-              }));
-              downloadCSV(exportData, "venues_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchVenues}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -491,6 +502,14 @@ const VenueManager = ({ onBack }) => {
               <option value={100}>100 Entries</option>
             </select>
           </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <FileText size={18} className="text-violet-400" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

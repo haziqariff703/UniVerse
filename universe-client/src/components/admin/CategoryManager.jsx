@@ -18,6 +18,7 @@ import {
   BarChart3,
   Layers,
   Users,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -41,6 +42,7 @@ import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { FileText } from "lucide-react";
+import { swalConfirm } from "@/lib/swalConfig";
 
 /**
  * Intelligence Card Component
@@ -147,6 +149,23 @@ const CategoryManager = () => {
     setCurrentCategory(null);
   };
 
+  const handleExport = () => {
+    if (categories.length === 0) {
+      toast.error("No categories available to export");
+      return;
+    }
+
+    const exportData = categories.map((c) => ({
+      Name: c.name,
+      Description: c.description || "N/A",
+      Status: c.is_active ? "Active" : "Inactive",
+      Color: c.color,
+    }));
+
+    downloadCSV(exportData, "UniVerse_Categories_Taxonomy");
+    toast.success("Categories exported successfully");
+  };
+
   const openEdit = (cat) => {
     setCurrentCategory(cat);
     setFormData({
@@ -194,12 +213,14 @@ const CategoryManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (
-      !confirm(
-        "Are you sure? This will permanently de-register this sector from the taxonomy.",
-      )
-    )
-      return;
+    const result = await swalConfirm({
+      title: "Delete Category?",
+      text: "Are you sure? This will permanently de-register this sector from the taxonomy.",
+      confirmButtonText: "Yes, Delete",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (!result.isConfirmed) return;
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -256,22 +277,6 @@ const CategoryManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = categories.map((cat) => ({
-                Name: cat.name,
-                Type: cat.type || "General",
-                Usage: cat.usageCount || 0,
-                Status: cat.is_active ? "Active" : "Inactive",
-              }));
-              downloadCSV(exportData, "categories_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchCategories}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -406,6 +411,14 @@ const CategoryManager = () => {
                 <option value={100}>100 Entries</option>
               </select>
             </div>
+
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
+            >
+              <Download size={16} className="text-violet-400" />
+              <span>Export CSV</span>
+            </button>
           </div>
         </div>
       </div>
