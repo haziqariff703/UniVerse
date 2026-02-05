@@ -96,7 +96,7 @@ const FeaturedEventSlider = ({ events, user, isSmall = false }) => {
               {/* Subtle inner glow for the glass card */}
               <div
                 className={cn(
-                  "absolute -top-24 -left-24 w-48 h-48 blur-[80px] rounded-full opacity-20",
+                  "absolute -top-24 -left-24 w-48 h-48 blur-[40px] rounded-full opacity-20",
                   currentEvent.theme === "cyan"
                     ? "bg-cyan-400"
                     : "bg-purple-400",
@@ -112,7 +112,7 @@ const FeaturedEventSlider = ({ events, user, isSmall = false }) => {
               >
                 <span
                   className={cn(
-                    "px-3 py-1 rounded-full text-[10px] md:text-xs font-bold font-clash tracking-widest uppercase border backdrop-blur-md",
+                    "px-3 py-1 rounded-full text-[10px] md:text-xs font-bold font-clash tracking-widest uppercase border backdrop-blur-sm",
                     !isSmall && "px-4 py-1.5",
                     currentEvent.theme === "cyan"
                       ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-300"
@@ -124,11 +124,11 @@ const FeaturedEventSlider = ({ events, user, isSmall = false }) => {
                 </span>
                 {!isSmall && (
                   <>
-                    <span className="px-4 py-1.5 rounded-full text-xs font-bold font-clash bg-white/5 border border-white/10 text-white/80 tracking-widest uppercase backdrop-blur-md">
+                    <span className="px-4 py-1.5 rounded-full text-xs font-bold font-clash bg-white/5 border border-white/10 text-white/80 tracking-widest uppercase backdrop-blur-sm">
                       <Target className="w-3.5 h-3.5 inline mr-2 mb-0.5" />
                       {currentEvent.target}
                     </span>
-                    <span className="px-4 py-1.5 rounded-full text-xs font-bold font-clash bg-white/5 border border-white/10 text-emerald-400/90 tracking-widest uppercase backdrop-blur-md">
+                    <span className="px-4 py-1.5 rounded-full text-xs font-bold font-clash bg-white/5 border border-white/10 text-emerald-400/90 tracking-widest uppercase backdrop-blur-sm">
                       {currentEvent.benefit}
                     </span>
                   </>

@@ -65,7 +65,7 @@ export default function StudentNavbar({
   return (
     <header className="sticky top-4 z-50 px-4 w-full flex justify-between pointer-events-none">
       {/* LEFT: Hamburger | Title (Matching Glass Pill) - Slides with Sidebar */}
-      <div className="pointer-events-auto flex items-center gap-3 bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 shadow-lg">
+      <div className="pointer-events-auto flex items-center gap-3 bg-[#0a0a0f]/80 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 shadow-lg">
         <button
           onClick={toggleSidebar}
           className="text-white hover:text-fuchsia-400 transition-colors"
@@ -80,7 +80,7 @@ export default function StudentNavbar({
       </div>
 
       {/* DESKTOP: Right-Aligned Status HUD Pill */}
-      <div className="pointer-events-auto flex items-center gap-4 bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 rounded-full px-5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="pointer-events-auto flex items-center gap-4 bg-[#0a0a0f]/80 backdrop-blur-md border border-white/10 rounded-full px-5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         {/* A. Live Clock (Hidden on Mobile) */}
         <div className="hidden md:block text-xs font-geist text-white/50 tracking-widest uppercase min-w-[120px] text-center">
           {formatTime(time)}

@@ -269,7 +269,7 @@ const News = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group relative h-[320px] md:h-[380px] rounded-[2.5rem] overflow-hidden bg-black/40 backdrop-blur-3xl border border-white/10 hover:border-white/30 transition-all duration-300"
+                className="group relative h-[320px] md:h-[380px] rounded-[2.5rem] overflow-hidden bg-black/40 backdrop-blur-lg border border-white/10 hover:border-white/30 transition-all duration-300"
               >
                 <img
                   src={news.image}
@@ -305,7 +305,7 @@ const News = () => {
           {/* SIDEBAR FEED (Right Column - 4 Cols ~33%) */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             {/* CAMPUS CALENDAR - Compressed */}
-            <div className="p-5 rounded-[2.5rem] bg-white/5 backdrop-blur-3xl border border-white/10 flex flex-col items-center">
+            <div className="p-5 rounded-[2.5rem] bg-white/5 backdrop-blur-lg border border-white/10 flex flex-col items-center">
               <div className="flex items-center gap-2 mb-3 w-full px-1">
                 <CalendarIcon size={14} className="text-fuchsia-400" />
                 <span className="text-[10px] font-mono font-bold text-white uppercase tracking-widest">
@@ -322,7 +322,7 @@ const News = () => {
             </div>
 
             {/* QUICK SIGNALS BUNDLE */}
-            <div className="rounded-[2.5rem] bg-white/5 backdrop-blur-3xl border border-white/10 overflow-hidden flex flex-col">
+            <div className="rounded-[2.5rem] bg-white/5 backdrop-blur-lg border border-white/10 overflow-hidden flex flex-col">
               <div className="px-6 py-4 border-b border-white/5 flex items-center gap-2 bg-white/5">
                 <Zap size={14} className="text-fuchsia-500" />
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">

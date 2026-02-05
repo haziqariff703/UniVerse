@@ -300,7 +300,7 @@ const EventDetails = () => {
       <div className="fixed top-24 left-6 md:left-12 z-50">
         <button
           onClick={() => navigate(-1)}
-          className="group flex items-center gap-3 px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all"
+          className="group flex items-center gap-3 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">
@@ -392,7 +392,7 @@ const EventDetails = () => {
                   Participant Rewards
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-fuchsia-500/40 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-fuchsia-500/40 transition-all backdrop-blur-sm text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] transition-all">
                       <Zap size={20} fill="currentColor" />
                     </div>
@@ -403,7 +403,7 @@ const EventDetails = () => {
                       University Rank
                     </p>
                   </div>
-                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-cyan-500/40 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-cyan-500/40 transition-all backdrop-blur-sm text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
                       <Award size={20} />
                     </div>
@@ -414,7 +414,7 @@ const EventDetails = () => {
                       Digital Credential
                     </p>
                   </div>
-                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-violet-500/40 transition-all backdrop-blur-xl text-center md:text-left">
+                  <div className="group p-6 rounded-[2rem] bg-slate-900/60 border border-white/10 hover:border-violet-500/40 transition-all backdrop-blur-sm text-center md:text-left">
                     <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-400 mb-4 mx-auto md:mx-0 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all">
                       <Utensils size={20} />
                     </div>
@@ -513,7 +513,7 @@ const EventDetails = () => {
           <div className="lg:w-2/5">
             <div className="sticky top-28 space-y-8">
               {/* LAUNCHPAD CARD */}
-              <div className="p-8 bg-slate-950/80 backdrop-blur-3xl rounded-[3rem] border border-white/20 relative overflow-hidden shadow-2xl">
+              <div className="p-8 bg-slate-950/80 backdrop-blur-lg rounded-[3rem] border border-white/20 relative overflow-hidden shadow-2xl">
                 <BorderBeam />
 
                 <div className="relative z-10 space-y-10">
@@ -636,7 +636,7 @@ const EventDetails = () => {
               </div>
 
               {/* SOCIAL PROOF & URGENCY (PHASE 3) */}
-              <div className="p-8 bg-slate-950/80 backdrop-blur-2xl rounded-[3rem] border border-white/20 space-y-8">
+              <div className="p-8 bg-slate-950/80 backdrop-blur-lg rounded-[3rem] border border-white/20 space-y-8">
                 {/* Facepile + Count */}
                 <div className="flex flex-col items-center gap-4">
                   <div className="flex -space-x-3">
@@ -761,7 +761,7 @@ const EventDetails = () => {
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="relative max-w-md w-full p-12 rounded-[2.5rem] bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-2xl text-center space-y-8 overflow-hidden"
+              className="relative max-w-md w-full p-12 rounded-[2.5rem] bg-white/[0.03] backdrop-blur-lg border border-white/20 shadow-2xl text-center space-y-8 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/10 via-transparent to-cyan-500/10" />
 

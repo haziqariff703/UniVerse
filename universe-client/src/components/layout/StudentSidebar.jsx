@@ -85,7 +85,7 @@ const StudentSidebar = ({ isOpen, user, onLogout, onToggle }) => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            className="fixed top-0 left-0 h-screen w-[280px] z-40 bg-black/20 backdrop-blur-3xl border-r border-white/10 rounded-r-[2.5rem] flex flex-col pt-10 pb-8"
+            className="fixed top-0 left-0 h-screen w-[280px] z-40 bg-black/20 backdrop-blur-lg border-r border-white/10 rounded-r-[2.5rem] flex flex-col pt-10 pb-8"
           >
             {/* Logo Section */}
             <div className="px-8 mb-6">

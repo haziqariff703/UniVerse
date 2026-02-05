@@ -283,7 +283,7 @@ const MyBookings = () => {
           </div>
 
           {/* SLIDING TAB SWITCHER */}
-          <div className="relative flex p-1.5 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] self-start md:self-auto">
+          <div className="relative flex p-1.5 bg-white/5 backdrop-blur-lg border border-white/10 rounded-[2rem] self-start md:self-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -336,7 +336,7 @@ const MyBookings = () => {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="group relative flex flex-col lg:flex-row items-stretch rounded-[2.5rem] bg-black/40 backdrop-blur-3xl border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 shadow-2xl"
+                    className="group relative flex flex-col lg:flex-row items-stretch rounded-[2.5rem] bg-black/40 backdrop-blur-lg border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 shadow-2xl"
                   >
                     {/* MAIN SECTION (70%) */}
                     <div className="flex-1 p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center min-w-0">
