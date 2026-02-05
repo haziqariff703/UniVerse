@@ -121,16 +121,19 @@ const Profile = () => {
           });
           if (res.ok) {
             const userData = await res.json();
-            // Merge real data with mock structure
-            setStudent((prev) => ({
-              ...prev,
-              name: userData.name || prev.name,
-              studentId: userData.student_id || prev.studentId,
-              avatar:
-                userData.avatar ||
-                "https://ui-avatars.com/api/?name=Student&background=18181b&color=fff",
+            // Build profile from backend data, only use mock for structure fields
+            setStudent({
+              // Use backend data first, then mock structure
+              name: userData.name || "Student",
+              studentId: userData.student_id || "000000000",
+              program: userData.program || MOCK_STUDENT_PROFILE.program,
+              semester: userData.semester || MOCK_STUDENT_PROFILE.semester,
+
+              // Images: Use backend or blank (never use mock URLs)
+              avatar: userData.avatar || "",
               coverImage: userData.coverImage || "",
-              // Use backend data or empty strings/arrays, do NOT fall back to mock data for these fields
+
+              // User-editable fields: Use backend or empty (never use mock data)
               bio: userData.bio || "",
               links: userData.links || {
                 github: "",
@@ -139,8 +142,17 @@ const Profile = () => {
               },
               dna: userData.dna || [],
               assets: userData.assets || [],
+
+              // XP/Merit: Use backend current_merit
               xp: userData.current_merit || 0,
-            }));
+
+              // Keep mock structure for display-only fields
+              rank: MOCK_STUDENT_PROFILE.rank,
+              maxXp: MOCK_STUDENT_PROFILE.maxXp,
+              level: MOCK_STUDENT_PROFILE.level,
+              loadout: MOCK_STUDENT_PROFILE.loadout,
+              questLog: MOCK_STUDENT_PROFILE.questLog,
+            });
             // Load certificates
             setCertificates(userData.assets || []);
           }
@@ -272,10 +284,12 @@ const Profile = () => {
           {/* I. FLOATING ISLAND - COSMIC COVER */}
           <div className="relative w-full h-64 md:h-80 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-black/60 backdrop-blur-xl group/cover">
             {/* Abstract Nebula Background */}
-            <div
-              className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-              style={{ backgroundImage: `url(${student.coverImage})` }}
-            />
+            {student.coverImage && (
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+                style={{ backgroundImage: `url(${student.coverImage})` }}
+              />
+            )}
 
             {/* Gradient Overlay for Text Readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
@@ -298,11 +312,17 @@ const Profile = () => {
               onClick={() => handleOpenEdit("visuals")}
               className="relative w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-[#0a0a0f] ring-1 ring-white/20 overflow-hidden bg-[#0a0a0f] shadow-2xl group cursor-pointer"
             >
-              <img
-                src={student.avatar}
-                alt={student.name}
-                className="w-full h-full object-cover transition-opacity duration-300"
-              />
+              {student.avatar ? (
+                <img
+                  src={student.avatar}
+                  alt={student.name}
+                  className="w-full h-full object-cover transition-opacity duration-300"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20">
+                  <User className="w-16 h-16 text-white/40" />
+                </div>
+              )}
 
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

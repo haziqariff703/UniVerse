@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
     sparse: true, // Allows multiple null/undefined values
     unique: true,
     trim: true,
-    minlength: 10,
-    maxlength: 10,
+    minlength: 8, // More flexible - allow 8-15 characters
+    maxlength: 15,
   },
   name: {
     type: String,
@@ -42,8 +42,8 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     unique: true,
     trim: true,
-    minlength: 12,
-    maxlength: 12,
+    minlength: 10, // More flexible - allow 10-15 characters
+    maxlength: 15,
   },
   gender: {
     type: String,

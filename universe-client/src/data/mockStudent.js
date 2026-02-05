@@ -1,12 +1,10 @@
 export const MOCK_STUDENT_PROFILE = {
-  name: "Megat Irfan",
-  studentId: "2023860618",
+  name: "Student",
+  studentId: "000000000",
   program: "Computer Science (CS230)",
   semester: "Sem 04",
-  avatar:
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop",
-  coverImage:
-    "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2048&auto=format&fit=crop",
+  avatar: "",
+  coverImage: "",
 
   // Gamification
   rank: "Rising Star",
