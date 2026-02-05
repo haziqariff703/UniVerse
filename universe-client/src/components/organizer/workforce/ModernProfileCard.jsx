@@ -14,6 +14,15 @@ const ModernProfileCard = ({ member, isOwner, onEdit }) => {
   const user = user_id || {};
   const { name, avatar, current_merit } = user;
 
+  const API_BASE = "http://localhost:5000";
+
+  // Resolve avatar URL
+  const avatarUrl = avatar
+    ? avatar.startsWith("http")
+      ? avatar
+      : `${API_BASE}${avatar}`
+    : null;
+
   // Visual helper for role colors
   const getRoleColor = (role) => {
     switch (role?.toLowerCase()) {
@@ -103,9 +112,9 @@ const ModernProfileCard = ({ member, isOwner, onEdit }) => {
           />
           <div className="w-32 h-32 md:w-36 md:h-36 rounded-full p-1 bg-gradient-to-br from-white/20 to-transparent">
             <div className="w-full h-full rounded-full overflow-hidden bg-[#1a1a1a] shadow-2xl relative">
-              {avatar ? (
+              {avatarUrl ? (
                 <img
-                  src={avatar}
+                  src={avatarUrl}
                   alt={name}
                   className="w-full h-full object-cover"
                 />

@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useTheme } from "@/context/ThemeContext";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 // Icons
 import {
@@ -16,6 +14,7 @@ import {
   Menu,
   Rocket,
 } from "lucide-react";
+import { swalConfirm } from "@/lib/swalConfig";
 
 const NAV_LINKS = [
   { name: "Home", href: "/" },
@@ -30,11 +29,20 @@ const Navbar = ({ user, collapsed, onToggleSidebar }) => {
   const location = useLocation();
   const [hoveredLink, setHoveredLink] = useState(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-    window.dispatchEvent(new Event("authChange"));
+  const handleLogout = async () => {
+    const result = await swalConfirm({
+      title: "Logout?",
+      text: "Are you sure you want to end your session?",
+      confirmButtonText: "Logout",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (result.isConfirmed) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+      window.dispatchEvent(new Event("authChange"));
+    }
   };
 
   return user ? (

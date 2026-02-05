@@ -290,7 +290,7 @@ const CreateEvent = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8">
+    <div className="min-h-screen pt-8 pb-20 px-4 md:px-8">
       {/* Header */}
       <div className="max-w-[1600px] mx-auto mb-6">
         <h1 className="text-3xl font-clash font-bold text-white mb-2">

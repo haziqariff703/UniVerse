@@ -98,7 +98,7 @@ const MyEvents = () => {
   const displayedEvents = getFilteredEvents();
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+    <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
       {/* Header Row */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
         <div>

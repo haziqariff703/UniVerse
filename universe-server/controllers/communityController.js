@@ -97,7 +97,7 @@ exports.getCommunityBySlug = async (req, res) => {
     const members = await CommunityMember.find({
       community_id: community._id,
       status: "Approved",
-    }).populate("user_id", "name email");
+    }).populate("user_id", "name email avatar current_merit");
 
     res.status(200).json({ community, members });
   } catch (error) {
@@ -259,7 +259,7 @@ exports.getCommunityApplicants = async (req, res) => {
 
     const applicants = await CommunityMember.find({ community_id }).populate(
       "user_id",
-      "name email student_id",
+      "name email student_id avatar current_merit",
     );
 
     res.status(200).json(applicants);

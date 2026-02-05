@@ -7,7 +7,6 @@ import FacultyShowcase from "@/components/sections/FacultyShowcase";
 import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
-import Footer from "@/components/common/Footer";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
 
 const API_BASE = "http://localhost:5000";
@@ -177,7 +176,6 @@ const Home = () => {
 
       <Testimonials />
       <Newsletter />
-      <Footer />
     </>
   );
 };

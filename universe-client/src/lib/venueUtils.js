@@ -22,7 +22,12 @@ export const getVenueStatus = (accessHours) => {
     const currentTimeMinutes = currentHour * 60 + currentMin;
 
     // Parse access hours (e.g., "08:00 - 22:00")
-    const [startPart, endPart] = accessHours.split("-").map(s => s.trim());
+    const parts = accessHours.split("-");
+    if (parts.length !== 2) {
+         // Fallback if format is not "HH:mm - HH:mm"
+         return { isOpen: true, status: "OPEN (24H)" }; 
+    }
+    const [startPart, endPart] = parts.map(s => s.trim());
     
     // Helper to parse "HH:mm"
     const parseTime = (timeStr) => {

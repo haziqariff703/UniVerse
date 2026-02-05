@@ -3,6 +3,7 @@ const BroadcastLog = require("../models/broadcastLog");
 const User = require("../models/user");
 const Registration = require("../models/registration");
 const Event = require("../models/event");
+const EventCrew = require("../models/eventCrew");
 
 /**
  * @desc    Get notifications for the logged-in user
@@ -189,7 +190,10 @@ exports.createOrganizerBroadcast = async (req, res) => {
 
     // 1. Determine Recipient IDs
     if (target_audience === 'attendees' && event_id) {
-      const registrations = await Registration.find({ event_id, status: 'Confirmed' }).select("user_id");
+      const registrations = await Registration.find({ 
+        event_id, 
+        status: { $in: ['Confirmed', 'CheckedIn'] } 
+      }).select("user_id");
       recipientIds = registrations.map(r => r.user_id);
     } else if (target_audience === 'workforce' && event_id) {
       const crew = await EventCrew.find({ event_id, status: 'accepted' }).select("user_id");

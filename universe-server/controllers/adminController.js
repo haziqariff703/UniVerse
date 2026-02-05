@@ -8,6 +8,7 @@ const Notification = require('../models/notification');
 const Speaker = require('../models/speaker');
 const Community = require('../models/community');
 const Review = require('../models/review');
+const ClubProposal = require('../models/clubProposal');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
@@ -610,18 +611,31 @@ exports.rejectEvent = async (req, res) => {
  */
 exports.getPendingOrganizers = async (req, res) => {
   try {
-    const users = await User.find({ role: 'student', organizerRequest: true })
+    // DEBUG: Log checks
+    const allRequests = await User.countDocuments({ organizerRequest: true });
+    console.log(`[DEBUG] Total users with organizerRequest: ${allRequests}`);
+
+    // Allow any user with an active organizerRequest to be shown, regardless of current role
+    // This fixes issues where a user might already be an 'organizer' (e.g. from previous tests) but wants to submit a new proposal
+    const users = await User.find({ organizerRequest: true })
       .select('-password')
       .sort({ created_at: -1 })
       .lean();
+    
+    console.log(`[DEBUG] Users found with organizerRequest=true: ${users.length}`);
 
     // Populate the latest proposal for each user
     const usersWithProposals = await Promise.all(users.map(async (user) => {
-      const proposal = await require('../models/clubProposal').findOne({ 
-        student_id: user._id,
-        status: 'pending' 
-      }).sort({ created_at: -1 });
-      return { ...user, proposal };
+      try {
+        const proposal = await ClubProposal.findOne({ 
+          student_id: user._id, 
+          status: 'pending' 
+        }).sort({ created_at: -1 });
+        return { ...user, proposal };
+      } catch (err) {
+        console.error(`Error fetching proposal for user ${user._id}:`, err);
+        return { ...user, proposal: null };
+      }
     }));
 
     res.json({ users: usersWithProposals });
@@ -673,7 +687,9 @@ exports.approveOrganizer = async (req, res) => {
             title: 'Faculty Advisor'
           },
           owner_id: user._id,
-          is_verified: true // Automatically verified since Admin approved the proposal
+          is_verified: true, // Automatically verified since Admin approved the proposal
+          logo: proposal.logo_url || '',
+          banner: proposal.banner_url || ''
         });
         await community.save();
 
@@ -1515,19 +1531,30 @@ exports.getAllCommunities = async (req, res) => {
       .populate('owner_id', 'name email student_id')
       .sort({ name: 1 });
 
-    // Enforce usage stats (count events for each community)
+    // 1. Get Event Stat Counts
     const eventStats = await Event.aggregate([
       { $group: { _id: '$organizer_id', count: { $sum: 1 } } }
     ]);
-
-    const statsMap = eventStats.reduce((acc, curr) => {
+    const eventStatsMap = eventStats.reduce((acc, curr) => {
       acc[curr._id] = curr.count;
+      return acc;
+    }, {});
+
+    // 2. Get Member Counts (New)
+    const CommunityMember = require('../models/communityMember');
+    const memberStats = await CommunityMember.aggregate([
+      { $match: { status: 'Approved' } }, // Only count approved members
+      { $group: { _id: '$community_id', count: { $sum: 1 } } }
+    ]);
+    const memberStatsMap = memberStats.reduce((acc, curr) => {
+      acc[curr._id.toString()] = curr.count; // Ensure ID is string for lookup
       return acc;
     }, {});
 
     const enrichedDocs = communities.map(doc => ({
       ...doc.toObject(),
-      eventCount: statsMap[doc.owner_id?._id?.toString()] || 0
+      eventCount: eventStatsMap[doc.owner_id?._id?.toString()] || 0,
+      memberCount: memberStatsMap[doc._id.toString()] || 0 // Default to 0
     }));
 
     res.json({

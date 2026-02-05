@@ -1,5 +1,13 @@
-import { useState, useEffect } from "react";
-import { School, UserCheck, FileUp, CheckCircle, Upload } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  School,
+  UserCheck,
+  FileUp,
+  CheckCircle,
+  Upload,
+  FileText,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Stepper, { Step } from "@/components/Stepper";
@@ -14,7 +22,7 @@ const STEPS_INFO = [
 ];
 
 const ClubProposalForm = () => {
-  const [currentStep, setCurrentStep] = useState(1); // Track step for Info Panel
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
@@ -25,7 +33,14 @@ const ClubProposalForm = () => {
     committeeSize: "",
     constitution: null,
     consentLetter: null,
+    logo: null,
+    banner: null,
   });
+
+  const constitutionRef = useRef(null);
+  const consentLetterRef = useRef(null);
+  const logoRef = useRef(null);
+  const bannerRef = useRef(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -47,16 +62,56 @@ const ClubProposalForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e, field) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File too large", {
+          description: "Maximum file size is 5MB.",
+        });
+        return;
+      }
+      setFormData((prev) => ({ ...prev, [field]: file }));
+      toast.success(
+        `${field === "constitution" ? "Constitution" : field === "consentLetter" ? "Consent Letter" : field === "logo" ? "Logo" : "Banner"} selected`,
+        {
+          description: file.name,
+        },
+      );
+    }
+  };
+
   const handleFinalStepCompleted = async () => {
     try {
       const token = localStorage.getItem("token");
+      const data = new FormData();
+
+      // Append text fields
+      Object.keys(formData).forEach((key) => {
+        if (
+          key !== "constitution" &&
+          key !== "consentLetter" &&
+          key !== "logo" &&
+          key !== "banner"
+        ) {
+          data.append(key, formData[key]);
+        }
+      });
+
+      // Append files
+      if (formData.constitution)
+        data.append("constitution", formData.constitution);
+      if (formData.consentLetter)
+        data.append("consentLetter", formData.consentLetter);
+      if (formData.logo) data.append("logo", formData.logo);
+      if (formData.banner) data.append("banner", formData.banner);
+
       const res = await fetch("http://localhost:5000/api/proposals", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: data,
       });
 
       if (res.ok) {
@@ -115,11 +170,6 @@ const ClubProposalForm = () => {
     );
   }
 
-  // Determine if current step is valid to enable/disable Next button
-  // Note: Since we don't have easy access to disable the Stepper button dynamically per step without re-render,
-  // we are relying on the user filling data. For this implementation, we won't strictly block "Next" to keep it fluid,
-  // or we could pass `nextButtonProps={{ disabled: !isValid }}` if we calculated `isValid` per step.
-
   return (
     <div className="flex flex-col md:flex-row gap-6 h-full min-h-[600px]">
       {/* LEFT: Stepper & Form */}
@@ -172,6 +222,84 @@ const ClubProposalForm = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Logo Upload */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                      Club Logo
+                    </label>
+                    <div
+                      onClick={() => logoRef.current.click()}
+                      className={`border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all h-32 ${
+                        formData.logo
+                          ? "border-emerald-500/50 bg-emerald-500/5"
+                          : "border-border hover:border-violet-500/50 bg-muted/20"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        ref={logoRef}
+                        onChange={(e) => handleFileChange(e, "logo")}
+                        className="hidden"
+                        accept="image/*"
+                      />
+                      {formData.logo ? (
+                        <div className="space-y-1">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto" />
+                          <p className="text-xs text-emerald-500 truncate max-w-[150px]">
+                            {formData.logo.name}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
+                          <p className="text-xs text-muted-foreground">
+                            Upload Logo
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Banner Upload */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                      Club Banner
+                    </label>
+                    <div
+                      onClick={() => bannerRef.current.click()}
+                      className={`border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all h-32 ${
+                        formData.banner
+                          ? "border-emerald-500/50 bg-emerald-500/5"
+                          : "border-border hover:border-violet-500/50 bg-muted/20"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        ref={bannerRef}
+                        onChange={(e) => handleFileChange(e, "banner")}
+                        className="hidden"
+                        accept="image/*"
+                      />
+                      {formData.banner ? (
+                        <div className="space-y-1">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto" />
+                          <p className="text-xs text-emerald-500 truncate max-w-[150px]">
+                            {formData.banner.name}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
+                          <p className="text-xs text-muted-foreground">
+                            Upload Banner
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -234,28 +362,118 @@ const ClubProposalForm = () => {
                   Document Uploads
                 </h2>
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="border-2 border-dashed border-border hover:border-violet-500/50 rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer bg-muted/20 group">
-                    <div className="bg-background p-3 rounded-full mb-3 shadow-sm group-hover:bg-violet-500 group-hover:text-white transition-colors">
-                      <Upload className="w-6 h-6" />
+                  {/* Proposed Constitution */}
+                  <div
+                    onClick={() => constitutionRef.current.click()}
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                      formData.constitution
+                        ? "border-emerald-500/50 bg-emerald-500/5"
+                        : "border-border hover:border-violet-500/50 bg-muted/20"
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      ref={constitutionRef}
+                      onChange={(e) => handleFileChange(e, "constitution")}
+                      className="hidden"
+                      accept=".pdf"
+                    />
+                    <div
+                      className={`p-3 rounded-full mb-3 shadow-sm transition-colors ${
+                        formData.constitution
+                          ? "bg-emerald-500 text-white"
+                          : "bg-background group-hover:bg-violet-500 group-hover:text-white"
+                      }`}
+                    >
+                      {formData.constitution ? (
+                        <FileText className="w-6 h-6" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
                     </div>
                     <h4 className="font-medium text-foreground">
                       Proposed Constitution
                     </h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PDF, Max 5MB
-                    </p>
+                    {formData.constitution ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-xs text-emerald-500 font-medium truncate max-w-[200px]">
+                          {formData.constitution.name}
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData((prev) => ({
+                              ...prev,
+                              constitution: null,
+                            }));
+                          }}
+                          className="p-1 hover:bg-emerald-500/10 rounded-full text-emerald-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PDF, Max 5MB
+                      </p>
+                    )}
                   </div>
 
-                  <div className="border-2 border-dashed border-border hover:border-violet-500/50 rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer bg-muted/20 group">
-                    <div className="bg-background p-3 rounded-full mb-3 shadow-sm group-hover:bg-violet-500 group-hover:text-white transition-colors">
-                      <Upload className="w-6 h-6" />
+                  {/* Advisor Consent Letter */}
+                  <div
+                    onClick={() => consentLetterRef.current.click()}
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                      formData.consentLetter
+                        ? "border-emerald-500/50 bg-emerald-500/5"
+                        : "border-border hover:border-violet-500/50 bg-muted/20"
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      ref={consentLetterRef}
+                      onChange={(e) => handleFileChange(e, "consentLetter")}
+                      className="hidden"
+                      accept=".pdf,image/*"
+                    />
+                    <div
+                      className={`p-3 rounded-full mb-3 shadow-sm transition-colors ${
+                        formData.consentLetter
+                          ? "bg-emerald-500 text-white"
+                          : "bg-background group-hover:bg-violet-500 group-hover:text-white"
+                      }`}
+                    >
+                      {formData.consentLetter ? (
+                        <FileText className="w-6 h-6" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
                     </div>
                     <h4 className="font-medium text-foreground">
                       Advisor Consent Letter
                     </h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PDF or Image
-                    </p>
+                    {formData.consentLetter ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-xs text-emerald-500 font-medium truncate max-w-[200px]">
+                          {formData.consentLetter.name}
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData((prev) => ({
+                              ...prev,
+                              consentLetter: null,
+                            }));
+                          }}
+                          className="p-1 hover:bg-emerald-500/10 rounded-full text-emerald-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PDF or Image
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -290,6 +508,26 @@ const ClubProposalForm = () => {
                     <span className="text-muted-foreground">Committee</span>
                     <span className="font-medium text-foreground">
                       {formData.committeeSize || 0} Members
+                    </span>
+                  </div>
+                  {/* Image Checklist */}
+                  <div className="flex justify-between border-t border-border/50 pt-2">
+                    <span className="text-muted-foreground">Visuals</span>
+                    <span className="font-medium text-foreground flex gap-2">
+                      {formData.logo ? (
+                        <span className="text-emerald-500 text-xs flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> Logo
+                        </span>
+                      ) : (
+                        <span className="text-red-500 text-xs">No Logo</span>
+                      )}
+                      {formData.banner ? (
+                        <span className="text-emerald-500 text-xs flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> Banner
+                        </span>
+                      ) : (
+                        <span className="text-red-500 text-xs">No Banner</span>
+                      )}
                     </span>
                   </div>
                 </div>

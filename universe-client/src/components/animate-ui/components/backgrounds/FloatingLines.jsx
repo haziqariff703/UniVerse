@@ -292,7 +292,14 @@ export default function FloatingLines({
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    let renderer;
+    try {
+      renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    } catch (e) {
+      console.error("WebGL initialization failed:", e);
+      return;
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
@@ -466,7 +473,7 @@ export default function FloatingLines({
         ro.disconnect();
       }
 
-      if (interactive) {
+      if (interactive && renderer) {
         renderer.domElement.removeEventListener(
           "pointermove",
           handlePointerMove,
@@ -477,11 +484,15 @@ export default function FloatingLines({
         );
       }
 
+      // Thorough disposal
       geometry.dispose();
       material.dispose();
-      renderer.dispose();
-      if (renderer.domElement.parentElement) {
-        renderer.domElement.parentElement.removeChild(renderer.domElement);
+      if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss(); // Help the browser reclaim WebGL context
+        if (renderer.domElement && renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

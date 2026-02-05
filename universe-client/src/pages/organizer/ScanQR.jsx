@@ -117,7 +117,7 @@ const ScanQR = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto flex flex-col items-center">
+    <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 max-w-2xl mx-auto flex flex-col items-center">
       <div className="w-full text-center space-y-4 mb-10">
         <h1 className="text-3xl font-clash font-bold text-white">
           Event Check-in

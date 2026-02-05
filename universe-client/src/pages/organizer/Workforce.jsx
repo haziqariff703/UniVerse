@@ -15,20 +15,31 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import TalentGrid from "@/components/organizer/workforce/TalentGrid";
 import TeamGrid from "@/components/organizer/workforce/TeamGrid";
 import { cn } from "@/lib/utils";
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/dark.css";
 
 const API_BASE = "http://localhost:5000";
 const Workforce = () => {
   const [activeTab, setActiveTab] = useState("applicants");
   const [communities, setCommunities] = useState([]);
   const [selectedCommunity, setSelectedCommunity] = useState(null);
-  const [applicants, setApplicants] = useState([]); // All members with status Applied/Interviewing
-  const [team, setTeam] = useState([]); // All members with status Approved
+  const [applicants, setApplicants] = useState([]);
+  const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(8);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Interview Modal State
+  const [interviewModalOpen, setInterviewModalOpen] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [interviewDate, setInterviewDate] = useState(new Date());
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
+  const [deptFilter, setDeptFilter] = useState("All");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   // Get current user to check ownership
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -126,6 +137,12 @@ const Workforce = () => {
     fetchApplicants();
   }, [fetchApplicants]);
 
+  const openInterviewModal = (applicant) => {
+    setSelectedApplicant(applicant);
+    setInterviewDate(new Date());
+    setInterviewModalOpen(true);
+  };
+
   const handleUpdateStatus = async (memberId, status, extra = {}) => {
     try {
       const token = localStorage.getItem("token");
@@ -150,6 +167,16 @@ const Workforce = () => {
     } catch (err) {
       console.error("Update error:", err);
     }
+  };
+
+  const confirmInterview = async () => {
+    if (!selectedApplicant || !interviewDate) return;
+
+    await handleUpdateStatus(selectedApplicant._id, "Interviewing", {
+      interview_date: interviewDate,
+    });
+    setInterviewModalOpen(false);
+    setSelectedApplicant(null);
   };
 
   const handleInvite = async (studentId) => {
@@ -187,18 +214,28 @@ const Workforce = () => {
     }
   };
 
-  // Filter Logic
-  const [searchTerm, setSearchTerm] = useState("");
-
   const filteredTeam = team.filter((member) => {
     const name = member.user_id?.name?.toLowerCase() || "";
-    const role = member.role?.toLowerCase() || "";
-    const dept = member.department?.toLowerCase() || "";
+    const role = member.role || "AJK";
+    const dept = member.department || "General";
     const search = searchTerm.toLowerCase();
-    return (
-      name.includes(search) || role.includes(search) || dept.includes(search)
-    );
+
+    const matchesSearch =
+      name.includes(search) ||
+      role.toLowerCase().includes(search) ||
+      dept.toLowerCase().includes(search);
+    const matchesRole = roleFilter === "All" || role === roleFilter;
+    const matchesDept = deptFilter === "All" || dept === deptFilter;
+
+    return matchesSearch && matchesRole && matchesDept;
   });
+
+  // Get unique roles and departments for filters
+  const uniqueRoles = ["All", ...new Set(team.map((m) => m.role || "AJK"))];
+  const uniqueDepts = [
+    "All",
+    ...new Set(team.map((m) => m.department || "General")),
+  ];
 
   // Early return if no communities (moved here to avoid hook errors)
   if (!loading && communities.length === 0) {
@@ -225,7 +262,7 @@ const Workforce = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+    <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
       {/* View-Only Warning for Authorized Organizers who aren't Owners */}
       {!isOwner && user.is_organizer_approved && (
         <div className="mb-8 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -261,7 +298,6 @@ const Workforce = () => {
             { id: "council", label: "Council" },
             { id: "applicants", label: "Applicants" },
             { id: "team", label: "Our Team" },
-            { id: "talent", label: "Talent Hub" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -366,6 +402,65 @@ const Workforce = () => {
         </div>
       )}
 
+      {/* Filter Dropdown Panel */}
+      {activeTab === "team" && showFilterDropdown && (
+        <div className="mb-8 p-6 rounded-[2rem] bg-[#050505] border border-white/10 shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-8 relative z-40 animate-in fade-in slide-in-from-top-4">
+          <div>
+            <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-4">
+              Filter by Role
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {uniqueRoles.map((role) => (
+                <button
+                  key={role}
+                  onClick={() => setRoleFilter(role)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
+                    roleFilter === role
+                      ? "bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-900/20"
+                      : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20",
+                  )}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-4">
+              Filter by Department
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {uniqueDepts.map((dept) => (
+                <button
+                  key={dept}
+                  onClick={() => setDeptFilter(dept)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
+                    deptFilter === dept
+                      ? "bg-fuchsia-600 border-fuchsia-500 text-white shadow-lg shadow-fuchsia-900/20"
+                      : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20",
+                  )}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setRoleFilter("All");
+              setDeptFilter("All");
+            }}
+            className="md:col-span-2 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors w-fit mx-auto mt-2"
+          >
+            Reset All Filters
+          </button>
+        </div>
+      )}
+
       {/* Content Area */}
       {activeTab === "team" && (
         /* Custom Controls for Team Tab matching design */
@@ -387,11 +482,32 @@ const Workforce = () => {
           </div>
 
           <div className="flex gap-2">
-            <button className="px-4 py-2.5 bg-[#050505] border border-white/10 hover:border-white/20 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-              <Filter size={14} /> Filter
+            <button
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={cn(
+                "px-4 py-2.5 border rounded-xl text-xs font-bold transition-all flex items-center gap-2",
+                showFilterDropdown ||
+                  roleFilter !== "All" ||
+                  deptFilter !== "All"
+                  ? "bg-violet-600/20 border-violet-500 text-violet-400"
+                  : "bg-[#050505] border-white/10 hover:border-white/20 text-slate-300",
+              )}
+            >
+              <Filter size={14} />{" "}
+              {showFilterDropdown ? "Hide Filters" : "Filter"}
+              {(roleFilter !== "All" || deptFilter !== "All") && (
+                <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+              )}
             </button>
-            <button className="px-4 py-2.5 bg-[#050505] border border-white/10 hover:border-white/20 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-              Select All
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setRoleFilter("All");
+                setDeptFilter("All");
+              }}
+              className="px-4 py-2.5 bg-[#050505] border border-white/10 hover:border-white/20 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
+            >
+              Clear
             </button>
             {isOwner && (
               <button
@@ -507,111 +623,168 @@ const Workforce = () => {
                 </div>
               </div>
             </div>
-          ) : activeTab === "applicants" ? (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-neuemontreal font-bold text-white">
-                  Application Queue ({applicants.length})
-                </h2>
-                <div className="flex gap-2">
-                  <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-white/40">
-                    <Filter className="w-4 h-4" />
+          ) : (
+            activeTab === "applicants" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-neuemontreal font-bold text-white">
+                    Application Queue ({applicants.length})
+                  </h2>
+                  <div className="flex gap-2">
+                    <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-white/40">
+                      <Filter className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {applicants.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Info className="w-12 h-12 text-white/5 mb-4" />
-                  <p className="text-white/40">No fresh applications found.</p>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {applicants.map((app) => (
-                    <div
-                      key={app._id}
-                      className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all flex flex-col md:flex-row justify-between items-center gap-6"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold">
-                          {app.user_id?.name?.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="text-white font-bold">
-                            {app.user_id?.name}
-                          </h3>
-                          <p className="text-white/40 text-xs">
-                            ID: {app.user_id?.student_id || "N/A"} • Applied{" "}
-                            {new Date(app.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {app.status === "Applied" ? (
-                          isOwner ? (
-                            <button
-                              onClick={() => {
-                                const date = prompt(
-                                  "Enter interview date (YYYY-MM-DD):",
-                                  "2026-02-15",
-                                );
-                                if (date)
-                                  handleUpdateStatus(app._id, "Interviewing", {
-                                    interview_date: date,
-                                  });
-                              }}
-                              className="px-4 py-2 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-600/30 text-xs font-bold hover:bg-violet-600 transition-all hover:text-white flex items-center gap-2"
-                            >
-                              <Clock className="w-4 h-4" />
-                              Set Interview
-                            </button>
-                          ) : (
-                            <span className="px-3 py-1.5 rounded-lg bg-white/5 text-white/30 text-[10px] font-bold uppercase tracking-widest">
-                              Pending Review
-                            </span>
-                          )
-                        ) : (
-                          <div className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                            <Clock className="w-3 h-3" />
-                            Interview:{" "}
-                            {new Date(app.interview_date).toLocaleDateString()}
+                {applicants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <Info className="w-12 h-12 text-white/5 mb-4" />
+                    <p className="text-white/40">
+                      No fresh applications found.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {applicants.map((app) => (
+                      <div
+                        key={app._id}
+                        className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all flex flex-col md:flex-row justify-between items-center gap-6"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold border-2 border-white/10 shadow-lg">
+                            {app.user_id?.avatar ? (
+                              <img
+                                src={
+                                  app.user_id.avatar.startsWith("http")
+                                    ? app.user_id.avatar
+                                    : `http://localhost:5000${app.user_id.avatar}`
+                                }
+                                alt={app.user_id.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              app.user_id?.name?.charAt(0)
+                            )}
                           </div>
-                        )}
+                          <div>
+                            <h3 className="text-white font-bold">
+                              {app.user_id?.name}
+                            </h3>
+                            <p className="text-white/40 text-xs">
+                              ID: {app.user_id?.student_id || "N/A"} • Applied{" "}
+                              {new Date(app.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
 
-                        {isOwner && (
-                          <>
-                            <button
-                              onClick={() =>
-                                handleUpdateStatus(app._id, "Approved", {
-                                  role: "AJK",
-                                })
-                              }
-                              className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 hover:bg-emerald-600 hover:text-white transition-all"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleUpdateStatus(app._id, "Rejected")
-                              }
-                              className="p-2 rounded-lg bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600 hover:text-white transition-all"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {app.status === "Applied" ? (
+                            isOwner ? (
+                              <button
+                                onClick={() => openInterviewModal(app)}
+                                className="px-4 py-2 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-600/30 text-xs font-bold hover:bg-violet-600 transition-all hover:text-white flex items-center gap-2"
+                              >
+                                <Clock className="w-4 h-4" />
+                                Set Interview
+                              </button>
+                            ) : (
+                              <span className="px-3 py-1.5 rounded-lg bg-white/5 text-white/30 text-[10px] font-bold uppercase tracking-widest">
+                                Pending Review
+                              </span>
+                            )
+                          ) : (
+                            <div className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              Interview:{" "}
+                              {new Date(
+                                app.interview_date,
+                              ).toLocaleDateString()}
+                            </div>
+                          )}
+
+                          {isOwner && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleUpdateStatus(app._id, "Approved", {
+                                    role: "AJK",
+                                  })
+                                }
+                                className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 hover:bg-emerald-600 hover:text-white transition-all"
+                                title="Approve"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleUpdateStatus(app._id, "Rejected")
+                                }
+                                className="p-2 rounded-lg bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600 hover:text-white transition-all"
+                                title="Reject"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <TalentGrid talent={[]} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
           )}
+        </div>
+      )}
+      {/* Interview Scheduling Modal */}
+      {interviewModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-white mb-2">
+              Schedule Interview
+            </h3>
+            <p className="text-white/40 text-sm mb-6">
+              Pick a date and time for {selectedApplicant?.user_id?.name}'s
+              interview.
+            </p>
+
+            <div className="mb-8">
+              <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">
+                Interview Date & Time
+              </label>
+              <div className="relative">
+                <Flatpickr
+                  data-enable-time
+                  value={interviewDate}
+                  options={{
+                    minDate: "today",
+                    dateFormat: "Y-m-d H:i",
+                    time_24hr: true,
+                    disableMobile: "true",
+                  }}
+                  onChange={([date]) => setInterviewDate(date)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-violet-500 transition-all"
+                />
+                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setInterviewModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl bg-white/5 text-white/60 font-bold hover:bg-white/10 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmInterview}
+                className="px-5 py-2.5 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition-all shadow-lg shadow-violet-900/20"
+              >
+                Confirm Schedule
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

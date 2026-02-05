@@ -211,3 +211,55 @@ The platform implements a unified strategy for handling uploaded assets across a
 
 - **Stateless Visual Feedback**: The Admin Panel (`CommunityManager`, `SpeakersList`) implements real-time image previews using `URL.createObjectURL(file)`. This provides immediate visual confirmation to the administrator before the data is committed to the database.
 - **Automatic State Cleanup**: Preview URLs are cleared upon dialog close or reset, preventing memory leaks and ensuring a clean workflow for subsequent edits.
+
+## 19. Advanced Workforce Management & Role-Based Filtering
+
+The Workforce Command system implements a granular management layer for community organizers, balancing a minimalist UI with powerful data controls.
+
+- **Dynamic Role/Department Matrix**: The system implements a client-side filtering engine in `Workforce.jsx` that dynamically generates filter options (Roles and Departments) based on the current team's composition. This "Self-Hydrating" filter UI ensures that curators only see relevant categories for their specific organization.
+- **Population-on-Demand Profile Strategy**: To maintain a "Command Center" feel, the backend `communityController` utilizes deep Mongoose population to bridge the gap between simple membership records and rich user identity. By populating `avatar` and `current_merit` directly into the member list response, the system ensures that user profiles are visually complete and gamification-ready without requiring secondary API calls.
+- **Unified Identity Resolution**: The frontend utilizes a centralized `avatarUrl` resolution logic (detecting absolute vs relative paths) to ensure that profile images load reliably regardless of whether they are hosted on the platform's local storage or an external identity provider.
+
+## 23. Club Proposal Lifecycle & Multi-Part Document Handling
+
+The "Start a Club" module utilizes a sophisticated multi-part form submission process to handle both structural metadata and legal documentation.
+
+- **Selective Multer Middleware**: The `ClubProposal` route utilizes `multer` configured specifically for the `constitution` and `consentLetter` fields. This ensures that only relevant files are processed and stored on the server, with relative paths saved to the database.
+- **Frontend FormData Transformation**: To support file uploads, the frontend `ClubProposalForm` transforms the standard state-based form data into a `FormData` object. This allows for the simultaneous transmission of text-based metadata (mission, advisor name, committee size) and binary file objects (PDF constitution, images).
+- **Interactive File Selection Feedback**: The UI utilizes hidden file inputs triggered by `useRef` on container clicks, providing immediate visual feedback and file validation (e.g., 5MB size limit) before submission.
+- **Admin-Ready State**: Upon submission, the system automatically flags the user for `organizerRequest` visibility in the Admin Dashboard, enabling a seamless transition from student to organizer upon document verification and approval.
+- **Clean Workspace Protocol**: Non-essential features like the "Talent Hub" are conditionally removed to reduce cognitive load, reflecting a strategic pivot towards focusing on real-time operational roster management.
+
+## 20. Cross-Modular Broadcast Logic (Communications)
+
+The internal broadcast system allows organizers to message attendees and workforce members with tiered targeting logic.
+
+- **Inclusive Attendee Filtering**: The `attendees` audience query was expanded to include both **`Confirmed`** and **`CheckedIn`** registration statuses. This ensures that late-arriving messages reach the maximum possible audience, even after the event has officially started and users have scanned in.
+- **Inter-Model Dependencies**: The system utilizes a cross-reference pattern where `notificationController` dynamically imports both `Registration` and `EventCrew` models. Fixing missing imports for `EventCrew` restored the ability for organizers to communicate with their volunteer and staff rosters.
+
+## 21. Real-Time Operational Metrics (Live Dashboards)
+
+The Organizer Dashboard features a "Live Ops" layer that provides immediate visibility into event progress.
+
+- **Check-In Velocity Aggregation**: Implements a backend aggregation pipeline (`/stats/live/:id`) that computes the ratio of `CheckedIn` vs. `Confirmed` registrations in real-time.
+- **Engagement Heatmapping**: Uses frequency distribution of check-in timestamps to help organizers identify peak entry periods and optimize gate management.
+
+## 22. Decoupled Auth State Synchronization (UX)
+
+The platform utilizes a **Stateless Event Dispatch** pattern to maintain authentication consistency across distinct layout trees (Admin vs. Student).
+
+- **Global Auth Broadcast**: When `localStorage` is cleared (Logout), the initiating component dispatches a `window.dispatchEvent(new Event("authChange"))`.
+- **Reactive Layout Recalculation**: The top-level `Layout` component in `App.jsx` listens for this event to set its `user` state to `null`. This immediately triggers the re-rendering of the `Navbar` from its "Authenticated" state to its "Public" state (Login/Sign Up) without a full page reload, preventing "ghosted" UI elements.
+
+## 24. Integrated Document Preview & Environment-Agnostic Routing
+
+The HEP Admin Panel was enhanced with a high-fidelity document review experience to streamline the club proposal approval workflow.
+
+- **Integrated PDF Previewer**: Implemented a responsive `<iframe>` inside the `Dialog` modal of `OrganizerApprovals.jsx` and `EventApprovals.jsx`. This allows administrators to review "Constitution", "Consent Letter", and "Event Proposal" documents directly within the details view, maintaining context and efficiency.
+- **Robust Path Normalization**: Implemented a `getDocumentUrl` utility in the frontend to handle inconsistent file paths stored in the database. This logic automatically detects missing `/public` prefixes or hostnames and constructs a valid absolute URL (e.g., handling both `/uploads/...` and `/public/uploads/...`), preventing 404 errors for legacy or malformed records.
+- **Relative URL Standardization (Reverted)**: While previously transitioned to relative paths for environment-agnostic routing, the system was reverted to use hardcoded `http://localhost:5000` prefixes in the frontend at the user's request. This provides direct connectivity to the local development backend for targeted modules.
+- **Transparent Public Backgrounds**: Enforced a design rule where public-facing pages use transparent or low-opacity backgrounds (e.g., `bg-black/20` or `bg-transparent`) to ensure the global "Floating Lines" Three.js animation remains visible, providing visual depth to the platform's "Cosmic" theme.
+
+---
+
+_Created by Antigravity_

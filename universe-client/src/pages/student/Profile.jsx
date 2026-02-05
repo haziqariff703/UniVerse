@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -81,7 +81,7 @@ const XpBar = ({ current, max }) => {
 };
 
 // 4. Action Row (Simplified for Signal Center)
-const ActionRow = ({ icon: Icon, label, onClick, colorClass }) => (
+const ActionRow = ({ label, onClick, colorClass }) => (
   <button
     onClick={onClick}
     className={cn(
@@ -116,7 +116,7 @@ const Profile = () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const res = await fetch("/api/users/profile", {
+          const res = await fetch("http://localhost:5000/api/users/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -180,7 +180,7 @@ const Profile = () => {
     // 2. Persist to Backend (only text fields, images are already uploaded via modal)
     try {
       const token = localStorage.getItem("token");
-      await fetch("/api/users/profile", {
+      await fetch("http://localhost:5000/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -593,7 +593,7 @@ const Profile = () => {
                                 try {
                                   const token = localStorage.getItem("token");
                                   const res = await fetch(
-                                    `/api/users/profile/assets/${cert._id}`,
+                                    `http://localhost:5000/api/users/profile/assets/${cert._id}`,
                                     {
                                       method: "DELETE",
                                       headers: {
@@ -606,7 +606,7 @@ const Profile = () => {
                                     setCertificates(data.assets);
                                     toast.success("Certificate deleted");
                                   }
-                                } catch (error) {
+                                } catch {
                                   toast.error("Failed to delete");
                                 }
                               }

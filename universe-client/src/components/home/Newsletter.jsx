@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { NoiseBackground } from "@/components/ui/noise-background";
 import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect";
 
+// Main Newsletter and Identity Card Component
 const Newsletter = () => {
   const [email, setEmail] = useState("");
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
@@ -79,6 +80,7 @@ const Newsletter = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="flex h-full"
           >
             <NoiseBackground
               gradientColors={[
@@ -88,39 +90,38 @@ const Newsletter = () => {
               ]}
               noiseIntensity={0.2}
               speed={0.18}
-              containerClassName="shadow-[0_0_30px_-10px_rgba(6,182,212,0.4)]"
+              containerClassName="shadow-[0_0_30px_-10px_rgba(6,182,212,0.4)] flex-1"
             >
-              <div className="p-8">
+              <div className="p-10 flex flex-col justify-between h-full min-h-[300px]">
                 {!newsletterSubmitted ? (
                   <>
                     {/* Header */}
-                    <div className="mb-6">
+                    <div className="mb-8">
                       <h3 className="text-2xl font-clash font-bold text-white mb-2">
                         Join the Feed
                       </h3>
-                      <p className="text-cyan-200/80 text-sm">
-                        Get the latest events and updates
+                      <p className="text-cyan-100/70 text-sm leading-relaxed max-w-[280px]">
+                        Get the latest events, trends, and campus updates
+                        delivered to your galaxy.
                       </p>
                     </div>
 
                     {/* Newsletter Form */}
                     <form
                       onSubmit={handleNewsletterSubmit}
-                      className="space-y-4"
+                      className="space-y-5"
                     >
-                      {/* Email Input with Charging Border */}
                       <div className="relative">
                         <input
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your.email@uitm.edu.my"
-                          className="w-full bg-white/5 border-b-2 border-white/10 px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 transition-colors duration-300"
+                          className="w-full bg-white/10 border-b-2 border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white transition-colors duration-300 rounded-t-lg"
                           required
                         />
-                        {/* Charging Border Animation */}
                         <motion.div
-                          className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-cyan-400 to-cyan-600"
+                          className="absolute bottom-0 left-0 h-0.5 bg-white"
                           style={{ width: `${chargingProgress}%` }}
                           initial={{ width: 0 }}
                           animate={{ width: `${chargingProgress}%` }}
@@ -128,32 +129,27 @@ const Newsletter = () => {
                         />
                       </div>
 
-                      {/* Subscribe Button */}
                       <motion.button
                         type="submit"
-                        whileHover={{ scale: 1.02 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl font-clash font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/30"
+                        className="w-full bg-white text-cyan-600 px-6 py-4 rounded-xl font-clash font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-xl shadow-cyan-900/20"
                       >
-                        <span>Subscribe</span>
-                        <Send
-                          size={16}
-                          className="group-hover:translate-x-1 transition-transform"
-                        />
+                        <span>Subscribe Now</span>
+                        <Send size={16} />
                       </motion.button>
                     </form>
                   </>
                 ) : (
-                  /* Success State */
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-8 h-8 text-cyan-400" />
+                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/30">
+                      <Sparkles className="w-10 h-10 text-white" />
                     </div>
-                    <p className="text-white font-clash font-semibold text-lg">
+                    <p className="text-white font-clash font-bold text-xl mb-2">
                       Transmission Received!
                     </p>
-                    <p className="text-cyan-200/80 text-sm mt-2">
-                      Welcome to the Galaxy.
+                    <p className="text-cyan-100/70 text-sm">
+                      Welcome to the Galaxy, traveler.
                     </p>
                   </div>
                 )}
@@ -161,81 +157,79 @@ const Newsletter = () => {
             </NoiseBackground>
           </motion.div>
 
-          {/* Right Card: Sign Up (Purple Theme) */}
+          {/* Right Card: Identity Card (Purple Theme) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
+            className="flex h-full"
           >
             <NoiseBackground
               gradientColors={[
                 "rgb(168, 85, 247)", // Bright Purple
                 "rgb(236, 72, 153)", // Pink
-                "rgb(217, 70, 239)", // Magenta
+                "rgb(79, 70, 229)", // Indigo
               ]}
               noiseIntensity={0.2}
               speed={0.18}
-              containerClassName="shadow-[0_0_30px_-10px_rgba(168,85,247,0.4)]"
+              containerClassName="shadow-[0_0_30px_-10px_rgba(168,85,247,0.4)] flex-1 overflow-hidden"
             >
-              <div className="p-8 flex flex-col justify-between min-h-[280px]">
+              <div className="p-10 flex flex-col justify-between h-full min-h-[300px] relative group">
+                {/* Decorative Elements for Identity Card Feel */}
+                <div className="absolute top-4 right-6 opacity-20 group-hover:opacity-40 transition-opacity">
+                  <div className="w-12 h-12 border-2 border-white rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 border border-white rounded-full" />
+                  </div>
+                </div>
+
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-8 relative z-10">
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                      Digital Citizen
+                    </span>
+                  </div>
                   <h3 className="text-2xl font-clash font-bold text-white mb-2">
                     Create Your Identity
                   </h3>
-                  <p className="text-purple-200/80 text-sm">
-                    Join thousands of UiTM students
+                  <p className="text-purple-100/70 text-sm leading-relaxed max-w-[280px]">
+                    Build your universal profile, track merits, and forge
+                    connections across the UniVerse.
                   </p>
                 </div>
 
-                {/* Sign Up Button */}
-                <div className="space-y-4">
+                {/* Sign Up Section */}
+                <div className="space-y-5 relative z-10">
                   <Link to="/signup" className="block">
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-4 rounded-xl font-clash font-bold text-base transition-all shadow-lg shadow-purple-500/30 relative overflow-hidden group"
+                      className="w-full bg-white text-purple-600 px-6 py-4 rounded-xl font-clash font-bold text-base transition-all shadow-xl shadow-purple-900/20 relative overflow-hidden group"
                     >
-                      {/* Shimmer Effect */}
-                      <motion.div
-                        className="absolute inset-0 w-full h-full"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                        }}
-                        animate={{
-                          x: ["-100%", "200%"],
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          repeatDelay: 2,
-                          ease: "linear",
-                        }}
-                      />
-
-                      {/* Pulsing Live Indicator */}
-                      <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                      </span>
-
                       <span className="relative z-10">Initialize Identity</span>
+                      {/* Inner Shine */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     </motion.button>
                   </Link>
 
-                  {/* Sign In Link */}
                   <div className="text-center">
                     <Link
                       to="/login"
-                      className="text-sm text-purple-200/60 hover:text-purple-200 transition-colors"
+                      className="text-xs text-white/50 hover:text-white transition-colors flex items-center justify-center gap-1 group/link"
                     >
-                      Already a traveler?{" "}
-                      <span className="underline font-semibold">Sign In</span>
+                      <span>Already a traveler?</span>
+                      <span className="font-bold underline group-hover/link:text-pink-300 transition-colors">
+                        Sign In
+                      </span>
                     </Link>
                   </div>
                 </div>
+
+                {/* Card ID simulation bar */}
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20" />
+                <div className="absolute bottom-0 left-0 w-1/3 h-1 bg-pink-400" />
               </div>
             </NoiseBackground>
           </motion.div>

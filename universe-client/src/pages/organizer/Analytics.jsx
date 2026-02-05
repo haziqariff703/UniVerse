@@ -113,7 +113,7 @@ const Analytics = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+    <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <div>

@@ -59,6 +59,24 @@ const EventApprovals = ({ onBack }) => {
   // Details Modal State
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Helper to ensure correct document URL (handles missing /public prefix if needed)
+  const getDocumentUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    // Ensure /public prefix exists if not already present (assuming typical storage)
+    const finalPath = cleanPath.startsWith("/public")
+      ? cleanPath
+      : `/public${cleanPath}`;
+    return `http://localhost:5000${finalPath}`;
+  };
+
+  // Reset preview when modal closes
+  useEffect(() => {
+    if (!detailsModalOpen) setPreviewUrl(null);
+  }, [detailsModalOpen]);
 
   const fetchPendingEvents = useCallback(async () => {
     setLoading(true);
@@ -566,10 +584,10 @@ const EventApprovals = ({ onBack }) => {
                               </DropdownMenuLabel>
                               <DropdownMenuSeparator className="bg-white/5" />
 
-                              {/* View Details Action */}
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedEvent(event);
+                                  // Pre-set preview if proposal exists and we want immediate view (optional)
                                   setDetailsModalOpen(true);
                                 }}
                                 className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
@@ -591,9 +609,18 @@ const EventApprovals = ({ onBack }) => {
                               >
                                 {event.proposal ? (
                                   <a
-                                    href={`http://localhost:5000/${event.proposal}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const url = getDocumentUrl(
+                                        event.proposal,
+                                      );
+                                      if (url) {
+                                        setSelectedEvent(event);
+                                        setPreviewUrl(url);
+                                        setDetailsModalOpen(true);
+                                      }
+                                    }}
+                                    href="#"
                                     className="flex items-center gap-2 w-full"
                                   >
                                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
@@ -754,29 +781,69 @@ const EventApprovals = ({ onBack }) => {
                           Required Documentation
                         </h4>
                         {selectedEvent.proposal ? (
-                          <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
-                                <FileText size={24} />
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                                  <FileText size={24} />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-blue-400">
+                                    Event Proposal.pdf
+                                  </p>
+                                  <p className="text-xs text-blue-300/60">
+                                    Review this document before approval
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-bold text-blue-400">
-                                  Event Proposal.pdf
-                                </p>
-                                <p className="text-xs text-blue-300/60">
-                                  Review this document before approval
-                                </p>
-                              </div>
+                              <button
+                                onClick={() =>
+                                  setPreviewUrl(
+                                    getDocumentUrl(selectedEvent.proposal),
+                                  )
+                                }
+                                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                                  previewUrl ===
+                                  getDocumentUrl(selectedEvent.proposal)
+                                    ? "bg-blue-500 text-white shadow-lg"
+                                    : "bg-blue-500 hover:bg-blue-600 text-white"
+                                }`}
+                              >
+                                <Eye size={16} />
+                                {previewUrl ===
+                                getDocumentUrl(selectedEvent.proposal)
+                                  ? "Viewing"
+                                  : "View Document"}
+                              </button>
                             </div>
-                            <a
-                              href={`http://localhost:5000/${selectedEvent.proposal}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
-                            >
-                              <Eye size={16} />
-                              View Document
-                            </a>
+
+                            {/* Integrated Preview */}
+                            {previewUrl && (
+                              <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                                    Live Preview
+                                  </label>
+                                  <div className="flex gap-2">
+                                    <a
+                                      href={previewUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1 px-3 rounded-lg bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+                                    >
+                                      <Download size={12} /> New Tab
+                                    </a>
+                                  </div>
+                                </div>
+                                <div className="w-full h-[500px] rounded-2xl overflow-hidden border border-white/10 bg-black/20 relative group">
+                                  <iframe
+                                    src={previewUrl}
+                                    className="w-full h-full border-0"
+                                    title="Proposal Preview"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-400">

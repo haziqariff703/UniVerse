@@ -38,6 +38,7 @@ app.use("/api/proposals", require("./routes/clubProposalRoutes"));
 app.use("/api/crew", require("./routes/crewRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/public", require("./routes/publicRoutes"));
 
 // Global Error Handler
 app.use((err, req, res, next) => {

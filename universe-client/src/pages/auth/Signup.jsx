@@ -79,7 +79,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 pt-24 md:pt-32">
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 pt-10 md:pt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -160,45 +160,7 @@ const Signup = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Toggle */}
-            <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 mb-6">
-              <button
-                type="button"
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  formData.role === "student"
-                    ? "bg-violet-600 text-white shadow-lg"
-                    : "text-gray-400 hover:text-white"
-                }`}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    role: "student",
-                    ic_number: "",
-                    gender: "",
-                    date_of_birth: "",
-                  })
-                }
-              >
-                Student
-              </button>
-              <button
-                type="button"
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  formData.role === "organizer"
-                    ? "bg-violet-600 text-white shadow-lg"
-                    : "text-gray-400 hover:text-white"
-                }`}
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    role: "organizer",
-                    student_id: "",
-                  });
-                }}
-              >
-                Organizer
-              </button>
-            </div>
+            {/* Role selection removed: All users join as student first */}
 
             {/* Name Row */}
             <div className="flex gap-3">
@@ -215,86 +177,24 @@ const Signup = () => {
                 />
               </div>
 
-              {/* Conditional Student ID */}
-              {formData.role === "student" && (
-                <div className="flex-1 relative">
-                  <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight/30" />
-                  <input
-                    type="text"
-                    name="student_id"
-                    value={formData.student_id}
-                    onChange={(e) => {
-                      const val = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 10);
-                      setFormData({ ...formData, student_id: val });
-                    }}
-                    placeholder="Student ID (10 digits)"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-starlight/30 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all text-sm"
-                    required
-                    minLength={10}
-                    maxLength={10}
-                  />
-                </div>
-              )}
-
-              {/* Conditional IC Number for Organizer */}
-              {formData.role === "organizer" && (
-                <div className="flex-1 relative">
-                  <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight/30" />
-                  <input
-                    type="text"
-                    name="ic_number"
-                    value={formData.ic_number || ""}
-                    onChange={(e) => {
-                      const val = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 12);
-
-                      // Extract info if valid length
-                      let updates = { ic_number: val };
-                      if (val.length === 12) {
-                        const year = val.substring(0, 2);
-                        const month = val.substring(2, 4);
-                        const day = val.substring(4, 6);
-                        const genderDigit = parseInt(val.substring(11, 12));
-
-                        // Basic Year estimation
-                        const fullYear =
-                          parseInt(year) > 30 ? `19${year}` : `20${year}`;
-
-                        // Validate date components
-                        const m = parseInt(month, 10);
-                        const d = parseInt(day, 10);
-
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-                          // Use Date to validate
-                          const testDate = new Date(
-                            `${fullYear}-${month}-${day}`,
-                          );
-                          if (!isNaN(testDate.getTime())) {
-                            updates.date_of_birth = `${fullYear}-${month}-${day}`;
-                          } else {
-                            updates.date_of_birth = undefined;
-                          }
-                        } else {
-                          updates.date_of_birth = undefined;
-                        }
-
-                        updates.gender =
-                          genderDigit % 2 === 0 ? "Female" : "Male";
-                      }
-
-                      setFormData({ ...formData, ...updates });
-                    }}
-                    placeholder="IC Number (12 digits)"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-starlight/30 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all text-sm"
-                    required
-                    minLength={12}
-                    maxLength={12}
-                  />
-                </div>
-              )}
+              {/* Student ID */}
+              <div className="flex-1 relative">
+                <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight/30" />
+                <input
+                  type="text"
+                  name="student_id"
+                  value={formData.student_id}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, student_id: val });
+                  }}
+                  placeholder="Student ID (10 digits)"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-starlight/30 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all text-sm"
+                  required
+                  minLength={10}
+                  maxLength={10}
+                />
+              </div>
             </div>
 
             {/* Email */}

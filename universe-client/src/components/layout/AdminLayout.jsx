@@ -92,7 +92,7 @@ const AdminLayout = ({ ...props }) => {
   const fetchStats = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/admin/stats", {
+      const response = await fetch("http://localhost:5000/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -138,6 +138,7 @@ const AdminLayout = ({ ...props }) => {
     if (result.isConfirmed) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      window.dispatchEvent(new Event("authChange"));
       navigate("/login");
     }
   };

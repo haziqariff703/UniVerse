@@ -202,7 +202,7 @@ const EventDashboard = () => {
   if (!event) return null; // Or error view
 
   return (
-    <div className="min-h-screen pt-14 pb-20 px-4 md:px-8 max-w-[1600px] mx-auto">
+    <div className="min-h-screen pt-4 pb-20 px-4 md:px-8 max-w-[1600px] mx-auto">
       {/* Top Bar / Breadcrumb */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">

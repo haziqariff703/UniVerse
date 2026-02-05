@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import { cn } from "@/lib/utils";
+import { swalConfirm } from "@/lib/swalConfig";
 
 // Public Pages
 import Home from "./pages/public/Home";
@@ -86,6 +87,10 @@ import MainSidebar from "./components/layout/MainSidebar";
 import Navbar from "./components/layout/Navbar";
 import FloatingLines from "./components/animate-ui/components/backgrounds/FloatingLines";
 import StudentSidebar from "./components/layout/StudentSidebar";
+import Footer from "./components/common/Footer";
+
+// Memoized/Static props for background to prevent WebGL context loss
+const BACKGROUND_GRADIENT = ["#18ecad", "#0facf0", "#E945F5"];
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -115,7 +120,7 @@ const Layout = ({ children }) => {
       if (!token) return;
 
       try {
-        const res = await fetch("/api/users/profile", {
+        const res = await fetch("http://localhost:5000/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -191,7 +196,7 @@ const Layout = ({ children }) => {
     <div className="flex min-h-screen bg-black text-foreground transition-colors duration-300 relative">
       <div className="fixed inset-0 z-[0]">
         <FloatingLines
-          linesGradient={["#18ecad", "#0facf0", "#E945F5"]}
+          linesGradient={BACKGROUND_GRADIENT}
           animationSpeed={1}
           interactive
           bendRadius={5}
@@ -206,11 +211,25 @@ const Layout = ({ children }) => {
         <StudentSidebar
           user={user}
           isOpen={!sidebarCollapsed}
-          onLogout={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            setUser(null);
-            window.location.href = "/login";
+          onLogout={async () => {
+            const result = await swalConfirm({
+              title: "Logout?",
+              text: "Are you sure you want to end your session?",
+              confirmButtonText: "Logout",
+              confirmButtonColor: "#ef4444",
+            });
+
+            if (result.isConfirmed) {
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              setUser(null);
+              window.dispatchEvent(new Event("authChange"));
+              const navigate = (path) => {
+                window.history.pushState({}, "", path);
+                window.dispatchEvent(new Event("popstate"));
+              };
+              navigate("/login");
+            }
           }}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
@@ -232,6 +251,7 @@ const Layout = ({ children }) => {
         <main className="flex-1 px-4 md:px-8 pb-8 pt-20 w-full max-w-7xl mx-auto">
           {children}
         </main>
+        <Footer />
       </div>
     </div>
   );

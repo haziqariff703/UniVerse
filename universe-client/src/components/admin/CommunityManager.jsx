@@ -576,26 +576,40 @@ const CommunityManager = () => {
                     {comm.description}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
-                    <div className="flex items-center gap-1.5">
-                      <UserIcon size={12} className="text-violet-400" />
-                      <div className="flex flex-col">
-                        <span className="text-[9px] text-starlight/30 uppercase font-black tracking-widest">
-                          President
+                  <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-1.5 col-span-1">
+                      <UserIcon
+                        size={12}
+                        className="text-violet-400 shrink-0"
+                      />
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="text-[9px] text-starlight/30 uppercase font-black tracking-widest truncate">
+                          Lead
                         </span>
-                        <span className="text-[10px] text-starlight font-bold truncate max-w-[80px]">
-                          {comm.owner_id?.name || "Unassigned"}
+                        <span className="text-[10px] text-starlight font-bold truncate">
+                          {comm.owner_id?.name || "N/A"}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <BarChart3 size={12} className="text-cyan-400" />
+                    <div className="flex items-center gap-1.5 col-span-1">
+                      <Users size={12} className="text-emerald-400 shrink-0" />
                       <div className="flex flex-col">
                         <span className="text-[9px] text-starlight/30 uppercase font-black tracking-widest">
-                          Impact
+                          Members
                         </span>
                         <span className="text-[10px] text-starlight font-bold">
-                          {comm.eventCount} Events
+                          {comm.memberCount || 0}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 col-span-1">
+                      <BarChart3 size={12} className="text-cyan-400 shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-starlight/30 uppercase font-black tracking-widest">
+                          Events
+                        </span>
+                        <span className="text-[10px] text-starlight font-bold">
+                          {comm.eventCount || 0}
                         </span>
                       </div>
                     </div>

@@ -1,13 +1,47 @@
 # Changelog
 
+## [2026-02-06]
+
+- **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
+- **Fixed**: Resolved `400 Bad Request` in attendee broadcast and fixed missing `EventCrew` import in backend.
+- **Changed**: Reduced excessive vertical spacing across the Organizer Dashboard (pt-24 -> pt-8) and Auth pages (pt-24 -> pt-10).
+- **Added**: Unified SweetAlert2 logout confirmation for all user roles (Student, Organizer, Association).
+- **Added**: Full document upload support for Club Proposals (Constitution and Advisor Consent Letter) with interactive UI and backend storage.
+- **Changed**: Standardized API URLs to use relative paths throughout the Club Proposal and Organizer Approval modules (Reverted: Replaced with hardcoded `http://localhost:5000` URLs at user's request).
+- **Improved**: Enhanced Admin Panel with a high-fidelity integrated PDF previewer in both the proposal review modal and event approval modal.
+- **Added**: Robust document URL normalization to automatically fix missing `/public` prefixes/pathing issues for event proposals.
+- **Improved**: Replaced native browser prompt with a modern `Flatpickr` modal for scheduling interviews in the Workforce module.
+- **Improved**: Admin Panel Community command center now displays real-time member counts for each society.
+- **Added**: Integrated Logo and Banner image uploads for Club Proposals, which automatically populate the Community profile upon approval.
+- **Changed**: Reverted document preview URLs in the Admin Panel to use hardcoded backend host.
+- **Removed**: Standardized relative API paths; reverted to hardcoded localhost URLs for specific modules.
+- **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
+- **Fixed**: Resolved "swalConfirm is not defined" error in `App.jsx` and cleaned up unused imports in `Navbar.jsx`.
+
 ## [2026-02-05]
 
+- **Changed**: Standardized newsletter cards and removed duplicate footer.
+- **Added**: Functional filtering (Role/Dept) to Workforce page and user profile image support.
+- **Removed**: Talent Hub placeholders from Workforce page.
+- **Fixed**: Population of user avatars in community member lists.
+- **Added**: New public stats API endpoint for landing page metrics.
+- **Fixed**: Restored missing `motion` import in `Newsletter.jsx` that caused component crashes.
+- **Changed**: Improved footer to be global and full-width across the application (excluding admin).
+- **Changed**: Standardized `Newsletter` cards with consistent padding, heights, and enhanced visual "ID Card" logic.
+- **Fixed**: Removed duplicate footer rendering on the home page.
+- **Changed**: Updated `TechStackTicker` to use real tech stack logos from external official URLs.
 - **Added**: Image upload functionality (Logo and Banner) for the Communities module, allowing admins to upload club pictures.
 - **Changed**: Refactored `CommunityManager` to use `FormData` for API submissions, supporting multi-field updates and file handling.
 - **Fixed**: Updated public `Communities` page to correctly handle relative image paths by prepending the `API_BASE` URL.
 - **Fixed**: Broken event and venue images on public pages by ensuring correct `API_BASE` pathing.
 - **Changed**: Improved visual depth by making exploration page backgrounds transparent to reveal layout animations.
 - **Improved**: Real-time membership intelligence on the Communities page with API-driven state synchronization.
+- **Changed**: Redesigned public `Footer.jsx` with Tech Stack Ticker and CTA buttons.
+- **Fixed**: WebGL context loss and "Error creating WebGL context" crash in `FloatingLines.jsx`.
+- **Fixed**: Multiple instances of Three.js warning by memoizing background props in `App.jsx`.
+- **Fixed**: `Communities.jsx` crash due to missing `motion` import.
+- **Fixed**: `venueUtils.js` TypeError by adding robustness to date parsing.
+- **Removed**: 'Organizer' role option from `Signup.jsx` to restrict initial registration to Students.
 - **Improved**: Restored essential `motion` imports and fixed syntax errors in public exploration pages.
 - **Changed**: Standardized admin notifications by transitioning from native `alert()` to `sonner` toasts across `CommunityManager`, `NotificationsManager`, `SpeakersList`, `SystemSettings`, and others for a consistent UI.
 - **Improved**: Standardized Admin "Command Center" UI across all 12 operational modules (Events, Organizers, Speakers, Reviews, Audit Logs, Categories, Venues).
