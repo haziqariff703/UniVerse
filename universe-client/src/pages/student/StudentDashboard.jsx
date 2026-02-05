@@ -259,7 +259,7 @@ const StudentDashboard = ({ user }) => {
         <motion.div
           variants={itemVariants}
           whileHover={{ y: -4, scale: 1.02 }}
-          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:border-white/20 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition-all group relative overflow-hidden"
+          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-lg hover:border-white/20 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition-all group relative overflow-hidden"
         >
           <div className="flex items-start justify-between mb-4">
             <span className="text-slate-400 text-xs font-mono uppercase tracking-widest">
@@ -285,7 +285,7 @@ const StudentDashboard = ({ user }) => {
         <motion.div
           variants={itemVariants}
           whileHover={{ y: -4, scale: 1.02 }}
-          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:border-white/20 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)] transition-all group"
+          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-lg hover:border-white/20 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)] transition-all group"
         >
           <div className="flex items-start justify-between mb-4">
             <span className="text-slate-400 text-xs font-mono uppercase tracking-widest">
@@ -304,7 +304,7 @@ const StudentDashboard = ({ user }) => {
         <motion.div
           variants={itemVariants}
           whileHover={{ y: -4, scale: 1.02 }}
-          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:border-white/20 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all group"
+          className="p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-lg hover:border-white/20 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all group"
         >
           <div className="flex items-start justify-between mb-4">
             <span className="text-slate-400 text-xs font-mono uppercase tracking-widest">
@@ -323,7 +323,7 @@ const StudentDashboard = ({ user }) => {
         <motion.div
           variants={itemVariants}
           whileHover={{ y: -4, scale: 1.02 }}
-          className="p-4 pl-6 rounded-[2.5rem] bg-gradient-to-br from-black/80 to-blue-950/30 border border-white/10 backdrop-blur-3xl hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center justify-between group"
+          className="p-4 pl-6 rounded-[2.5rem] bg-gradient-to-br from-black/80 to-blue-950/30 border border-white/10 backdrop-blur-lg hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center justify-between group"
         >
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -415,7 +415,7 @@ const StudentDashboard = ({ user }) => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
-                  className="flex flex-col md:flex-row md:items-center gap-5 p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-3xl hover:bg-white/[0.03] hover:border-white/20 transition-all group relative overflow-hidden"
+                  className="flex flex-col md:flex-row md:items-center gap-5 p-6 rounded-[2.5rem] bg-black/60 border border-white/10 backdrop-blur-lg hover:bg-white/[0.03] hover:border-white/20 transition-all group relative overflow-hidden"
                 >
                   {/* Date Badge */}
                   <div
@@ -480,7 +480,7 @@ const StudentDashboard = ({ user }) => {
           </div>
 
           {/* Quick Find */}
-          <div className="p-8 rounded-[2.5rem] bg-gradient-to-r from-blue-950/40 to-purple-950/40 border border-blue-500/20 backdrop-blur-3xl relative overflow-hidden group">
+          <div className="p-8 rounded-[2.5rem] bg-gradient-to-r from-blue-950/40 to-purple-950/40 border border-blue-500/20 backdrop-blur-lg relative overflow-hidden group">
             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div>
                 <h3 className="text-xl font-bold font-clash text-white mb-2">
@@ -619,7 +619,7 @@ const StudentDashboard = ({ user }) => {
                 <motion.div
                   key={venue._id}
                   whileHover={{ y: -5 }}
-                  className="group relative h-48 rounded-[2.5rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-3xl"
+                  className="group relative h-48 rounded-[2.5rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-lg"
                 >
                   <img
                     src={venue.image}

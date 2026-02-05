@@ -181,7 +181,7 @@ const Notifications = () => {
             </h1>
           </div>
 
-          <div className="flex items-center gap-1 bg-black/60 backdrop-blur-xl border border-white/20 p-1.5 rounded-full shadow-2xl">
+          <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md border border-white/20 p-1.5 rounded-full shadow-2xl">
             {["all", "unread"].map((tab) => (
               <button
                 key={tab}
@@ -242,7 +242,7 @@ const Notifications = () => {
                           className={cn(
                             "group relative flex items-center gap-6 p-5 md:p-6 rounded-[2.5rem] border transition-all duration-300",
                             !signal.isRead
-                              ? "bg-white/[0.08] border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)] backdrop-blur-xl cursor-pointer"
+                              ? "bg-white/[0.08] border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)] backdrop-blur-md cursor-pointer"
                               : "bg-black/40 border-white/10 hover:border-white/30 backdrop-blur-md opacity-90 hover:opacity-100",
                           )}
                         >

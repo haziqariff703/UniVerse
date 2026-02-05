@@ -86,6 +86,9 @@ module.exports = {
           "0%": { "background-position": "100%" },
           "100%": { "background-position": "-100%" },
         },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

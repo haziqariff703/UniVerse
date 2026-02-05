@@ -23,29 +23,12 @@ const NAV_LINKS = [
   { name: "Events", href: "/events" },
   { name: "Venues", href: "/venues" },
 ];
+import StudentNavbar from "./StudentNavbar";
 
-const Navbar = ({ user, onToggleSidebar }) => {
+const Navbar = ({ user, collapsed, onToggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Scroll listener - trigger at 20px like Vercel
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -54,59 +37,56 @@ const Navbar = ({ user, onToggleSidebar }) => {
     window.dispatchEvent(new Event("authChange"));
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+  return user ? (
+    <StudentNavbar
+      user={user}
+      sidebarCollapsed={collapsed}
+      toggleSidebar={onToggleSidebar}
+      onLogout={handleLogout}
+    />
+  ) : (
+    // =============================================================
+    // 🌍 PUBLIC STATE (Elite Glass Capsule)
+    // =============================================================
+    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw]">
+      {/* CONTAINER: Thinner padding (py-2.5) for a sleek 'OS' feel */}
+      <div className="flex items-center gap-6 px-5 py-2.5 rounded-full bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        {/* 1. LOGO (Restored Original Floating Animation) */}
+        <Link to="/" className="flex items-center gap-2 group shrink-0 pr-2">
+          <motion.div
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {/* No Box Background - Just the Icon */}
+            <Rocket className="w-5 h-5 text-fuchsia-500 fill-fuchsia-500/20 group-hover:text-fuchsia-400 transition-colors" />
+          </motion.div>
+          <span className="font-clash font-bold text-lg text-white tracking-wide hidden sm:block whitespace-nowrap">
+            UniVerse
+          </span>
+        </Link>
 
-  return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300",
-        isScrolled
-          ? "bg-black/40 backdrop-blur-md border-b border-white/5"
-          : "bg-transparent border-b border-transparent",
-      )}
-    >
-      <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* LEFT: Logo */}
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-3">
-              <motion.div
-                animate={{ y: [0, -4, 0] }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Rocket className="text-purple-400 w-5 h-5" />
-              </motion.div>
-              <span className="text-white font-semibold text-sm tracking-tight">
-                UniVerse
-              </span>
-            </Link>
-          </div>
+        {/* 2. NAV LINKS (Sleek & Active Aware) */}
+        <ul className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => {
+            const isActive = location.pathname === link.href;
 
-          {/* CENTER: Nav Links with Sliding Pill */}
-          {/* CENTER: Nav Links with Sliding Pill - HIDDEN FOR STUDENTS */}
-          <nav className="hidden md:flex items-center gap-1">
-            {(!user ||
-              (user.role !== "student" && !user.roles?.includes("student"))) &&
-              NAV_LINKS.map((link) => (
+            return (
+              <li key={link.name} className="relative">
                 <Link
-                  key={link.href}
                   to={link.href}
-                  className="relative px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
-                  onMouseEnter={() => setHoveredLink(link.href)}
+                  onMouseEnter={() => setHoveredLink(link.name)}
                   onMouseLeave={() => setHoveredLink(null)}
+                  className={`relative z-10 block px-4 py-1.5 text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
+                    isActive ? "text-white" : "text-white/60 hover:text-white"
+                  }`}
                 >
-                  {/* Sliding Pill Background */}
-                  {(hoveredLink === link.href ||
-                    location.pathname === link.href) && (
+                  {link.name}
+
+                  {/* Magnetic Hover Bubble */}
+                  {hoveredLink === link.name && (
                     <motion.div
-                      layoutId="navbar-pill"
-                      className="absolute inset-0 bg-white/[0.06] rounded-md"
+                      layoutId="public-nav-pill"
+                      className="absolute inset-0 bg-white/10 rounded-full -z-10"
                       transition={{
                         type: "spring",
                         bounce: 0.2,
@@ -114,160 +94,44 @@ const Navbar = ({ user, onToggleSidebar }) => {
                       }}
                     />
                   )}
-                  <span className="relative z-10">{link.name}</span>
-                </Link>
-              ))}
-          </nav>
 
-          {/* RIGHT: Actions */}
-          <div className="flex items-center gap-3">
-            {/* Mobile: Hamburger - ONLY for logged-in users */}
-            {user && (
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 text-slate-400 hover:text-white transition-colors"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-            )}
-
-            {user ? (
-              /* LOGGED IN: User Dropdown with Theme/Notifications Inside */
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/[0.06] transition-colors"
-                >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-white font-semibold text-xs">
-                    {user.name?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                  <ChevronDown
-                    className={cn(
-                      "w-4 h-4 text-slate-400 transition-transform",
-                      dropdownOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-
-                {/* Dropdown Menu */}
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 top-full mt-2 w-56 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl overflow-hidden p-2"
-                    >
-                      <div className="px-3 py-2 border-b border-white/10 mb-1">
-                        <p className="text-sm font-medium text-white">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-slate-400">{user.role}</p>
-                      </div>
-
-                      <Link
-                        to="/profile"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        <User className="w-4 h-4" />
-                        Profile
-                      </Link>
-
-                      <Link
-                        to="/notifications"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        <Bell className="w-4 h-4" />
-                        Notifications
-                        <span className="ml-auto w-2 h-2 bg-red-500 rounded-full" />
-                      </Link>
-
-                      {mounted && (
-                        <button
-                          onClick={toggleTheme}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                        >
-                          {theme === "dark" ? (
-                            <Sun className="w-4 h-4" />
-                          ) : (
-                            <Moon className="w-4 h-4" />
-                          )}
-                          {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                        </button>
-                      )}
-
-                      <Link
-                        to="/profile"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </Link>
-
-                      <div className="h-px bg-white/10 my-1" />
-
-                      {/* Mode Switching for Multi-Role Users (Excluding Associations) */}
-                      {user.roles?.includes("organizer") &&
-                        user.role !== "association" && (
-                          <>
-                            {location.pathname.startsWith("/organizer") ? (
-                              <Link
-                                to="/"
-                                onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-violet-400 hover:bg-violet-500/10 transition-colors"
-                              >
-                                <Rocket className="w-4 h-4" />
-                                Switch to Student View
-                              </Link>
-                            ) : (
-                              <Link
-                                to="/organizer/my-events"
-                                onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-purple-400 hover:bg-purple-500/10 transition-colors"
-                              >
-                                <Settings className="w-4 h-4" />
-                                Switch to Organizer View
-                              </Link>
-                            )}
-                            <div className="h-px bg-white/10 my-1" />
-                          </>
-                        )}
-
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Log out
-                      </button>
-                    </motion.div>
+                  {/* Active State Indicator (Glowing Dot) */}
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-fuchsia-500 rounded-full shadow-[0_0_8px_#d946ef]" />
                   )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              /* GUEST: Login + Sign Up */
-              <>
-                <Link
-                  to="/login"
-                  className="hidden md:inline-flex px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
-                >
-                  Login
                 </Link>
-                <Link
-                  to="/signup"
-                  className="px-4 py-2 text-sm font-medium bg-white text-black rounded-full hover:bg-white/90 transition-colors"
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* 3. AUTH (Balanced Hierarchy + Un-Squashed) */}
+        <div className="flex items-center gap-4 shrink-0 pl-2">
+          {/* Subtle Divider */}
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+          {/* Login: Ghost Style */}
+          <Link
+            to="/login"
+            className="text-xs font-geist font-medium text-white/70 hover:text-white uppercase tracking-widest transition-colors whitespace-nowrap"
+          >
+            Login
+          </Link>
+
+          {/* Sign Up: White Shimmer Button (High Contrast) */}
+          <Link
+            to="/signup"
+            className="relative group overflow-hidden rounded-full bg-white px-5 py-2 transition-transform hover:scale-105 whitespace-nowrap shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          >
+            <span className="relative z-10 text-sm font-bold text-black group-hover:text-fuchsia-900 transition-colors">
+              Sign Up
+            </span>
+            {/* Shimmer Effect */}
+            <div className="absolute inset-0 -translate-x-[100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/80 to-transparent z-0" />
+          </Link>
         </div>
       </div>
-    </header>
+    </nav>
   );
 };
 

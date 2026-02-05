@@ -48,12 +48,12 @@ const Speakers = () => {
         </div>
       )}
       {/* I. LAYOUT RESTRUCTURE (THE SPOTLIGHT HERO) */}
-      <div className="flex flex-col items-center text-center mb-20 space-y-8">
-        <div className="space-y-4 max-w-3xl flex flex-col items-center">
-          <h1 className="text-6xl md:text-8xl font-clash font-bold tracking-tight bg-gradient-to-r from-white via-fuchsia-400 to-purple-500 text-transparent bg-clip-text animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col items-center text-center mb-16 space-y-6">
+        <div className="space-y-3 max-w-3xl flex flex-col items-center">
+          <h1 className="text-5xl md:text-7xl font-clash font-bold tracking-tight bg-gradient-to-r from-white via-fuchsia-400 to-purple-500 text-transparent bg-clip-text animate-in fade-in slide-in-from-bottom-4 duration-700">
             Speakers
           </h1>
-          <p className="text-white/60 text-lg md:text-xl font-sans leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
+          <p className="text-white/60 text-lg font-sans leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
             Meet the visionaries, experts, and artists shaping the UniVerse.
           </p>
         </div>
@@ -62,18 +62,18 @@ const Speakers = () => {
         <div className="w-full max-w-2xl animate-in fade-in zoom-in-95 duration-700 delay-200">
           <div className="relative group">
             <div className="absolute inset-0 bg-violet-600/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/40 w-5 h-5 group-focus-within:text-cyan-400 group-focus-within:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all z-20" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40 w-4 h-4 group-focus-within:text-cyan-400 group-focus-within:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all z-20" />
 
-            <div className="w-full h-16 bg-white/5 border border-white/10 backdrop-blur-xl px-16 flex items-center text-white rounded-full hover:bg-white/10 relative overflow-hidden transition-all focus-within:bg-white/10 focus-within:border-white/20 shadow-2xl">
+            <div className="w-full h-12 bg-white/5 border border-white/10 backdrop-blur-xl px-12 flex items-center text-white rounded-full hover:bg-white/10 relative overflow-hidden transition-all focus-within:bg-white/10 focus-within:border-white/20 shadow-2xl">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="absolute inset-0 w-full h-full bg-transparent px-16 text-white text-lg focus:outline-none z-10"
+                className="absolute inset-0 w-full h-full bg-transparent px-12 text-white text-sm focus:outline-none z-10"
               />
 
               {searchTerm === "" && (
-                <div className="opacity-40 text-lg pointer-events-none flex items-center gap-1 font-geist">
+                <div className="opacity-40 text-sm pointer-events-none flex items-center gap-1 font-geist">
                   <Typewriter
                     options={{
                       strings: [
@@ -98,13 +98,13 @@ const Speakers = () => {
         </div>
 
         {/* Smart Filter Pills */}
-        <div className="flex flex-wrap justify-center gap-3 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300">
+        <div className="flex flex-wrap justify-center gap-2 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300">
           {FILTERS.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={cn(
-                "px-5 py-2 rounded-full text-xs font-geist uppercase tracking-widest transition-all duration-300 border backdrop-blur-md relative overflow-hidden group",
+                "px-4 py-1.5 rounded-full text-[10px] font-geist uppercase tracking-widest transition-all duration-300 border backdrop-blur-md relative overflow-hidden group",
                 activeFilter === filter
                   ? "bg-white/10 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                   : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white",

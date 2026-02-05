@@ -125,7 +125,7 @@ exports.uploadAvatar = async (req, res) => {
     }
 
     // Construct URL (assuming server serves public folder)
-    const avatarUrl = `/public/uploads/${req.file.filename}`;
+    const avatarUrl = `/public/uploads/assets/${req.file.filename}`;
     user.avatar = avatarUrl;
     await user.save();
 
@@ -155,7 +155,7 @@ exports.uploadCover = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const coverUrl = `/public/uploads/${req.file.filename}`;
+    const coverUrl = `/public/uploads/assets/${req.file.filename}`;
     user.coverImage = coverUrl;
     await user.save();
 

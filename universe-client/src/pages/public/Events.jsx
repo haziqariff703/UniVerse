@@ -198,7 +198,7 @@ const Events = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="relative group p-[2px] rounded-[2rem] bg-gradient-to-r from-fuchsia-500/20 via-violet-500/20 to-cyan-500/20 overflow-hidden"
         >
-          <div className="relative bg-slate-950/80 backdrop-blur-3xl rounded-[1.9rem] p-6 md:p-8 border border-white/5">
+          <div className="relative bg-slate-950/80 backdrop-blur-lg rounded-[1.9rem] p-6 md:p-8 border border-white/5">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-2 text-center md:text-left">
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
