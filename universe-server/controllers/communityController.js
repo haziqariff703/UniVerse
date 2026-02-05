@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Community = require("../models/community");
 const CommunityMember = require("../models/communityMember");
 const User = require("../models/user");
@@ -45,7 +46,34 @@ exports.createCommunity = async (req, res) => {
  */
 exports.getAllCommunities = async (req, res) => {
   try {
-    const communities = await Community.find();
+    const communities = await Community.aggregate([
+      {
+        $lookup: {
+          from: "communitymembers",
+          localField: "_id",
+          foreignField: "community_id",
+          as: "members",
+        },
+      },
+      {
+        $addFields: {
+          "stats.member_count": {
+            $size: {
+              $filter: {
+                input: "$members",
+                as: "member",
+                cond: { $eq: ["$$member.status", "Approved"] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          members: 0,
+        },
+      },
+    ]);
     res.status(200).json(communities);
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
@@ -320,38 +348,47 @@ exports.addMember = async (req, res) => {
  */
 exports.getMyCommunities = async (req, res) => {
   try {
-    // Safety check for user roles
     const roles = req.user.roles || [];
 
-    // If Admin, return all communities
-    if (roles.includes("admin")) {
-      const allCommunities = await Community.find();
-      return res.status(200).json(allCommunities);
-    }
+    // Base match criteria for Admin (all) or User (owned or member)
+    const matchCriteria = roles.includes("admin") ? {} : {
+      $or: [
+        { owner_id: new mongoose.Types.ObjectId(req.user.id) },
+        { "membership.user_id": new mongoose.Types.ObjectId(req.user.id), "membership.status": "Approved" }
+      ]
+    };
 
-    // 1. Communities owned by user
-    const owned = await Community.find({ owner_id: req.user.id });
+    const communities = await Community.aggregate([
+      // 1. Lookup all memberships to find where user belongs
+      {
+        $lookup: {
+          from: "communitymembers",
+          localField: "_id",
+          foreignField: "community_id",
+          as: "membership"
+        }
+      },
+      // 2. Filter for user's communities
+      { $match: matchCriteria },
+      // 3. Recalculate real-time member count for these communities
+      {
+        $addFields: {
+          "stats.member_count": {
+            $size: {
+              $filter: {
+                input: "$membership",
+                as: "m",
+                cond: { $eq: ["$$m.status", "Approved"] }
+              }
+            }
+          }
+        }
+      },
+      // 4. Cleanup
+      { $project: { membership: 0 } }
+    ]);
 
-    // 2. Communities where user is an approved member (AJK, President, etc.)
-    const memberships = await CommunityMember.find({
-      user_id: req.user.id,
-      status: "Approved",
-    }).populate("community_id");
-
-    // Extract communities from memberships and filter out any nulls
-    const memberOf = memberships
-      .map((m) => m.community_id)
-      .filter((c) => c !== null);
-
-    // Combine and remove duplicates based on _id
-    const combined = [...owned];
-    memberOf.forEach((comm) => {
-      if (!combined.some((c) => c._id.toString() === comm._id.toString())) {
-        combined.push(comm);
-      }
-    });
-
-    res.status(200).json(combined);
+    res.status(200).json(communities);
   } catch (err) {
     console.error("Get My Communities Error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });

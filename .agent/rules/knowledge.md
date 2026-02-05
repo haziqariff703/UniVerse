@@ -107,7 +107,16 @@ The Heatmap component provides a visual "Registry" of a venue's daily availabili
 - **Visual Psychological Signalling**: Uses color-coded glows (Fuchsia for Booked, Low-opacity for Free) to help students identify low-density study windows at a glance.
 - **Client-Side Optimization**: Centralizes event fetching in the parent list component (`Venues.jsx`) to associate event data with venues in a single pass, preventing N+1 API overhead.
 
-## 10. Temporal Event State Management (Stability & Correctness)
+## 10. Admin Reporting & Export Infrastructure (Governance)
+
+The platform implements a standardized, cross-module reporting system for administrative data portability.
+
+- **Standardized Export Protocol**: All administrative list views utilize a consistent "Export CSV" action located in the primary header group.
+- **Visual Psychological Cues**: Export buttons use a distinct `border-dashed border-zinc-700` styling and `zinc-900/50` background to separate "Operational Actions" (like Add/Refresh) from "Governance Actions" (like Reporting).
+- **Data Densification (CSV Engine)**: The `downloadCSV` utility performs a deterministic mapping of complex Mongoose objects into flat, registry-ready CSV rows, ensuring compatibility with external analytical tools like Excel or Google Sheets.
+- **Import/Component Safety**: Fixed persistent lint and runtime errors caused by duplicate `DropdownMenuTrigger` imports and missing `lucide-react` icons, ensuring absolute architectural stability in the Admin Suite.
+
+## 11. Temporal Event State Management (Stability & Correctness)
 
 The system implements a robust temporal logic for event status to ensure UI consistency and accurate reporting.
 
@@ -118,15 +127,15 @@ The system implements a robust temporal logic for event status to ensure UI cons
 - Points are cumulative and persistent in the `User` model.
 - The Rank System is purely visual and derived from the `current_merit` total.
 
-## 11. Administrative User Intelligence (Governance)
+## 12. Administrative User Intelligence (Governance)
 
 The User Management dashboard provides a real-time governance layer for platform administrators.
 
 - **Real-time KPI Hydration**: The `getAllUsers` API implements an "Aggregation-on-Fetch" pattern, returning global counts for all user roles (Total, Student, Organizer, Admin) in a single request. This ensures that KPI cards are always accurate without requiring separate high-overhead polling.
-- **Portable Data Registry (PDF Export)**: Implements a client-side document generation engine using `jsPDF`. The system maps the current user state into a professional tabular layout with automatic styling and temporal stamping (`UniVerse_Users_List_YYYY-MM-DD.pdf`).
+- **Portable Data Registry (PDF Export)**: Implemented a functional "Export List" tool in `UsersList.jsx` using `jsPDF` and `jspdf-autotable`. The system maps the current user state into a professional tabular layout with automatic styling and temporal stamping (`UniVerse_Users_List_YYYY-MM-DD.pdf`).
 - **Forensic Access Termination**: Provides a "Terminate Access" (Delete) operation protected by internal safeguards (preventing self-deletion and strictly auditing all termination events).
 
-## 12. Global Analytics Filtering (Operational Intelligence)
+## 13. Global Analytics Filtering (Operational Intelligence)
 
 The Admin Dashboard implements a unified, period-aware filtering system to provide deep temporal insights into platform performance.
 
@@ -137,12 +146,12 @@ The Admin Dashboard implements a unified, period-aware filtering system to provi
 - **Contextual KPI Branding**: The frontend dynamically re-labels KPI cards based on the filter context. "Total Events" (Yearly view) automatically becomes "New Events" (Weekly/Monthly view), and descriptions shift from "Lifetime Volume" to period-specific context like "Joined this week".
 - **Performance Optimized Filtering**: Date-based filtering is implemented at the database layer using MongoDB `$match` and `$gte` operators during aggregation, ensuring large data sets are narrowed down efficiently before calculations occur.
 
-## 13. Infrastructure & Deployment Standards (Frontend)
+## 14. Infrastructure & Deployment Standards (Frontend)
 
 - **Relative API Routing**: The frontend uses relative paths (`/api/...`) rather than hardcoded URLs (e.g., `http://localhost:5000`). This ensures the application works seamlessly with the Vite development proxy and in production environments.
 - **Icon Set Standardization**: Lucide-React is the primary icon provider. When introducing new loading states or visual metaphors, the system mandates the use of standardized components like `Loader2` (with `animate-spin`) to maintain UI consistency.
 
-## 14. Responsive Admin Interface (UX/UI)
+## 15. Responsive Admin Interface (UX/UI)
 
 The Admin section uses a mobile-first responsive design to ensure accessibility across devices.
 
@@ -150,9 +159,46 @@ The Admin section uses a mobile-first responsive design to ensure accessibility 
 - **Contextual Closing**: The mobile navigation automatically closes upon selecting a route or clicking the backdrop, reducing manual overhead for the administrator.
 - **Dynamic Styling (CN Utility)**: Standardized on the `cn` (class-name) utility for managing complex tailwind classes, especially for responsive states like `translate-x` and `w` (width).
 
-## 15. Operational Navigation Context (Admin Dashboard)
+## 16. Operational Navigation Context (Admin Dashboard)
 
 To improve administrative throughput, the dashboard implements "Shortcut Logic" within its KPI cards.
 
 - **Direct Approval Links**: High-priority cards like "Pending Approvals" are interactive. Clicking them provides a direct bypass to the specific management module (`/admin/events/approvals`), allowing admins to move from high-level statistics to operational actions in a single click.
 - **Visual Psychological Cues**: Interactive cards use `cursor-pointer` and hover border effects (`hover:border-violet-500/30`) to signal navigability without cluttering the UI with additional buttons.
+
+## 17. Membership Synchronization (Live Data Strategy)
+
+The system prioritizes server-side truth for student memberships to ensure UX consistency across multiple sessions and devices.
+
+- **Reactive State Hydration**: The `Communities.jsx` page and `ClubDetailModal` implement a "Reactive Pull" pattern. Upon session initialization and modal opening, they concurrently retrieve global registry data and the user-specific "Joined" list via the authenticated `/my-communities` and parameterized slug endpoints.
+- **Server-Side Aggregation Truth**: The system has transitioned from cached `member_count` integers to real-time MongoDB `$lookup` aggregations in the `communityController`. This ensures that every view of a community's size is a direct reflection of active, approved membership records.
+- **Fallback Resilience Logic**: To handle transient network issues or legacy sessions, the frontend utilizes a tiered data reconciliation strategy:
+  1. **Primary**: Live API membership payload (Aggregated count).
+  2. **Secondary**: Local storage `memberClubIds` (updated during login/registration).
+  3. **Result**: A deduplicated, accurate view of the student's organizational footprint.
+
+### Visual Standards & Image Rendering
+
+- **Image Pathing**: All frontend components consuming images from the backend (Express) MUST prefix the path with API_BASE (e.g., http://localhost:5000) unless the path is already a full URL.
+- **Transparency & Depth**: Public-facing pages should avoid solid dark backgrounds (bg-black, bg-slate-950) to ensure the global 'Floating Lines' animation in the App.jsx layout is visible. Use bg-transparent or low-opacity overlays (bg-black/20) instead.
+- **Membership Sync**: Use reactive hydration for community membership status. Always query the /api/communities/my-communities endpoint to provide the 'Source of Truth' for joined status, bypassing stale local storage where possible.
+
+## 18. Image Path Standardization & Resource Management
+
+The platform implements a unified strategy for handling uploaded assets across all modules (Communities, Speakers, Venues, Events) to ensure portability and consistency.
+
+### A. Backend Storage Strategy
+
+- **Absolute-to-Relative Conversion**: Controllers use `path.relative(process.cwd(), file.path)` to strip the system-specific absolute path and store only the relative path (e.g., `/public/uploads/assets/filename.png`).
+- **Slash Normalization**: All backslashes (Windows) are converted to forward slashes for URL compatibility.
+- **Leading Slash Persistence**: Paths are stored with a leading `/` to simplify frontend concatenation.
+
+### B. Frontend Rendering Logic
+
+- **Dynamic API Base Concatenation**: Components utilize an `API_BASE` constant. If a stored path is relative (does not start with `http`), it is automatically prepended with `API_BASE`.
+- **Legacy URL Support**: The logic detects full URLs (like Unsplash placeholders) and skips concatenation, ensuring zero breakage for external resources.
+
+### C. Administrative UX: Real-time Previews
+
+- **Stateless Visual Feedback**: The Admin Panel (`CommunityManager`, `SpeakersList`) implements real-time image previews using `URL.createObjectURL(file)`. This provides immediate visual confirmation to the administrator before the data is committed to the database.
+- **Automatic State Cleanup**: Preview URLs are cleared upon dialog close or reset, preventing memory leaks and ensuring a clean workflow for subsequent edits.

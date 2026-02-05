@@ -20,10 +20,13 @@ import {
   User,
   TrendingUp,
   UserPlus,
+  ArrowLeft,
+  FileText,
 } from "lucide-react";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { downloadCSV } from "@/lib/exportUtils";
+import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button"; // Added Button import
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,9 +134,10 @@ const UsersList = ({ onBack }) => {
 
       fetchUsers();
       if (selectedUser?._id === userId) setSelectedUser(null);
+      toast.success("User deleted successfully");
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Failed to delete user");
+      toast.error("Failed to delete user");
     } finally {
       setDeleteProcessing(null);
     }
@@ -161,9 +165,10 @@ const UsersList = ({ onBack }) => {
       if (selectedUser?._id === userId) {
         setSelectedUser((prev) => ({ ...prev, role: newRole }));
       }
+      toast.success(`User role updated to ${newRole}`);
     } catch (error) {
       console.error("Error updating role:", error);
-      alert("Failed to update user role");
+      toast.error("Failed to update user role");
     }
   };
 
@@ -195,35 +200,13 @@ const UsersList = ({ onBack }) => {
         student_id: "",
       });
       fetchUsers();
+      toast.success("User created successfully");
     } catch (error) {
       console.error("Error creating user:", error);
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setCreateLoading(false);
     }
-  };
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    const tableColumn = ["Name", "Email", "Role", "Student ID", "Joined Date"];
-    const tableRows = [];
-
-    users.forEach((user) => {
-      const userData = [
-        user.name,
-        user.email,
-        user.role.toUpperCase(),
-        user.student_id || "N/A",
-        new Date(user.created_at).toLocaleDateString(),
-      ];
-      tableRows.push(userData);
-    });
-
-    doc.autoTable(tableColumn, tableRows, { startY: 20 });
-    doc.text("UniVerse - User List", 14, 15);
-    doc.save(
-      `UniVerse_Users_List_${new Date().toISOString().split("T")[0]}.pdf`,
-    );
   };
 
   // --- KPI Calculations ---
@@ -278,6 +261,23 @@ const UsersList = ({ onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = users.map((user) => ({
+                Name: user.name,
+                Email: user.email,
+                Role: user.role,
+                Student_ID: user.student_id || "N/A",
+                Joined: new Date(user.created_at).toLocaleDateString(),
+              }));
+              downloadCSV(exportData, "users_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={() => {
               setCurrentPage(1);
@@ -286,18 +286,6 @@ const UsersList = ({ onBack }) => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
           >
             <RefreshCw size={14} /> <span>Refresh</span>
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold shadow-lg shadow-violet-500/20 hover:bg-violet-600 transition-all active:scale-95"
-          >
-            <UserPlus size={16} /> <span>Create User</span>
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-starlight/5 text-starlight text-sm hover:bg-starlight/10 transition-colors"
-          >
-            <Download size={14} /> <span>Export List</span>
           </button>
         </div>
       </div>
@@ -856,13 +844,13 @@ const UsersList = ({ onBack }) => {
               </div>
 
               <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   onClick={() => setIsCreateModalOpen(false)}
                   className="flex-1 py-3 rounded-xl glass-panel text-sm font-bold text-starlight/60 hover:text-white transition-all"
                 >
                   Cancel
-                </button>
+                </Button>
                 <button
                   type="submit"
                   disabled={createLoading}

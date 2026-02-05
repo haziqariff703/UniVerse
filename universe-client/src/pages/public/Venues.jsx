@@ -104,7 +104,7 @@ const Venues = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-4 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-transparent pt-4 pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Cinema Header */}
         <motion.div

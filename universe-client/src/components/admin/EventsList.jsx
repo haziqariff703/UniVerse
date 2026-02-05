@@ -28,6 +28,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
 
 const KpiCard = ({
   title,
@@ -206,6 +208,24 @@ const EventsList = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = filteredEvents.map((event) => ({
+                Title: event.title,
+                Organizer: event.organizer_id?.name || "N/A",
+                Date: new Date(event.date_time).toLocaleDateString(),
+                Status: event.status,
+                Capacity: event.max_capacity,
+                Type: event.event_type,
+              }));
+              downloadCSV(exportData, "events_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={() => {
               setCurrentPage(1);

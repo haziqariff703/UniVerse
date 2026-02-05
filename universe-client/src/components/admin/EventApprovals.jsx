@@ -36,6 +36,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 
 /**
@@ -222,14 +224,32 @@ const EventApprovals = ({ onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = events.map((event) => ({
+                Title: event.title,
+                Organizer: event.organizer_id?.name || "N/A",
+                Date: new Date(event.date_time).toLocaleDateString(),
+                Type: event.event_type,
+                Status: event.status,
+              }));
+              downloadCSV(exportData, "pending_events_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchPendingEvents}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
           >
-            <RefreshCw size={14} /> <span>Refresh</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/10 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors">
-            <Download size={14} /> <span>Export Report</span>
+            <RefreshCw
+              size={14}
+              className={`${loading ? "animate-spin" : ""}`}
+            />
+            <span>Refresh</span>
           </button>
         </div>
       </div>

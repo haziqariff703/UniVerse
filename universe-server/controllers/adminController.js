@@ -9,6 +9,7 @@ const Speaker = require('../models/speaker');
 const Community = require('../models/community');
 const Review = require('../models/review');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
 /**
  * Admin Controller
@@ -809,8 +810,8 @@ exports.createVenue = async (req, res) => {
 
     const images = [];
     if (req.file) {
-      const filePath = req.file.path.replace(/\\/g, "/");
-      images.push(`http://localhost:5000/${filePath}`);
+      const relativePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, "/");
+      images.push("/" + relativePath);
     }
 
     const venue = new Venue({ 
@@ -882,10 +883,9 @@ exports.updateVenue = async (req, res) => {
     };
 
     if (req.file) {
-      const filePath = req.file.path.replace(/\\/g, "/");
-      const imageUrl = `http://localhost:5000/${filePath}`;
-      updateData.images = [imageUrl];
-      updateData.image = imageUrl;
+      const relativePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, "/");
+      updateData.image = "/" + relativePath;
+      updateData.images = ["/" + relativePath]; // Set as first image
     }
 
     const venue = await Venue.findByIdAndUpdate(
@@ -958,8 +958,31 @@ exports.deleteVenue = async (req, res) => {
  */
 exports.getAllSpeakers = async (req, res) => {
   try {
-    const speakers = await Speaker.find({ status: 'verified' }).sort({ name: 1 });
-    res.json({ speakers });
+    const { page = 1, limit = 20, search } = req.query;
+
+    const query = { status: 'verified' };
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { expertise: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const speakers = await Speaker.find(query)
+      .sort({ name: 1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await Speaker.countDocuments(query);
+
+    res.json({ 
+      speakers,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        total
+      }
+    });
   } catch (error) {
     console.error('Get speakers error:', error);
     res.status(500).json({ message: 'Failed to fetch speakers' });
@@ -972,17 +995,39 @@ exports.getAllSpeakers = async (req, res) => {
  */
 exports.createSpeaker = async (req, res) => {
   try {
-    const { name, expertise, bio, social_links } = req.body;
+    const { name, role, expertise, category, bio, about, social_links, achievements, upcoming } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Speaker name is required' });
     }
 
+    let image = null;
+    let proposal_url = null;
+
+    if (req.files) {
+      if (req.files.image) {
+        const relativePath = path.relative(process.cwd(), req.files.image[0].path).replace(/\\/g, "/");
+        image = "/" + relativePath;
+      }
+      if (req.files.proposal) {
+        const relativePath = path.relative(process.cwd(), req.files.proposal[0].path).replace(/\\/g, "/");
+        proposal_url = "/" + relativePath;
+      }
+    }
+
     const speaker = new Speaker({
       name,
+      role,
       expertise,
+      category,
       bio,
-      social_links
+      about: about || bio, // Fallback to bio if about is not provided
+      social_links: typeof social_links === 'string' ? JSON.parse(social_links) : social_links,
+      achievements: typeof achievements === 'string' ? JSON.parse(achievements) : achievements,
+      upcoming,
+      image,
+      proposal_url,
+      status: 'verified' // Auto-verify when created by admin
     });
     await speaker.save();
 
@@ -1009,11 +1054,40 @@ exports.createSpeaker = async (req, res) => {
 exports.updateSpeaker = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, expertise, bio, social_links } = req.body;
+    const { name, role, expertise, category, bio, about, social_links, achievements, upcoming, status } = req.body;
+
+    const updateData = {
+      name,
+      role,
+      expertise,
+      category,
+      bio,
+      about,
+      upcoming,
+      status
+    };
+
+    if (social_links) {
+      updateData.social_links = typeof social_links === 'string' ? JSON.parse(social_links) : social_links;
+    }
+    if (achievements) {
+      updateData.achievements = typeof achievements === 'string' ? JSON.parse(achievements) : achievements;
+    }
+
+    if (req.files) {
+      if (req.files.image) {
+        const relativePath = path.relative(process.cwd(), req.files.image[0].path).replace(/\\/g, "/");
+        updateData.image = "/" + relativePath;
+      }
+      if (req.files.proposal) {
+        const relativePath = path.relative(process.cwd(), req.files.proposal[0].path).replace(/\\/g, "/");
+        updateData.proposal_url = "/" + relativePath;
+      }
+    }
 
     const speaker = await Speaker.findByIdAndUpdate(
       id,
-      { name, expertise, bio, social_links },
+      updateData,
       { new: true }
     );
 
@@ -1472,7 +1546,16 @@ exports.getAllCommunities = async (req, res) => {
 
 exports.createCommunity = async (req, res) => {
   try {
-    const { name, slug, description, category, advisor, owner_id, tagline } = req.body;
+    let { name, slug, description, category, advisor, owner_id, tagline } = req.body;
+
+    // Parse advisor if it's a string (from FormData)
+    if (typeof advisor === 'string') {
+      try {
+        advisor = JSON.parse(advisor);
+      } catch (e) {
+        console.error('Advisor parsing error:', e);
+      }
+    }
 
     const community = new Community({
       name,
@@ -1484,6 +1567,18 @@ exports.createCommunity = async (req, res) => {
       owner_id: owner_id || req.user.id,
       is_verified: true // Admin-created are auto-verified
     });
+
+    // Handle Image Uploads
+    if (req.files) {
+      if (req.files.logo) {
+        const relativePath = path.relative(process.cwd(), req.files.logo[0].path).replace(/\\/g, "/");
+        community.logo = "/" + relativePath;
+      }
+      if (req.files.banner) {
+        const relativePath = path.relative(process.cwd(), req.files.banner[0].path).replace(/\\/g, "/");
+        community.banner = "/" + relativePath;
+      }
+    }
 
     await community.save();
 
@@ -1505,8 +1600,29 @@ exports.createCommunity = async (req, res) => {
 
 exports.updateCommunity = async (req, res) => {
   try {
-    const updates = req.body;
-    const community = await Community.findByIdAndUpdate(req.params.id, updates, { new: true });
+    const { id } = req.params;
+    let updates = req.body;
+
+    // Parse sub-objects if they are strings (from FormData)
+    if (typeof updates.advisor === 'string') {
+      try {
+        updates.advisor = JSON.parse(updates.advisor);
+      } catch (e) {}
+    }
+
+    // Handle Image Uploads
+    if (req.files) {
+      if (req.files.logo) {
+        const relativePath = path.relative(process.cwd(), req.files.logo[0].path).replace(/\\/g, "/");
+        updates.logo = "/" + relativePath;
+      }
+      if (req.files.banner) {
+        const relativePath = path.relative(process.cwd(), req.files.banner[0].path).replace(/\\/g, "/");
+        updates.banner = "/" + relativePath;
+      }
+    }
+
+    const community = await Community.findByIdAndUpdate(id, updates, { new: true });
     
     if (!community) return res.status(404).json({ message: 'Community not found' });
 

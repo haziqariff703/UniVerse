@@ -1,5 +1,29 @@
 # Changelog
 
+## [2026-02-05]
+
+- **Added**: Image upload functionality (Logo and Banner) for the Communities module, allowing admins to upload club pictures.
+- **Changed**: Refactored `CommunityManager` to use `FormData` for API submissions, supporting multi-field updates and file handling.
+- **Fixed**: Updated public `Communities` page to correctly handle relative image paths by prepending the `API_BASE` URL.
+- **Fixed**: Broken event and venue images on public pages by ensuring correct `API_BASE` pathing.
+- **Changed**: Improved visual depth by making exploration page backgrounds transparent to reveal layout animations.
+- **Improved**: Real-time membership intelligence on the Communities page with API-driven state synchronization.
+- **Improved**: Restored essential `motion` imports and fixed syntax errors in public exploration pages.
+- **Changed**: Standardized admin notifications by transitioning from native `alert()` to `sonner` toasts across `CommunityManager`, `NotificationsManager`, `SpeakersList`, `SystemSettings`, and others for a consistent UI.
+- **Added**: Standardized "Export CSV" functionality across all 12 admin list and approval components.
+- **Improved**: Consistent button placement, styling (dashed border, zinc-based colors), and icons for all admin reporting tools.
+- **Fixed**: Standardized image path handling across all modules (Communities, Speakers, Venues, Events) to use relative paths.
+- **Fixed**: Migrated existing community and speaker data to resolve broken image links.
+- **Fixed**: Resolved `ReferenceError: motion is not defined` in `Communities.jsx` caused by an accidental import removal.
+- **Fixed**: Resolved duplicate image rendering in `Communities.jsx` by ensuring unique React keys (stringified IDs) and category-specific fallback placeholders.
+- **Changed**: Improved community detailed view to show banners in "full image" mode using `object-contain` and blurred backdrop.
+- **Fixed**: Resolved global image preview collision in `CommunityManager.jsx` where one upload affected all listed communities.
+- **Added**: Real-time visual image previews (logo & banner) in the Community Admin edit modal.
+- **Added**: Real-time image preview for logo and banner uploads in the Admin Panel.
+- **Added**: Enhanced image rendering logic to handle both absolute and relative paths consistently.
+- **Fixed**: Community logo and banner rendering by standardizing paths to `/public/uploads/assets/` and prepending `API_BASE` on the frontend. (2026-02-05)
+- **Fixed**: Removed broken PDF export in `UsersList.jsx` and resolved multiple duplicate import issues across admin components. (2026-02-05)
+
 ## [2026-02-04]
 
 ### Added
@@ -13,6 +37,8 @@
 - **Navigation Logic**: Updated `AdminSidebar` to automatically close the mobile menu upon navigation or backdrop click.
 - **Standardized Approval Routes**: Corrected all approval-related navigation paths to use consistent sub-routes (e.g., `/admin/events/approvals`, `/admin/organizers/approvals`).
 - **Data Fetching Optimization**: Refactored `AdminLayout` statistics fetching using `useCallback` to improve performance and resolve React linting warnings.
+- **Direct Approval Links**: High-priority cards like "Pending Approvals" are interactive. Clicking them provides a direct bypass to the specific management module (`/admin/events/approvals`), allowing admins to move from high-level statistics to operational actions in a single click.
+- **Visual Psychological Cues**: Interactive cards use `cursor-pointer` and hover border effects (`hover:border-violet-500/30`) to signal navigability without cluttering the UI with additional buttons.
 
 ### Fixed
 
@@ -58,7 +84,16 @@
 
 ## [2026-02-05]
 
+### Changed
+
+- **Real-time Membership Intelligence**: Overhauled community membership logic to use server-side aggregation. Member counts on community cards and within the `ClubDetailModal` now reflect live, approved membership records from the `CommunityMember` collection, ensuring data integrity.
+- **UI Streamlining**: Removed the redundant "Joined" tab filter while maintaining the "Your Communities" priority section, providing a cleaner navigation experience for students.
+- **Community Detail Enrichment**: Updated `ClubDetailModal` to perform a real-time reactive hydration of the active members roster when opened.
+- **Community Joined Status Enrichment**: Upgraded the `Communities.jsx` page to fetch the user's joined communities directly from the backend API (`/api/communities/my-communities`).
+
 ### Fixed
+
+- **Venue Creation 500 Error**: Resolved a critical server error during venue creation by correctly parsing `bestFor` and `facilities` from JSON strings in `adminController.js`.
 
 - **Venue Creation 500 Error**: Resolved a critical server error during venue creation by correctly parsing `bestFor` and `facilities` from JSON strings in `adminController.js`.
 - **Image Field Redundancy**: Removed duplicate file append in `VenueManager.jsx` that caused Multer to reject the request with "Unexpected field".

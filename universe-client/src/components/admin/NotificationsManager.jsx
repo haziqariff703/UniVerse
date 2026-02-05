@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
+import { toast } from "sonner";
 
 const NotificationsManager = () => {
   const [notifications, setNotifications] = useState([]);
@@ -77,13 +78,13 @@ const NotificationsManager = () => {
       if (!response.ok) throw new Error("Failed to send notification");
 
       const data = await response.json();
-      alert(`Success: ${data.message}`);
+      toast.success(`Success: ${data.message}`);
 
       setMessage("");
       fetchNotifications();
     } catch (error) {
       console.error("Error sending notification:", error);
-      alert("Failed to send notification");
+      toast.error("Failed to send notification");
     } finally {
       setSending(false);
     }

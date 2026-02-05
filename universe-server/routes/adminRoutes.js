@@ -38,8 +38,8 @@ router.delete('/venues/:id', auth, authorize('admin'), adminController.deleteVen
 // Speaker Management
 router.get('/speakers', auth, authorize('admin', 'organizer'), adminController.getAllSpeakers);
 router.get('/speakers/pending', auth, authorize('admin'), adminController.getPendingSpeakers);
-router.post('/speakers', auth, authorize('admin'), adminController.createSpeaker);
-router.put('/speakers/:id', auth, authorize('admin'), adminController.updateSpeaker);
+router.post('/speakers', auth, authorize('admin'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), adminController.createSpeaker);
+router.put('/speakers/:id', auth, authorize('admin'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), adminController.updateSpeaker);
 router.patch('/speakers/:id/verify', auth, authorize('admin'), adminController.verifySpeaker);
 router.delete('/speakers/:id', auth, authorize('admin'), adminController.deleteSpeaker);
 
@@ -62,8 +62,8 @@ router.delete('/categories/:id', auth, authorize('admin'), adminController.delet
 
 // Community Management
 router.get('/communities', auth, authorize('admin'), adminController.getAllCommunities);
-router.post('/communities', auth, authorize('admin'), adminController.createCommunity);
-router.put('/communities/:id', auth, authorize('admin'), adminController.updateCommunity);
+router.post('/communities', auth, authorize('admin'), upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }]), adminController.createCommunity);
+router.put('/communities/:id', auth, authorize('admin'), upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }]), adminController.updateCommunity);
 router.delete('/communities/:id', auth, authorize('admin'), adminController.deleteCommunity);
 
 module.exports = router;

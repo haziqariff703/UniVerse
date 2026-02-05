@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 const SystemSettings = () => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -25,7 +26,7 @@ const SystemSettings = () => {
   });
 
   const handleSave = () => {
-    alert("Settings saved locally! (Backend implementation pending)");
+    toast.success("Settings saved locally! (Backend implementation pending)");
   };
 
   return (
@@ -217,4 +218,3 @@ const SystemSettings = () => {
 };
 
 export default SystemSettings;
-

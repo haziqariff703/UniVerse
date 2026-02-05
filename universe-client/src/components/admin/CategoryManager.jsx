@@ -19,6 +19,7 @@ import {
   Layers,
   Users,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
+import { FileText } from "lucide-react";
 
 /**
  * Intelligence Card Component
@@ -173,11 +177,16 @@ const CategoryManager = () => {
       });
 
       if (response.ok) {
+        toast.success(
+          currentCategory
+            ? "Category updated successfully"
+            : "Category created successfully",
+        );
         fetchCategories();
         setIsDialogOpen(false);
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to save category");
+        toast.error(errorData.message || "Failed to save category");
       }
     } catch (error) {
       console.error("Error saving category:", error);
@@ -201,13 +210,15 @@ const CategoryManager = () => {
         },
       );
       if (response.ok) {
+        toast.success("Category deleted successfully");
         fetchCategories();
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to delete category");
+        toast.error(errorData.message || "Failed to delete category");
       }
     } catch (error) {
       console.error("Error deleting category:", error);
+      toast.error("An error occurred while deleting the category");
     }
   };
 
@@ -245,6 +256,22 @@ const CategoryManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = categories.map((cat) => ({
+                Name: cat.name,
+                Type: cat.type || "General",
+                Usage: cat.usageCount || 0,
+                Status: cat.is_active ? "Active" : "Inactive",
+              }));
+              downloadCSV(exportData, "categories_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchCategories}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"

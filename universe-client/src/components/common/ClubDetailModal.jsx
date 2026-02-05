@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,28 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
   const navigate = useNavigate();
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
-  if (!club) return null;
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!club?.slug || !isOpen) return;
+      setLoadingMembers(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/communities/${club.slug}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMembers(data.members || []);
+        }
+      } catch (err) {
+        console.error("Fetch members error:", err);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetchMembers();
+  }, [club?.slug, isOpen]);
 
   const handleExploreEvents = () => {
     navigate(`/events?club=${club.id}`);
@@ -34,7 +54,6 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
   };
 
   const handleContactAdmin = () => {
-    // TODO: Implement contact admin functionality
     window.location.href = `mailto:${club.social.email}?subject=Inquiry about ${club.title}`;
   };
 
@@ -63,6 +82,8 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
     }
   };
 
+  if (!club) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-slate-950/95 backdrop-blur-xl border-white/10 text-foreground max-h-[90vh] overflow-y-auto">
@@ -76,13 +97,22 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
         </button>
 
         {/* Image Header */}
-        <div className="relative w-full h-64 -mx-6 -mt-6 overflow-hidden">
+        <div className="relative w-full h-80 -mx-6 -mt-6 bg-slate-900 flex items-center justify-center overflow-hidden">
           <img
-            src={club.image}
+            src={club.banner || club.logo || club.image}
             alt={club.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain relative z-10"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/60 to-slate-950/95" />
+          {/* Blurred background for "full image" effect */}
+          <div
+            className="absolute inset-0 blur-2xl opacity-40 scale-110"
+            style={{
+              backgroundImage: `url(${club.banner || club.logo || club.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950/95 z-20" />
         </div>
 
         <DialogHeader className="-mt-16 relative z-10">
@@ -128,7 +158,7 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
               <div>
                 <p className="text-xs text-muted-foreground">Members</p>
                 <p className="text-sm font-medium text-foreground">
-                  {club.members}
+                  {members.length > 0 ? members.length : club.members}
                 </p>
               </div>
             </div>
@@ -141,6 +171,45 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Real-time Members List */}
+          <div className="space-y-4 pt-2">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-400" />
+              Active Members
+            </h4>
+            {loadingMembers ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating roster...
+              </div>
+            ) : members.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {members.map((m, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5 hover:border-white/10 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                      {m.user_id?.name?.charAt(0) || "U"}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-foreground">
+                        {m.user_id?.name || "Unknown User"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {m.role || "Member"} • {m.department}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Initial members roster being finalized.
+              </p>
+            )}
           </div>
 
           {/* Social Media */}
