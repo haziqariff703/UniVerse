@@ -68,7 +68,7 @@ export default function StudentNavbar({
       <div
         className="pointer-events-auto flex items-center gap-3 bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 shadow-lg transition-transform duration-300 ease-in-out"
         style={{
-          transform: `translateX(${!sidebarCollapsed ? "280px" : "0px"})`,
+          transform: `translateX(${!sidebarCollapsed ? "240px" : "0px"})`,
         }}
       >
         <button

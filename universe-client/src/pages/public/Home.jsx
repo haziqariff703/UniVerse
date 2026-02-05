@@ -9,7 +9,6 @@ import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
 import Footer from "@/components/common/Footer";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
-import StudentDashboard from "@/pages/student/StudentDashboard";
 
 const API_BASE = "http://localhost:5000";
 
@@ -124,8 +123,8 @@ const Home = () => {
 
     // Students land on the Student Dashboard
     if (hasStudentRole || !user.role) {
-      console.log("Rendering Student Dashboard");
-      return <StudentDashboard user={user} />;
+      console.log("Redirecting to Student Dashboard");
+      return <Navigate to="/student/dashboard" replace />;
     }
   }
 

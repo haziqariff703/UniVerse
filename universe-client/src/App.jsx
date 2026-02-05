@@ -32,6 +32,7 @@ import MyBookings from "./pages/public/MyBookings";
 import ClubProposal from "./pages/student/ClubProposal";
 import Notifications from "./pages/student/Notifications";
 import Profile from "./pages/student/Profile";
+import StudentDashboard from "./pages/student/StudentDashboard";
 
 // Admin Pages
 import AdminLayout from "./components/layout/AdminLayout";
@@ -211,6 +212,7 @@ const Layout = ({ children }) => {
             setUser(null);
             window.location.href = "/login";
           }}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
       ) : (
         user && <MainSidebar user={user} collapsed={sidebarCollapsed} />
@@ -254,6 +256,16 @@ function App() {
               <Route path="/events/:id" element={<EventDetails />} />
               <Route path="/venues" element={<Venues />} />
               <Route path="/venues/:id" element={<VenueDetails />} />
+
+              {/* Student Routes */}
+              <Route
+                path="/student/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Routes - Any Logged In User */}
               <Route
