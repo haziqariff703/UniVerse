@@ -30,6 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
 
 /**
  * Common facilities usually available on campus.
@@ -361,7 +363,24 @@ const VenueManager = ({ onBack }) => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = venues.map((venue) => ({
+                Name: venue.name,
+                Location: venue.location_code,
+                Capacity: venue.max_capacity,
+                Type: venue.type,
+                Status: venue.occupancyStatus,
+              }));
+              downloadCSV(exportData, "venues_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchVenues}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"

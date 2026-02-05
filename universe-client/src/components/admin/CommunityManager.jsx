@@ -38,6 +38,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
+import { FileText } from "lucide-react";
+
+const API_BASE = "http://localhost:5000";
 
 /**
  * Intelligence Card Component
@@ -114,6 +120,11 @@ const CommunityManager = () => {
     is_verified: true,
   });
 
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+
   useEffect(() => {
     fetchCommunities();
     fetchUsers();
@@ -166,6 +177,10 @@ const CommunityManager = () => {
       owner_id: "",
       is_verified: true,
     });
+    setLogoFile(null);
+    setLogoPreview(null);
+    setBannerFile(null);
+    setBannerPreview(null);
     setCurrentCommunity(null);
   };
 
@@ -181,6 +196,10 @@ const CommunityManager = () => {
       owner_id: comm.owner_id?._id || comm.owner_id || "",
       is_verified: comm.is_verified,
     });
+    setLogoFile(null);
+    setLogoPreview(null);
+    setBannerFile(null);
+    setBannerPreview(null);
     setIsDialogOpen(true);
   };
 
@@ -192,21 +211,39 @@ const CommunityManager = () => {
         ? `http://localhost:5000/api/admin/communities/${currentCommunity._id}`
         : "http://localhost:5000/api/admin/communities";
 
+      const submissionData = new FormData();
+
+      // Append basic fields
+      submissionData.append("name", formData.name);
+      submissionData.append("slug", formData.slug);
+      submissionData.append("tagline", formData.tagline);
+      submissionData.append("description", formData.description);
+      submissionData.append("category", formData.category);
+      submissionData.append("owner_id", formData.owner_id);
+      submissionData.append("is_verified", formData.is_verified);
+
+      // Append complex objects as JSON strings
+      submissionData.append("advisor", JSON.stringify(formData.advisor));
+
+      // Append files
+      if (logoFile) submissionData.append("logo", logoFile);
+      if (bannerFile) submissionData.append("banner", bannerFile);
+
       const response = await fetch(url, {
         method: currentCommunity ? "PUT" : "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: submissionData,
       });
 
       if (response.ok) {
         fetchCommunities();
         setIsDialogOpen(false);
+        toast.success("Community saved successfully");
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to save community");
+        toast.error(errorData.message || "Failed to save community");
       }
     } catch (error) {
       console.error("Error saving community:", error);
@@ -233,7 +270,7 @@ const CommunityManager = () => {
         fetchCommunities();
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to delete community");
+        toast.error(errorData.message || "Failed to delete community");
       }
     } catch (error) {
       console.error("Error deleting community:", error);
@@ -271,6 +308,23 @@ const CommunityManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = filteredCommunities.map((comm) => ({
+                Name: comm.name,
+                Category: comm.category,
+                Verified: comm.is_verified ? "Yes" : "No",
+                Members: comm.memberCount || 0,
+                Slug: comm.slug,
+              }));
+              downloadCSV(exportData, "communities_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchCommunities}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -447,10 +501,12 @@ const CommunityManager = () => {
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-cover bg-center border border-white/10"
                     style={{
-                      backgroundImage: comm.logo ? `url(${comm.logo})` : "none",
+                      backgroundImage: comm.logo
+                        ? `url(${comm.logo.startsWith("http") ? comm.logo : `${API_BASE}${comm.logo}`})`
+                        : "none",
                     }}
                   >
-                    {!comm.logo && (
+                    {!comm.logo && !logoPreview && (
                       <Rocket size={24} className="text-violet-400" />
                     )}
                   </div>
@@ -705,6 +761,77 @@ const CommunityManager = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-starlight/30">
+                  Society Logo
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    setLogoFile(file);
+                    if (file) setLogoPreview(URL.createObjectURL(file));
+                    else setLogoPreview(null);
+                  }}
+                  className="bg-white/5 border-white/5 focus:border-violet-500/50 rounded-xl h-12 text-sm transition-all file:bg-violet-600 file:text-white file:border-none file:rounded-lg file:px-2 file:py-1 file:mr-4 file:text-xs file:font-bold hover:file:bg-violet-500 cursor-pointer pt-2"
+                />
+                {(logoPreview ||
+                  (currentCommunity && currentCommunity.logo)) && (
+                  <div className="mt-2 relative group w-16 h-16">
+                    <img
+                      src={
+                        logoPreview ||
+                        (currentCommunity.logo.startsWith("http")
+                          ? currentCommunity.logo
+                          : `${API_BASE}${currentCommunity.logo}`)
+                      }
+                      className="w-full h-full object-cover rounded-lg border border-white/10"
+                      alt="Logo Preview"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                      <CheckCircle size={16} className="text-emerald-400" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-starlight/30">
+                  Society Banner
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    setBannerFile(file);
+                    if (file) setBannerPreview(URL.createObjectURL(file));
+                    else setBannerPreview(null);
+                  }}
+                  className="bg-white/5 border-white/5 focus:border-violet-500/50 rounded-xl h-12 text-sm transition-all file:bg-violet-600 file:text-white file:border-none file:rounded-lg file:px-2 file:py-1 file:mr-4 file:text-xs file:font-bold hover:file:bg-violet-500 cursor-pointer pt-2"
+                />
+                {(bannerPreview ||
+                  (currentCommunity && currentCommunity.banner)) && (
+                  <div className="mt-2 relative group w-full h-24">
+                    <img
+                      src={
+                        bannerPreview ||
+                        (currentCommunity.banner.startsWith("http")
+                          ? currentCommunity.banner
+                          : `${API_BASE}${currentCommunity.banner}`)
+                      }
+                      className="w-full h-full object-contain bg-black/20 rounded-lg border border-white/10"
+                      alt="Banner Preview"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                      <CheckCircle size={16} className="text-emerald-400" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

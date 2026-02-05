@@ -278,7 +278,7 @@ const EventDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
@@ -295,7 +295,7 @@ const EventDetails = () => {
   const fillPercentage = currentFill;
 
   return (
-    <div className="min-h-screen text-white selection:bg-fuchsia-500/30 font-inter overflow-x-hidden">
+    <div className="min-h-screen bg-black/20 text-white selection:bg-fuchsia-500/30 font-inter overflow-x-hidden">
       {/* I. NAVIGATION (FLOATING GHOST) */}
       <div className="fixed top-24 left-6 md:left-12 z-50">
         <button

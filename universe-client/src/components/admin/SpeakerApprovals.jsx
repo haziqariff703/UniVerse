@@ -26,6 +26,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -149,8 +152,9 @@ const SpeakerApprovals = () => {
       if (!response.ok) throw new Error(`Failed to ${action} speaker`);
 
       setSpeakers(speakers.filter((s) => s._id !== id));
+      toast.success(`Speaker ${action}d successfully`);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setProcessingId(null);
     }
@@ -173,11 +177,31 @@ const SpeakerApprovals = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = speakers.map((s) => ({
+                Name: s.name,
+                Email: s.email,
+                Expertise: s.expertise,
+                Bio: s.bio || "",
+                Applied_Date: new Date(s.created_at).toLocaleDateString(),
+              }));
+              downloadCSV(exportData, "pending_speakers_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchPendingSpeakers}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
+            <RefreshCw
+              size={14}
+              className={`${loading ? "animate-spin" : ""}`}
+            />
             <span>Refresh</span>
           </button>
         </div>

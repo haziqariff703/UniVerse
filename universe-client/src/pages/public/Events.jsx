@@ -176,7 +176,7 @@ const Events = () => {
   };
 
   return (
-    <div className="min-h-screen pt-4 pb-20 px-4 md:px-8 max-w-7xl mx-auto space-y-12 overflow-x-hidden">
+    <div className="min-h-screen bg-transparent pt-4 pb-20 px-4 md:px-8 max-w-7xl mx-auto space-y-12 overflow-x-hidden">
       {/* FEATURED HERO SLIDER */}
       <AnimatePresence mode="wait">
         {view === "upcoming" && featuredEvents.length > 0 && (

@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom"; // Added useParams, useNavigate
 import { useState, useEffect } from "react"; // Added useState, useEffect
 
+const API_BASE = "http://localhost:5000";
+
 const VenueDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,14 +39,12 @@ const VenueDetails = () => {
       try {
         setLoading(true);
         // Step 1: Fetch Venue Info
-        const res = await fetch(`http://localhost:5000/api/venues/${id}`);
+        const res = await fetch(`${API_BASE}/api/venues/${id}`);
         const data = await res.json();
 
         if (res.ok) {
           // Step 2: Fetch Upcoming Events for this venue
-          const eventsRes = await fetch(
-            `http://localhost:5000/api/venues/${id}/events`,
-          );
+          const eventsRes = await fetch(`${API_BASE}/api/venues/${id}/events`);
           const eventsData = await eventsRes.json();
           setVenue({ ...data, upcomingEvents: eventsData || [] });
         } else {
@@ -100,7 +100,7 @@ const VenueDetails = () => {
     venue.glowColor === "cyan" ? "border-cyan-500/30" : "border-fuchsia-500/30";
 
   return (
-    <div className="min-h-screen bg-slate-950 bg-gradient-to-b from-slate-950 via-slate-950/95 to-slate-900 text-white selection:bg-fuchsia-500/30">
+    <div className="min-h-screen bg-black/20 text-white selection:bg-fuchsia-500/30">
       {/* 1. CINEMATIC HERO SECTION */}
       <div className="relative h-[65vh] md:h-[75vh] w-full overflow-hidden">
         {/* Background Image with Parallax-esque feel */}
@@ -108,7 +108,13 @@ const VenueDetails = () => {
           initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5 }}
-          src={venue.image}
+          src={
+            venue.image
+              ? venue.image.startsWith("http")
+                ? venue.image
+                : `${API_BASE}/${venue.image}`
+              : "/placeholder-venue.jpg"
+          }
           className="absolute inset-0 w-full h-full object-cover grayscale-[20%]"
         />
 
@@ -279,7 +285,13 @@ const VenueDetails = () => {
                       {/* Event Mini Thumb */}
                       <div className="w-full md:w-32 h-20 rounded-2xl overflow-hidden grayscale group-hover:grayscale-0 transition-all">
                         <img
-                          src={event.image}
+                          src={
+                            event.image
+                              ? event.image.startsWith("http")
+                                ? event.image
+                                : `${API_BASE}/${event.image}`
+                              : "/placeholder-event.jpg"
+                          }
                           className="w-full h-full object-cover"
                           alt=""
                         />

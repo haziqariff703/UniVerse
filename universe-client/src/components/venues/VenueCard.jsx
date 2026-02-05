@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users, ArrowRight } from "lucide-react";
 
-const VenueCard = ({ venue, index }) => {
+const VenueCard = ({ venue }) => {
   const { id, name, location_code, max_capacity, image, facilities } = venue;
 
   return (
@@ -14,7 +14,13 @@ const VenueCard = ({ venue, index }) => {
       <div className="relative h-48 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
         <img
-          src={image}
+          src={
+            image
+              ? image.startsWith("http")
+                ? image
+                : `http://localhost:5000/${image}`
+              : "/placeholder-venue.jpg"
+          }
           alt={name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />

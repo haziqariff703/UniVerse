@@ -18,7 +18,10 @@ import {
   RefreshCw,
   X,
   TrendingUp,
+  FileDown,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
 
 const KpiCard = ({
   title,
@@ -210,6 +213,23 @@ const AuditLogList = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = logs.map((log) => ({
+                Action: log.action,
+                Target: log.target_type,
+                Admin: log.admin_id?.name || "System",
+                Details: JSON.stringify(log.details || {}),
+                Date: new Date(log.created_at).toLocaleString(),
+              }));
+              downloadCSV(exportData, "audit_logs_report");
+            }}
+          >
+            <FileDown className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchLogs}
             disabled={loading}

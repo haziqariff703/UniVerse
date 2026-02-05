@@ -1,4 +1,5 @@
 const Event = require('../models/event');
+const path = require('path');
 const Speaker = require('../models/speaker'); // Required for populate
 const Review = require('../models/review');
 const Registration = require('../models/registration');
@@ -354,10 +355,12 @@ exports.createEvent = async (req, res) => {
 
     if (req.files) {
       if (req.files['image']) {
-        eventData.image = req.files['image'][0].path.replace(/\\/g, "/");
+        const relativePath = path.relative(process.cwd(), req.files['image'][0].path).replace(/\\/g, "/");
+        eventData.image = "/" + relativePath;
       }
       if (req.files['proposal']) {
-        eventData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
+        const relativePath = path.relative(process.cwd(), req.files['proposal'][0].path).replace(/\\/g, "/");
+        eventData.proposal = "/" + relativePath;
       }
     }
 
@@ -484,10 +487,12 @@ exports.updateEvent = async (req, res) => {
     // Handle File Uploads
     if (req.files) {
       if (req.files['image']) {
-        updateData.image = req.files['image'][0].path.replace(/\\/g, "/");
+        const relativePath = path.relative(process.cwd(), req.files['image'][0].path).replace(/\\/g, "/");
+        updateData.image = "/" + relativePath;
       }
       if (req.files['proposal']) {
-        updateData.proposal = req.files['proposal'][0].path.replace(/\\/g, "/");
+        const relativePath = path.relative(process.cwd(), req.files['proposal'][0].path).replace(/\\/g, "/");
+        updateData.proposal = "/" + relativePath;
       }
     }
 

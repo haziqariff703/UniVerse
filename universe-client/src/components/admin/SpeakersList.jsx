@@ -35,6 +35,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 const KpiCard = ({
   title,
@@ -91,10 +93,18 @@ const SpeakersList = () => {
   const [currentSpeaker, setCurrentSpeaker] = useState(null); // null = new, object = edit
   const [formData, setFormData] = useState({
     name: "",
+    role: "Guest Speaker",
     expertise: "",
+    category: "Other",
     bio: "",
+    about: "",
     social_links: { linkedin: "", twitter: "", website: "" },
+    achievements: "", // String for input, will parse to array
+    upcoming: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [proposalFile, setProposalFile] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -159,13 +169,24 @@ const SpeakersList = () => {
 
       const method = currentSpeaker ? "PUT" : "POST";
 
+      const submitData = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === "social_links" || key === "achievements") {
+          submitData.append(key, JSON.stringify(formData[key]));
+        } else {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+      if (imageFile) submitData.append("image", imageFile);
+      if (proposalFile) submitData.append("proposal", proposalFile);
+
       const response = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: submitData,
       });
 
       if (!response.ok) throw new Error("Failed to save speaker");
@@ -173,9 +194,10 @@ const SpeakersList = () => {
       setIsDataDialogOpen(false);
       fetchSpeakers();
       resetForm();
+      toast.success("Speaker saved successfully");
     } catch (error) {
       console.error("Error saving speaker:", error);
-      alert("Failed to save speaker");
+      toast.error("Failed to save speaker");
     }
   };
 
@@ -196,25 +218,44 @@ const SpeakersList = () => {
   const resetForm = () => {
     setFormData({
       name: "",
+      role: "Guest Speaker",
       expertise: "",
+      category: "Other",
       bio: "",
+      about: "",
       social_links: { linkedin: "", twitter: "", website: "" },
+      achievements: "",
+      upcoming: "",
     });
+    setImageFile(null);
+    setImagePreview(null);
+    setProposalFile(null);
     setCurrentSpeaker(null);
   };
 
   const openEdit = (speaker) => {
     setCurrentSpeaker(speaker);
     setFormData({
-      name: speaker.name,
-      expertise: speaker.expertise,
-      bio: speaker.bio,
+      name: speaker.name || "",
+      role: speaker.role || "Guest Speaker",
+      expertise: speaker.expertise || "",
+      category: speaker.category || "Other",
+      bio: speaker.bio || "",
+      about: speaker.about || "",
       social_links: speaker.social_links || {
         linkedin: "",
         twitter: "",
         website: "",
       },
+      achievements: speaker.achievements
+        ? Array.isArray(speaker.achievements)
+          ? speaker.achievements.join(", ")
+          : speaker.achievements
+        : "",
+      upcoming: speaker.upcoming || "",
     });
+    setImageFile(null);
+    setImagePreview(null);
     setIsDataDialogOpen(true);
   };
 
@@ -517,13 +558,14 @@ const SpeakersList = () => {
 
       {/* 5. Enhanced Operational Dialog */}
       <Dialog open={isDataDialogOpen} onOpenChange={setIsDataDialogOpen}>
-        <DialogContent className="bg-[#050505]/95 backdrop-blur-2xl border-white/10 text-starlight max-w-2xl rounded-3xl p-0 overflow-hidden shadow-2xl">
-          <div className="relative h-32 bg-gradient-to-br from-violet-600/20 to-cyan-500/20 border-b border-white/10 flex items-end p-8">
+        <DialogContent className="max-w-3xl bg-[#050505] border-white/10 p-0 overflow-hidden shadow-2xl rounded-3xl max-h-[90vh] flex flex-col">
+          {/* Header Section - Fixed at Top */}
+          <div className="relative flex-shrink-0 h-32 bg-gradient-to-br from-violet-600/20 to-cyan-500/20 border-b border-white/10 flex items-end p-8">
             <div className="absolute top-4 right-4 text-violet-500/20">
               <Mic2 size={80} />
             </div>
-            <div className="relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight uppercase">
+            <div className="relative z-10 w-full">
+              <DialogTitle className="text-2xl font-black tracking-tight uppercase text-starlight">
                 {currentSpeaker
                   ? "Edit Talent Record"
                   : "New Talent Onboarding"}
@@ -534,93 +576,249 @@ const SpeakersList = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+          {/* Form Container - Content Scrolls, Footer Fixed */}
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Full Identity Name
+                  </Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Dr. John Doe"
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Professional Role
+                  </Label>
+                  <Input
+                    value={formData.role}
+                    onChange={(e) =>
+                      setFormData({ ...formData, role: e.target.value })
+                    }
+                    placeholder="Astrophysicist"
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Primary Expertise
+                  </Label>
+                  <Input
+                    value={formData.expertise}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expertise: e.target.value })
+                    }
+                    placeholder="AI Researcher / Keynote Speaker"
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Category
+                  </Label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
+                    className="w-full bg-white/5 border-white/5 rounded-xl h-12 px-4 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="Science">Science</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Leadership">Leadership</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Short Bio (Prompt Box)
+                  </Label>
+                  <Input
+                    value={formData.bio}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
+                    placeholder="Brief 1-liner for cards"
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Upcoming Feature
+                  </Label>
+                  <Input
+                    value={formData.upcoming}
+                    onChange={(e) =>
+                      setFormData({ ...formData, upcoming: e.target.value })
+                    }
+                    placeholder="Title of next talk..."
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
-                  Full Identity Name
+                  Extended Biography (Detailed)
                 </Label>
-                <Input
-                  value={formData.name}
+                <Textarea
+                  value={formData.about}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, about: e.target.value })
                   }
-                  placeholder="Dr. John Doe"
-                  className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
-                  required
+                  placeholder="Full professional background and story..."
+                  className="bg-white/5 border-white/5 rounded-xl min-h-[100px] text-sm focus:border-violet-500/50 transition-all leading-relaxed p-4"
                 />
               </div>
+
+              <div className="grid grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    LinkedIn URL
+                  </Label>
+                  <Input
+                    value={formData.social_links.linkedin}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        social_links: {
+                          ...formData.social_links,
+                          linkedin: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="https://linkedin.com/in/..."
+                    className="bg-white/5 border-white/5 rounded-xl h-10 text-xs focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Twitter / X
+                  </Label>
+                  <Input
+                    value={formData.social_links.twitter}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        social_links: {
+                          ...formData.social_links,
+                          twitter: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="https://x.com/..."
+                    className="bg-white/5 border-white/5 rounded-xl h-10 text-xs focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Website / Portfolio
+                  </Label>
+                  <Input
+                    value={formData.social_links.website}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        social_links: {
+                          ...formData.social_links,
+                          website: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="https://..."
+                    className="bg-white/5 border-white/5 rounded-xl h-10 text-xs focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
-                  Field of Expertise
+                  Key Achievements (Comma separated)
                 </Label>
                 <Input
-                  value={formData.expertise}
+                  value={formData.achievements}
                   onChange={(e) =>
-                    setFormData({ ...formData, expertise: e.target.value })
+                    setFormData({ ...formData, achievements: e.target.value })
                   }
-                  placeholder="AI Researcher / Keynote Speaker"
+                  placeholder="Nobel Prize Nominee, TEDx Speaker, Published Author..."
                   className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Profile Image
+                  </Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      setImageFile(file);
+                      if (file) setImagePreview(URL.createObjectURL(file));
+                      else setImagePreview(null);
+                    }}
+                    className="bg-white/5 border-white/5 focus:border-violet-500/50 h-10 text-xs rounded-xl file:bg-violet-600 file:text-white file:border-none file:rounded-lg file:px-2 file:py-1 file:mr-4 file:text-xs file:font-bold hover:file:bg-violet-500 cursor-pointer pt-2"
+                  />
+                  {imagePreview && (
+                    <p className="text-[9px] text-violet-400 font-bold uppercase tracking-widest mt-1">
+                      Talent Identity Preview Active
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Proposal Document (PDF)
+                  </Label>
+                  <Input
+                    type="file"
+                    accept=".pdf, .doc, .docx"
+                    onChange={(e) => setProposalFile(e.target.files[0])}
+                    className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all file:bg-violet-600 file:text-white file:border-none file:rounded-lg file:px-2 file:py-1 file:mr-4 file:text-xs file:font-bold hover:file:bg-violet-500 cursor-pointer pt-2"
+                  />
+                </div>
+              </div>
+
+              {currentSpeaker && (
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
+                    Verification Status
+                  </Label>
+                  <select
+                    value={formData.status || "pending"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value })
+                    }
+                    className="w-full bg-white/5 border-white/5 rounded-xl h-12 px-4 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="verified">Verified</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
-                Professional Biography
-              </Label>
-              <Textarea
-                value={formData.bio}
-                onChange={(e) =>
-                  setFormData({ ...formData, bio: e.target.value })
-                }
-                placeholder="Brief professional overview for promotional use..."
-                className="bg-white/5 border-white/5 rounded-xl min-h-[120px] text-sm focus:border-violet-500/50 transition-all leading-relaxed p-4"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
-                  LinkedIn Profile URL
-                </Label>
-                <Input
-                  value={formData.social_links.linkedin}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      social_links: {
-                        ...formData.social_links,
-                        linkedin: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="https://linkedin.com/in/..."
-                  className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-starlight/60 uppercase tracking-widest">
-                  Twitter / X Handle
-                </Label>
-                <Input
-                  value={formData.social_links.twitter}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      social_links: {
-                        ...formData.social_links,
-                        twitter: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="https://x.com/..."
-                  className="bg-white/5 border-white/5 rounded-xl h-12 text-sm focus:border-violet-500/50 transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
+            <div className="flex-shrink-0 flex justify-end gap-3 p-6 border-t border-white/5 bg-zinc-950/80 backdrop-blur-xl">
               <button
                 type="button"
                 onClick={() => setIsDataDialogOpen(false)}

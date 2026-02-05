@@ -13,6 +13,7 @@ import {
   TrendingUp,
   MoreVertical,
   Eye,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,6 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/exportUtils";
 
 /**
  * KPI Card Component
@@ -181,6 +184,23 @@ const ReviewsList = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
+            onClick={() => {
+              const exportData = filteredReviews.map((review) => ({
+                Reviewer: review.user_id?.name || "Anonymous",
+                Event: review.event_id?.title || "N/A",
+                Rating: review.rating,
+                Comment: review.comment,
+                Date: new Date(review.created_at).toLocaleDateString(),
+              }));
+              downloadCSV(exportData, "reviews_report");
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            Export CSV
+          </Button>
           <button
             onClick={fetchReviews}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"

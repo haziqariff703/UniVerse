@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,17 +17,31 @@ import ClubDetailModal from "@/components/common/ClubDetailModal";
 
 const API_BASE = "http://localhost:5000";
 
+// Helper for distinct fallback images based on category
+const getCategoryPlaceholder = (category) => {
+  switch (category) {
+    case "Creative":
+      return "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop";
+    case "Academic":
+      return "https://images.unsplash.com/photo-1523050335456-c684e040ae73?q=80&w=2070&auto=format&fit=crop";
+    case "FYP":
+      return "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop";
+    default:
+      return "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop";
+  }
+};
+
 const Communities = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClub, setSelectedClub] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [communities, setCommunities] = useState([]);
+  const [joinedCommunities, setJoinedCommunities] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   // Real Auth Logic
-  const [user, setUser] = useState(() => {
+  const [user] = useState(() => {
     try {
       const storedUser = localStorage.getItem("user");
       return storedUser ? JSON.parse(storedUser) : null;
@@ -40,23 +54,55 @@ const Communities = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [commRes, catRes] = await Promise.all([
+        const fetchOps = [
           fetch(`${API_BASE}/api/communities`),
           fetch(`${API_BASE}/api/categories`),
-        ]);
+        ];
+
+        // If user is logged in, fetch their joined communities
+        const token = localStorage.getItem("token");
+        if (token && user) {
+          fetchOps.push(
+            fetch(`${API_BASE}/api/communities/my-communities`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          );
+        }
+
+        const results = await Promise.all(fetchOps);
+        const [commRes, catRes, joinedRes] = results;
 
         if (commRes.ok) {
           const data = await commRes.json();
           const mapped = data.map((c) => ({
-            id: c._id,
+            id: String(c._id),
+            slug: c.slug,
             title: c.name,
             fullName: c.name,
             tagline: c.tagline,
             description: c.description,
             image:
-              c.banner ||
-              c.logo ||
-              "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop",
+              (c.banner
+                ? c.banner.startsWith("http")
+                  ? c.banner
+                  : `${API_BASE}${c.banner}`
+                : null) ||
+              (c.logo
+                ? c.logo.startsWith("http")
+                  ? c.logo
+                  : `${API_BASE}${c.logo}`
+                : null) ||
+              getCategoryPlaceholder(c.category),
+            logo: c.logo
+              ? c.logo.startsWith("http")
+                ? c.logo
+                : `${API_BASE}${c.logo}`
+              : null,
+            banner: c.banner
+              ? c.banner.startsWith("http")
+                ? c.banner
+                : `${API_BASE}${c.banner}`
+              : null,
             category: c.category,
             tags: [c.category, "UiTM"],
             members: c.stats?.member_count || 0,
@@ -74,14 +120,56 @@ const Communities = () => {
           const catData = await catRes.json();
           setCategories(catData);
         }
+
+        if (joinedRes && joinedRes.ok) {
+          const joinedData = await joinedRes.json();
+          const mappedJoined = joinedData.map((c) => ({
+            id: String(c._id),
+            slug: c.slug,
+            title: c.name,
+            fullName: c.name,
+            tagline: c.tagline,
+            description: c.description,
+            image:
+              (c.banner
+                ? c.banner.startsWith("http")
+                  ? c.banner
+                  : `${API_BASE}${c.banner}`
+                : null) ||
+              (c.logo
+                ? c.logo.startsWith("http")
+                  ? c.logo
+                  : `${API_BASE}${c.logo}`
+                : null) ||
+              getCategoryPlaceholder(c.category),
+            logo: c.logo
+              ? c.logo.startsWith("http")
+                ? c.logo
+                : `${API_BASE}${c.logo}`
+              : null,
+            banner: c.banner
+              ? c.banner.startsWith("http")
+                ? c.banner
+                : `${API_BASE}${c.banner}`
+              : null,
+            category: c.category,
+            tags: [c.category, "UiTM"],
+            members: c.stats?.member_count || 0,
+            founded: c.stats?.founded_year || "2024",
+            social: {
+              instagram: c.social_links?.instagram || "@uitm",
+              email: c.advisor?.email || "info@uitm.edu.my",
+            },
+            meritYield: c.category === "Academic" ? "High" : "Standard",
+          }));
+          setJoinedCommunities(mappedJoined);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const placeholders = [
     "Search for 'IMSA' or 'SMF'...",
@@ -93,36 +181,47 @@ const Communities = () => {
   ];
 
   // Filter function - searches across title, tagline, and tags
-  const filterClubs = (clubs) => {
-    if (!searchTerm.trim()) return clubs;
+  const filterClubs = useCallback(
+    (clubs) => {
+      if (!searchTerm.trim()) return clubs;
 
-    const search = searchTerm.toLowerCase();
-    return clubs.filter((club) => {
-      const matchesTitle = club?.title?.toLowerCase().includes(search);
-      const matchesTagline = club?.tagline?.toLowerCase().includes(search);
-      const matchesTags = club?.tags?.some((tag) =>
-        tag.toLowerCase().includes(search),
-      );
-      const matchesDescription = club?.description
-        ?.toLowerCase()
-        .includes(search);
+      const search = searchTerm.toLowerCase();
+      return clubs.filter((club) => {
+        const matchesTitle = club?.title?.toLowerCase().includes(search);
+        const matchesTagline = club?.tagline?.toLowerCase().includes(search);
+        const matchesTags = club?.tags?.some((tag) =>
+          tag.toLowerCase().includes(search),
+        );
+        const matchesDescription = club?.description
+          ?.toLowerCase()
+          .includes(search);
 
-      return (
-        matchesTitle || matchesTagline || matchesTags || matchesDescription
-      );
-    });
-  };
+        return (
+          matchesTitle || matchesTagline || matchesTags || matchesDescription
+        );
+      });
+    },
+    [searchTerm],
+  );
 
   // Segment Data
-  const myCommunities = useMemo(
-    () =>
-      user && user.role === "student" && user.memberClubIds
-        ? filterClubs(
-            communities.filter((c) => user.memberClubIds.includes(c.id)),
-          )
-        : [],
-    [communities, searchTerm, user],
-  );
+  const myCommunities = useMemo(() => {
+    if (!user || user.role !== "student") return [];
+
+    // Prioritize API data if available, otherwise fallback to local IDs
+    if (joinedCommunities.length > 0) {
+      return filterClubs(joinedCommunities);
+    }
+
+    // Fallback to local storage IDs (kept for resilience)
+    if (user.memberClubIds) {
+      return filterClubs(
+        communities.filter((c) => user.memberClubIds.includes(c.id)),
+      );
+    }
+
+    return [];
+  }, [communities, joinedCommunities, user, filterClubs]);
 
   // Dynamic Tabs Generation
   const tabItems = useMemo(() => {
@@ -176,7 +275,7 @@ const Communities = () => {
   };
 
   return (
-    <div className="min-h-screen pt-0 pb-20 px-4 md:px-6">
+    <div className="min-h-screen bg-transparent pt-0 pb-20 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <motion.div
