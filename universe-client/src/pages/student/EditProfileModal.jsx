@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   X,
   Camera,

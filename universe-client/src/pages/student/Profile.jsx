@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -81,7 +81,7 @@ const XpBar = ({ current, max }) => {
 };
 
 // 4. Action Row (Simplified for Signal Center)
-const ActionRow = ({ label, onClick, colorClass }) => (
+const ActionRow = ({ label, onClick, colorClass, icon: Icon }) => (
   <button
     onClick={onClick}
     className={cn(

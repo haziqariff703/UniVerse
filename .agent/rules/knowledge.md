@@ -143,6 +143,7 @@ The User Management dashboard provides a real-time governance layer for platform
 - **Real-time KPI Hydration**: The `getAllUsers` API implements an "Aggregation-on-Fetch" pattern, returning global counts for all user roles (Total, Student, Organizer, Admin) in a single request. This ensures that KPI cards are always accurate without requiring separate high-overhead polling.
 - **Portable Data Registry (PDF Export)**: Implemented a functional "Export List" tool in `UsersList.jsx` using `jsPDF` and `jspdf-autotable`. The system maps the current user state into a professional tabular layout with automatic styling and temporal stamping (`UniVerse_Users_List_YYYY-MM-DD.pdf`).
 - **Forensic Access Termination**: Provides a "Terminate Access" (Delete) operation protected by internal safeguards (preventing self-deletion and strictly auditing all termination events).
+- **Direct Account Initialization**: Implemented a "Add User" workflow that allows administrators to bypass public registration for association officials or faculty advisors. This process captures official credentials (Employee/Student ID) and assigns roles atomically during account creation.
 
 ## 13. Global Analytics Filtering (Operational Intelligence)
 

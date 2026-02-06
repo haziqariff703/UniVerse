@@ -2,6 +2,7 @@
 
 ## [2026-02-06]
 
+- **Added**: "Add User" button in Admin User Management to trigger user registration modal.
 - **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
 - **Fixed**: Resolved `400 Bad Request` in attendee broadcast and fixed missing `EventCrew` import in backend.
 - **Changed**: Reduced excessive vertical spacing across the Organizer Dashboard (pt-24 -> pt-8) and Auth pages (pt-24 -> pt-10).
@@ -17,6 +18,8 @@
 - **Removed**: Standardized relative API paths; reverted to hardcoded localhost URLs for specific modules.
 - **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
 - **Fixed**: Resolved "swalConfirm is not defined" error in `App.jsx` and cleaned up unused imports in `Navbar.jsx`.
+- **Fixed**: Resolved `ReferenceError: motion is not defined` in `Profile.jsx`, `EditProfileModal.jsx`, and `CertificateUpload.jsx` by importing `motion` from `framer-motion`.
+- **Fixed**: Resolved `ReferenceError: Icon is not defined` in `Profile.jsx` by correctly destructuring the `icon` prop in the `ActionRow` component.
 
 ## [2026-02-05]
 

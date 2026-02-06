@@ -289,6 +289,12 @@ const UsersList = ({ onBack }) => {
             Export CSV
           </Button>
           <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-colors shadow-lg shadow-violet-500/20"
+          >
+            <UserPlus size={14} /> <span>Add User</span>
+          </button>
+          <button
             onClick={() => {
               setCurrentPage(1);
               fetchUsers();
@@ -700,8 +706,8 @@ const UsersList = ({ onBack }) => {
                           <p>
                             {selectedUser.date_of_birth
                               ? new Date(
-                                  selectedUser.date_of_birth,
-                                ).toLocaleDateString()
+                                selectedUser.date_of_birth,
+                              ).toLocaleDateString()
                               : "Not set"}
                           </p>
                         </div>
