@@ -281,13 +281,16 @@ The platform has transitioned to a more robust document handling and routing str
   - **Environment Agnostic**: Uses relative paths (`/api`, `/public`) to leverage Vite Proxy in dev and direct serving in prod, eliminating hardcoded `localhost:5000` dependencies.
 - **Transparent Public Backgrounds**: Enforced a design rule where public-facing pages use transparent or low-opacity backgrounds (e.g., `bg-black/20` or `bg-transparent`) to ensure the global "Floating Lines" Three.js animation remains visible, providing visual depth to the platform's "Cosmic" theme.
 
-## 25. Dynamic Cloud/Local Hybrid Storage Strategy
+## 25. Dynamic Cloud/Local Hybrid Storage Strategy (Supabase-Only)
 
-To ensure seamless transitions between development and production, the platform utilizes a dynamic storage engine in `middleware/upload.js`.
+The platform utilizes **Supabase Storage** as the sole cloud provider for a streamlined, robust architecture.
 
-- **Automatic Detection**: The system checks for `CLOUDINARY_CLOUD_NAME` in the environment.
-- **Fall-through Logic**: If cloud credentials are found, it uses `multer-storage-cloudinary`. Otherwise, it falls back to local disk storage (`public/uploads/assets`).
-- **Path Resolution**: The `utils/pathResolver.js` utility standardizes pathing. It detects if a path is a Cloudinary URL (starts with `http`) or a local disk path (needs absolute-to-relative normalization), ensuring the database always stores accessible endpoint references.
+- **Storage Priority**:
+  1. **Supabase**: Primary cloud engine using the **Service Role Key** for full server-side access.
+  2. **Local Disk**: Default development fallback (`public/uploads/assets`).
+- **Custom Supabase Engine**: A custom Multer storage engine (`utils/supabaseStorage.js`) handles buffered uploads directly to Supabase Buckets.
+- **Path Resolution**: The `utils/pathResolver.js` utility remains the single source of truth for URL normalization, automatically detecting absolute Supabase links vs. relative local paths.
+- **Environment Targeting**: Requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the environment configuration.
 
 ## 26. Database Connection Resilience & Targeting
 
@@ -320,6 +323,19 @@ To eliminate "localhost" leaks and broken image states during deployment, all fr
   3. Clean slash normalization (preventing `//api`).
 - **Relative-First Architecture**: Favor relative paths (`/api`, `/public`) over hardcoded hostnames. This leverages the local Vite development proxy while ensuring zero-config compatibility on production domains (Vercel, Railway, etc.).
 - **Proactive Registry**: Every major entry point (`App.jsx`, `Events.jsx`, `StudentDashboard.jsx`, `Login.jsx`) must be periodically audited for hardcoded legacy hostnames.
+
+## 29. Agent Architecture & Collaborative Development (Protocol)
+
+To maintain high architectural standards during rapid development, the system utilizes a decoupled Agent-Executioner protocol.
+
+- **Antigravity (Planning Layer)**: Acts as the Senior Principal Architect. This role is responsible for:
+  - **Data Modeling**: Designing Mongoose schemas that satisfy ACID principles and CAP theorem requirements.
+  - **Security Oversight**: Ensuring all endpoints implement Joi validation and Role-Based Access Control (RBAC).
+  - **UX/UI Direction**: Enforcing the "Premium & Alive" aesthetic using shadcn/ui and cinematic motion libraries.
+- **Codex CLI (Execution Layer)**: Acts as the technical implementation engine. This role is responsible for:
+  - **File Operations**: Executing granular code edits and generating new modules.
+  - **Terminal Management**: Handling package installations, git operations, and environment configuration.
+- **Protocol Integrity**: Every feature implementation follows a "Plan-Confirm-Execute" cycle, ensuring that the final code adheres to the project's strict quality standards defined in `.agent/rules/agent_protocols.md`.
 
 ---
 

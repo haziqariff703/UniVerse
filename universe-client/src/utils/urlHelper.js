@@ -6,10 +6,8 @@ export const resolveUrl = (url) => {
   const cleanUrl = url.startsWith("/") ? url.slice(1) : url;
   let finalUrl = `/public/${cleanUrl}`;
 
-  // Fix common Cloudinary path issues
-  if (finalUrl.includes("cloudinary.com")) {
-    finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
-  }
+  // Fix any double slash issues in URLs
+  finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
   
   return finalUrl;
 };

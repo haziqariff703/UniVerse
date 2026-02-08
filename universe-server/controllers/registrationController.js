@@ -140,7 +140,7 @@ exports.getMyBookings = async (req, res) => {
     const registrations = await Registration.find({ user_id: req.user.id })
       .populate({
         path: 'event_id',
-        select: 'title date_time status ticket_price category image',
+        select: 'title date_time status ticket_price category image merit_points',
         populate: {
           path: 'venue_id',
           select: 'name location_code'
@@ -218,10 +218,29 @@ exports.checkIn = async (req, res) => {
   try {
     const { qr_code } = req.body;
 
-    const registration = await Registration.findOne({ qr_code_string: qr_code });
+    const registration = await Registration.findOne({ qr_code_string: qr_code })
+      .populate('event_id', 'date_time merit_points');
 
     if (!registration) {
       return res.status(404).json({ message: "Invalid QR code." });
+    }
+
+    const event = registration.event_id;
+    if (!event || !event.date_time) {
+      return res.status(400).json({
+        message: "Event schedule is not available for check-in.",
+      });
+    }
+
+    const now = new Date();
+    const eventStart = new Date(event.date_time);
+    const msUntilStart = eventStart.getTime() - now.getTime();
+    const checkInWindowMs = 20 * 60 * 1000;
+
+    if (msUntilStart > checkInWindowMs) {
+      return res.status(400).json({
+        message: "Check-in only opens 20 minutes before the event starts.",
+      });
     }
 
     if (registration.status === 'CheckedIn') {
@@ -236,8 +255,7 @@ exports.checkIn = async (req, res) => {
     await registration.save();
 
     // Award merit points
-    const event = await Event.findById(registration.event_id);
-    if (event && event.merit_points > 0) {
+    if (event.merit_points > 0) {
       await User.findByIdAndUpdate(registration.user_id, {
         $inc: { current_merit: event.merit_points }
       });

@@ -14,7 +14,7 @@ async function fixPaths() {
 
     const sanitize = (path) => {
       if (!path) return path;
-      // Fix malformed Cloudinary URLs like /https:/res.cloudinary.com/...
+      // Fix malformed cloud URLs like /https:/res.example.com/...
       if (path.startsWith('/http')) {
         return path.substring(1).replace(':/', '://');
       }

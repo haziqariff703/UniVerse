@@ -1,7 +1,18 @@
 # Changelog
 
-## [2026-02-08]
+## [2026-02-09]
 
+- **Changed**: Migrated cloud storage provider from Cloudinary to **Supabase Storage**.
+  - Implemented custom Multer storage engine for Supabase in `universe-server/utils/supabaseStorage.js`.
+  - Configured Supabase client in `universe-server/config/supabase.js`.
+  - Updated `upload` middleware to prioritize Supabase with local fallback only.
+  - Standardized public URL handling for "Premium" media delivery.
+- **Removed**: Completely removed Cloudinary integration.
+  - Uninstalled `cloudinary` and `multer-storage-cloudinary` packages.
+  - Deleted `config/cloudinary.js` configuration file.
+  - Updated to use `SUPABASE_SERVICE_ROLE_KEY` for robust server-side access.
+
+- **Added**: Integrated Agent Protocols for Antigravity (Planner/Architect) and Codex CLI (Executioner). Defined distinct roles for architectural planning and technical execution to ensure system integrity and "Premium" MERN development standards as per `.agent/rules/agent_protocols.md`.
 - **Fixed**: Resolved issue where events (e.g., "Bengkel PHP") were not appearing in "Upcoming" or student dashboards due to Atlas date/time desynchronization. Updated event dates to ensure visibility in live/upcoming views.
 - **Improved**: Standardized high-density image and API resolution across the entire frontend (Events, MyEvents, StudentDashboard, EventDetails, App) by replacing hardcoded `http://localhost:5000` URLs with relative paths and the `resolveUrl` utility.
 - **Improved**: Optimized `resolveUrl` to handle a wider variety of path formats (local /public, Cloudinary, absolute) consistently.

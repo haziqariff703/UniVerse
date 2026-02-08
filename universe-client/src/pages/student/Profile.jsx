@@ -99,7 +99,10 @@ const ActionRow = ({ label, onClick, colorClass, icon: Icon }) => (
 const Profile = () => {
   const navigate = useNavigate();
   // Initialize with mock data but try to fetch real user data if available
-  const [student, setStudent] = useState(MOCK_STUDENT_PROFILE);
+  const [student, setStudent] = useState({
+    ...MOCK_STUDENT_PROFILE,
+    questLog: [],
+  });
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -125,16 +128,77 @@ const Profile = () => {
   };
 
   useEffect(() => {
+    const getTimeAgo = (dateInput) => {
+      if (!dateInput) return "Unknown time";
+
+      const date = new Date(dateInput);
+      if (Number.isNaN(date.getTime())) return "Unknown time";
+
+      const now = new Date();
+      const diffMs = now - date;
+
+      if (diffMs < 60 * 1000) return "Just now";
+
+      const minutes = Math.floor(diffMs / (60 * 1000));
+      if (minutes < 60) return `${minutes}m ago`;
+
+      const hours = Math.floor(diffMs / (60 * 60 * 1000));
+      if (hours < 24) return `${hours}h ago`;
+
+      const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      if (days < 7) return `${days}d ago`;
+
+      const weeks = Math.floor(days / 7);
+      if (weeks < 5) return `${weeks}w ago`;
+
+      const months = Math.floor(days / 30);
+      if (months < 12) return `${months}mo ago`;
+
+      const years = Math.floor(days / 365);
+      return `${years}y ago`;
+    };
+
+    const buildQuestLog = (registrations) => {
+      if (!Array.isArray(registrations)) return [];
+
+      return registrations
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.booking_time || 0).getTime() -
+            new Date(a.booking_time || 0).getTime(),
+        )
+        .slice(0, 3)
+        .map((reg) => ({
+          title:
+            reg?.event_snapshot?.title ||
+            reg?.event_id?.title ||
+            "Untitled Event",
+          xp: `+${reg?.event_id?.merit_points || 0} XP`,
+          date: getTimeAgo(reg?.booking_time),
+          type: reg?.event_id?.category || "Event",
+        }));
+    };
+
     // Check if we have a logged in user and fetch their latest data
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const res = await fetch("/api/users/profile", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const userData = await res.json();
+          const [profileRes, bookingsRes] = await Promise.all([
+            fetch("/api/users/profile", {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            fetch("/api/registrations/my-bookings", {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+
+          if (profileRes.ok) {
+            const userData = await profileRes.json();
+            const bookingsData = bookingsRes.ok ? await bookingsRes.json() : [];
+            const questLog = buildQuestLog(bookingsData);
+
             // Build profile from backend data, only use mock for structure fields
             setStudent({
               // Use backend data first, then mock structure
@@ -165,7 +229,7 @@ const Profile = () => {
               maxXp: MOCK_STUDENT_PROFILE.maxXp,
               level: MOCK_STUDENT_PROFILE.level,
               loadout: MOCK_STUDENT_PROFILE.loadout,
-              questLog: MOCK_STUDENT_PROFILE.questLog,
+              questLog,
             });
             // Load certificates
             setCertificates(userData.assets || []);

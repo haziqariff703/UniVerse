@@ -2,7 +2,7 @@ const path = require("path");
 
 /**
  * Resolves a file path to a public-facing URL or absolute path.
- * Handles both local disk storage and Cloudinary URLs.
+ * Handles local disk storage and Supabase URLs.
  * 
  * @param {Object} file - The file object from multer (req.file or req.files[i])
  * @returns {string} - The resolved path/URL to be saved in the database
@@ -10,7 +10,7 @@ const path = require("path");
 const resolveFilePath = (file) => {
   if (!file) return "";
 
-  // If Cloudinary is used, multer-storage-cloudinary sets file.path to the full URL
+  // Supabase or any cloud storage sets file.path to the full URL
   if (file.path && (file.path.startsWith("http://") || file.path.startsWith("https://"))) {
     return file.path;
   }

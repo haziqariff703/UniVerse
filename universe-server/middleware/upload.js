@@ -1,7 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const { cloudinaryStorage } = require("../config/cloudinary");
+const supabaseStorage = require("../utils/supabaseStorage");
 
 // --- LOCAL STORAGE ENGINE (Fallback) ---
 const diskStorage = multer.diskStorage({
@@ -9,7 +9,7 @@ const diskStorage = multer.diskStorage({
     const dir = path.join(process.cwd(), "public/uploads/assets");
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-      console.log(`📂 Created missing directory: ${dir}`);
+      console.log(`Created missing directory: ${dir}`);
     }
     cb(null, dir);
   },
@@ -21,42 +21,30 @@ const diskStorage = multer.diskStorage({
 });
 
 // --- DYNAMIC STORAGE SELECTION ---
-// If Cloudinary credentials are missing, we fallback to Local Disk
-const isCloudinaryConfigured = 
-  process.env.CLOUDINARY_CLOUD_NAME && 
-  process.env.CLOUDINARY_API_KEY && 
-  process.env.CLOUDINARY_API_SECRET;
+// Priority: 1. Supabase, 2. Local Disk
+const isSupabaseConfigured = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const selectedStorage = isCloudinaryConfigured ? cloudinaryStorage : diskStorage;
-
-if (isCloudinaryConfigured) {
-  console.log("☁️  Cloudinary Storage initialized for uploads.");
+let selectedStorage;
+if (isSupabaseConfigured) {
+  selectedStorage = supabaseStorage();
+  console.log("Supabase Storage initialized for uploads.");
 } else {
-  console.log("📁 Local Disk Storage initialized for uploads (Cloudinary missing).");
+  selectedStorage = diskStorage;
+  console.log("Local Disk Storage initialized for uploads (Supabase missing).");
 }
 
 // Check file type
 function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png|gif|pdf|webp|doc|docx|txt/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const allowedMimes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-  ];
-  const mimetype = allowedMimes.includes(file.mimetype);
+  const isImage = typeof file.mimetype === "string" && file.mimetype.startsWith("image/");
+  const isPdf = file.mimetype === "application/pdf";
 
-  if (mimetype && extname) {
+  if (isImage || isPdf) {
     return cb(null, true);
-  } else {
-    cb(new Error("Unsupported file type! Allowed: images, PDF, Word, TXT"));
   }
+
+  const err = new Error("Unsupported file type. Only image/* and application/pdf are allowed.");
+  err.statusCode = 400;
+  cb(err);
 }
 
 // Init upload

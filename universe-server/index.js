@@ -47,7 +47,7 @@ app.use((err, req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("UniVerse Backend is Online and Optimized! 🚀");
+  res.send("UniVerse Backend is Online and Optimized!");
 });
 
 // Async Server Startup - Wait for DB Connection First
@@ -57,15 +57,15 @@ const startServer = async () => {
     await mongoose.connect(
       process.env.MONGO_URI || "mongodb://127.0.0.1:27017/UniVerse",
     );
-    console.log(`UniVerse Database Connected! ✅ [DB: ${mongoose.connection.name}]`);
+    console.log(`UniVerse Database Connected!  [DB: ${mongoose.connection.name}]`);
 
     // 2. ONLY THEN Start the Server
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} 🚀`);
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("Database Connection Failed! ❌", error.message);
+    console.error("Database Connection Failed!", error.message);
     process.exit(1); // Stop the process if we can't connect
   }
 };

@@ -252,81 +252,97 @@ const DynamicSteppedForm = ({
         )}
 
         {field.type === "file" && (
-          <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-8 text-center hover:border-zinc-700 transition-all cursor-pointer relative group">
+          <div className="space-y-3">
             <input
+              id={`file-input-${field.name}`}
               type="file"
               accept={field.accept}
               onChange={(e) => handleFileChange(e, field.name)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="hidden"
             />
-            {formData[field.name] ? (
-              <div className="relative z-10">
-                {/* Handle File Object (New Upload) or String (Existing URL) */}
-                {(formData[field.name] instanceof File &&
-                  (formData[field.name].name.endsWith(".pdf") ||
-                    formData[field.name].type === "application/pdf")) ||
-                (typeof formData[field.name] === "string" &&
-                  formData[field.name].endsWith(".pdf")) ? (
-                  <div className="w-full h-48 rounded-lg mb-3 border border-zinc-800 bg-zinc-900 flex flex-col items-center justify-center p-4">
-                    <Save className="w-10 h-10 text-violet-500 mb-2" />
-                    <a
-                      href={
-                        typeof formData[field.name] === "string"
-                          ? `http://localhost:5000/${formData[field.name]}`
-                          : "#"
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-zinc-500 font-mono break-all hover:text-white transition-colors"
-                      onClick={(e) =>
-                        formData[field.name] instanceof File &&
-                        e.preventDefault()
-                      }
-                    >
-                      {formData[field.name] instanceof File
-                        ? formData[field.name].name
-                        : "View Current PDF"}
-                    </a>
-                  </div>
-                ) : (
-                  <div className="w-full h-48 rounded-lg overflow-hidden mb-3 border border-zinc-800">
-                    <img
-                      src={
-                        formData[field.name] instanceof File
-                          ? URL.createObjectURL(formData[field.name])
-                          : `http://localhost:5000/${formData[field.name]}`
-                      }
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <p className="text-zinc-300 font-medium text-sm">
-                  {formData[field.name] instanceof File
-                    ? formData[field.name].name
-                    : "Current File"}
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">Click to replace</p>
-              </div>
-            ) : (
-              <div className="space-y-3 pointer-events-none">
-                <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center mx-auto">
-                  <Upload className="w-5 h-5 text-zinc-500" />
-                </div>
+
+            <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-8 text-center">
+              {formData[field.name] ? (
                 <div>
-                  <p className="text-sm text-zinc-300 font-medium">
-                    {field.accept?.includes(".pdf")
-                      ? "Upload Event Proposal"
-                      : "Upload Event Artwork"}
-                  </p>
-                  <p className="text-xs text-zinc-600">
-                    {field.accept?.includes(".pdf")
-                      ? "PDF (Max 5MB)"
-                      : "JPG, PNG, WEBP (Max 5MB)"}
+                  {/* Handle File Object (New Upload) or String (Existing URL) */}
+                  {(formData[field.name] instanceof File &&
+                    (formData[field.name].name.endsWith(".pdf") ||
+                      formData[field.name].type === "application/pdf")) ||
+                  (typeof formData[field.name] === "string" &&
+                    formData[field.name].endsWith(".pdf")) ? (
+                    <div className="w-full h-48 rounded-lg mb-3 border border-zinc-800 bg-zinc-900 flex flex-col items-center justify-center p-4">
+                      <Save className="w-10 h-10 text-violet-500 mb-2" />
+                      <a
+                        href={
+                          typeof formData[field.name] === "string"
+                            ? `http://localhost:5000/${formData[field.name]}`
+                            : "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-zinc-500 font-mono break-all hover:text-white transition-colors"
+                        onClick={(e) =>
+                          formData[field.name] instanceof File &&
+                          e.preventDefault()
+                        }
+                      >
+                        {formData[field.name] instanceof File
+                          ? formData[field.name].name
+                          : "View Current PDF"}
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 rounded-lg overflow-hidden mb-3 border border-zinc-800">
+                      <img
+                        src={
+                          formData[field.name] instanceof File
+                            ? URL.createObjectURL(formData[field.name])
+                            : `http://localhost:5000/${formData[field.name]}`
+                        }
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <p className="text-zinc-300 font-medium text-sm">
+                    {formData[field.name] instanceof File
+                      ? formData[field.name].name
+                      : "Current File"}
                   </p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center mx-auto">
+                    <Upload className="w-5 h-5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-300 font-medium">
+                      {field.accept?.includes(".pdf")
+                        ? "Upload Event Proposal"
+                        : "Upload Event Artwork"}
+                    </p>
+                    <p className="text-xs text-zinc-600">
+                      {field.accept?.includes(".pdf")
+                        ? "PDF (Max 5MB)"
+                        : "JPG, PNG, WEBP (Max 5MB)"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <label
+              htmlFor={`file-input-${field.name}`}
+              className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900/60 px-4 py-2 text-xs font-semibold text-zinc-300 hover:border-zinc-600 hover:text-white cursor-pointer transition-colors"
+            >
+              {formData[field.name]
+                ? field.accept?.includes(".pdf")
+                  ? "Replace Proposal"
+                  : "Replace Cover Image"
+                : field.accept?.includes(".pdf")
+                  ? "Choose Proposal File"
+                  : "Choose Cover Image"}
+            </label>
           </div>
         )}
 
