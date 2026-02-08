@@ -10,8 +10,9 @@ import {
   DollarSign,
   Ticket,
 } from "lucide-react";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 const EventCardCompact = ({ event }) => {
   const date = new Date(event.date_time);
@@ -30,11 +31,7 @@ const EventCardCompact = ({ event }) => {
       <div className="relative h-40 w-full bg-white/5 border-b border-white/5 shrink-0 overflow-hidden">
         {event.image ? (
           <img
-            src={
-              event.image.startsWith("http")
-                ? event.image
-                : `${API_BASE}/${event.image}`
-            }
+            src={resolveUrl(event.image)}
             alt={event.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />

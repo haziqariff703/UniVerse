@@ -92,20 +92,17 @@ const AccountTab = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        "http://localhost:5000/api/users/security/password",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            currentPassword: password,
-            newPassword,
-          }),
+      const res = await fetch("/api/users/security/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          currentPassword: password,
+          newPassword,
+        }),
+      });
 
       const data = await res.json();
 
@@ -128,7 +125,7 @@ const AccountTab = () => {
   const handleRecoveryEmailSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/settings", {
+      const res = await fetch("/api/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -312,7 +309,7 @@ const PrivacyTab = () => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/users/profile", {
+        const res = await fetch("/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -331,7 +328,7 @@ const PrivacyTab = () => {
   const updatePrivacySetting = async (field, value) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/users/settings", {
+      await fetch("/api/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -352,7 +349,7 @@ const PrivacyTab = () => {
     setExporting(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/data/export", {
+      const res = await fetch("/api/users/data/export", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -496,7 +493,7 @@ const NotificationsTab = () => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/users/profile", {
+        const res = await fetch("/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -516,7 +513,7 @@ const NotificationsTab = () => {
   const updateNotificationSetting = async (field, value) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/users/settings", {
+      await fetch("/api/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

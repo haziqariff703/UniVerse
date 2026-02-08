@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import DecryptedText from "@/components/ui/DecryptedText";
+import { resolveUrl } from "@/utils/urlHelper";
 
 const OrganizerVenues = () => {
   const [venues, setVenues] = useState([]);
@@ -34,7 +35,7 @@ const OrganizerVenues = () => {
     const fetchVenues = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/api/admin/venues", {
+        const response = await fetch("/api/admin/venues", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -145,17 +146,7 @@ const OrganizerVenues = () => {
               {/* Image Section - High Contrast Clipping */}
               <div className="w-full md:w-72 h-48 md:h-auto flex-shrink-0 relative overflow-hidden">
                 <img
-                  src={
-                    venue.image
-                      ? venue.image.startsWith("http")
-                        ? venue.image
-                        : `http://localhost:5000/${venue.image}`
-                      : venue.images?.[0]
-                        ? venue.images[0].startsWith("http")
-                          ? venue.images[0]
-                          : `http://localhost:5000/${venue.images[0]}`
-                        : "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800"
-                  }
+                  src={resolveUrl(venue.image || venue.images?.[0] || "")}
                   alt={venue.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />

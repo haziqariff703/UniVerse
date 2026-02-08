@@ -19,8 +19,9 @@ import TeamGrid from "@/components/organizer/workforce/TeamGrid";
 import { cn } from "@/lib/utils";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/dark.css";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 const Workforce = () => {
   const [activeTab, setActiveTab] = useState("applicants");
   const [communities, setCommunities] = useState([]);
@@ -655,11 +656,7 @@ const Workforce = () => {
                           <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold border-2 border-white/10 shadow-lg">
                             {app.user_id?.avatar ? (
                               <img
-                                src={
-                                  app.user_id.avatar.startsWith("http")
-                                    ? app.user_id.avatar
-                                    : `http://localhost:5000${app.user_id.avatar}`
-                                }
+                                src={resolveUrl(app.user_id.avatar)}
                                 alt={app.user_id.name}
                                 className="w-full h-full object-cover"
                               />

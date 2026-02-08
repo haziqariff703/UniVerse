@@ -1,4 +1,23 @@
-# Merit System Architecture
+# Merit## System Architecture & Logic (MERN)
+
+### Robust Path Normalization for Local/Cloud Assets
+
+**Strategy**: Standardizing how the system handles file paths between the local filesystem (development) and public URLs (production/cloud) is critical for consistent media rendering.
+
+- **Backend (Node/Express)**: Always save relative paths starting with a leading slash (e.g., `/public/uploads/assets/...`). This ensures the database stores "clean" public references that don't leak server-specific absolute paths (e.g., `C:/Users/...`). Use `path.relative(process.cwd(), file.path)` to generate these.
+- **Frontend (React)**: Implement a resilient URL mapper that handles three scenarios:
+  1. **Absolute URLs**: If the path starts with `http`, use it as is (useful for Cloudinary/S3 integration).
+  2. **Leading Slashes**: Ensure paths have exactly one leading slash before prefixing with the `API_BASE`.
+  3. **Local Leaks**: Filter out or replace any remaining absolute local paths (e.g., containing `:/`) with placeholders to prevent broken UI states.
+
+### Debugging React Reference Errors (Framer Motion)
+
+**Context**: Features using high-fidelity animations frequently rely on libraries like `framer-motion`.
+
+- **Common Pitfall**: Using the `motion` component (e.g., `<motion.div>`) without explicitly importing it, even if other components from the same library (like `AnimatePresence`) are imported.
+- **Resolution**: Ensure every file using `motion.*` includes `import { motion } from "framer-motion"`. In complex projects, shared animation wrappers or higher-order components can help reduce import boilerplate and ensure consistency.
+
+## Tech Stack Constraints
 
 ## Overview
 
@@ -251,14 +270,56 @@ The platform utilizes a **Stateless Event Dispatch** pattern to maintain authent
 - **Global Auth Broadcast**: When `localStorage` is cleared (Logout), the initiating component dispatches a `window.dispatchEvent(new Event("authChange"))`.
 - **Reactive Layout Recalculation**: The top-level `Layout` component in `App.jsx` listens for this event to set its `user` state to `null`. This immediately triggers the re-rendering of the `Navbar` from its "Authenticated" state to its "Public" state (Login/Sign Up) without a full page reload, preventing "ghosted" UI elements.
 
-## 24. Integrated Document Preview & Environment-Agnostic Routing
+## 24. Direct Document Access & Relative API Standardization
 
-The HEP Admin Panel was enhanced with a high-fidelity document review experience to streamline the club proposal approval workflow.
+The platform has transitioned to a more robust document handling and routing strategy to eliminate authentication and rendering issues in the Admin Panel.
 
-- **Integrated PDF Previewer**: Implemented a responsive `<iframe>` inside the `Dialog` modal of `OrganizerApprovals.jsx` and `EventApprovals.jsx`. This allows administrators to review "Constitution", "Consent Letter", and "Event Proposal" documents directly within the details view, maintaining context and efficiency.
-- **Robust Path Normalization**: Implemented a `getDocumentUrl` utility in the frontend to handle inconsistent file paths stored in the database. This logic automatically detects missing `/public` prefixes or hostnames and constructs a valid absolute URL (e.g., handling both `/uploads/...` and `/public/uploads/...`), preventing 404 errors for legacy or malformed records.
-- **Relative URL Standardization (Reverted)**: While previously transitioned to relative paths for environment-agnostic routing, the system was reverted to use hardcoded `http://localhost:5000` prefixes in the frontend at the user's request. This provides direct connectivity to the local development backend for targeted modules.
+- **Direct Document Links**: Replaced unstable embedded `<iframe>` previews with direct "Open/Download" links that trigger in a new tab. This bypasses authentication headers issues and browser extension conflicts (e.g., IDM/AdBlockers) that frequently break embedded PDF viewers.
+- **Standardized URL Resolution (`resolveUrl`)**: Implemented a universal helper function to handle pathing diversity:
+  - **Local Assets**: Prepend `/public/` and normalize slashes.
+  - **Cloudinary/External**: Pass-through absolute URLs while sanitizing common formatting errors (e.g., duplicate slashes in Cloudinary paths).
+  - **Environment Agnostic**: Uses relative paths (`/api`, `/public`) to leverage Vite Proxy in dev and direct serving in prod, eliminating hardcoded `localhost:5000` dependencies.
 - **Transparent Public Backgrounds**: Enforced a design rule where public-facing pages use transparent or low-opacity backgrounds (e.g., `bg-black/20` or `bg-transparent`) to ensure the global "Floating Lines" Three.js animation remains visible, providing visual depth to the platform's "Cosmic" theme.
+
+## 25. Dynamic Cloud/Local Hybrid Storage Strategy
+
+To ensure seamless transitions between development and production, the platform utilizes a dynamic storage engine in `middleware/upload.js`.
+
+- **Automatic Detection**: The system checks for `CLOUDINARY_CLOUD_NAME` in the environment.
+- **Fall-through Logic**: If cloud credentials are found, it uses `multer-storage-cloudinary`. Otherwise, it falls back to local disk storage (`public/uploads/assets`).
+- **Path Resolution**: The `utils/pathResolver.js` utility standardizes pathing. It detects if a path is a Cloudinary URL (starts with `http`) or a local disk path (needs absolute-to-relative normalization), ensuring the database always stores accessible endpoint references.
+
+## 26. Database Connection Resilience & Targeting
+
+### Admin Manual User Creation
+
+- **Mechanism**: Admins can manually register users through the `POST /api/admin/users` endpoint.
+- **Workflow**:
+  - Passwords are encrypted via `bcrypt` before storage.
+  - Roles are synchronized: If a user is manually assigned 'association', they automatically inherit 'organizer' permissions in the `roles` array.
+  - Audit Trail: Every manual creation is logged with the admin's ID, target user details, and IP address for compliance.
+  - Approval State: Manually created organizers are `is_organizer_approved: true` by default.
+- **Verification Logging**: The server logs `mongoose.connection.name` upon every successful connection to provide immediate forensic evidence of the active database.
+- **Environment Context**: Using `path.join(__dirname, "./config/.env")` ensures that the server loads the correct environment variables regardless of the directory from which the process was started.
+
+## 27. Atlas Deployment Desync & Temporal Logic
+
+When migrating from local MongoDB to Atlas, date and time desynchronization can occur if the server/database cluster is in a different timezone than the client.
+
+- **The "Bengkel PHP" Phenomenon**: Events may "disappear" from upcoming views because the database considers the current time (UTC) to be in the "future" relative to local event timestamps, or vice versa.
+- **Resolution**: Implement defensive date normalization in controllers. When querying for upcoming events, always use a sliding window (e.g., `date_time: { $gte: new Date(Date.now() - 600000) }`) to account for small clock drifts.
+- **Frontend Hygiene**: Ensure that the system "Past/Upcoming" tabs prioritize `end_time` logic to avoid premature archival of live events.
+
+## 28. Standardized Front-End URL Resolution (`urlHelper.js`)
+
+To eliminate "localhost" leaks and broken image states during deployment, all frontend asset/API calls must use a centralized resolution utility.
+
+- **Centralized Logic**: `resolveUrl` should be the "Single Source of Truth" for pathing. It must detect and handle:
+  1. `/public/` prefixes for internal assets.
+  2. Cloudinary/Absolute URLs (no transformation).
+  3. Clean slash normalization (preventing `//api`).
+- **Relative-First Architecture**: Favor relative paths (`/api`, `/public`) over hardcoded hostnames. This leverages the local Vite development proxy while ensuring zero-config compatibility on production domains (Vercel, Railway, etc.).
+- **Proactive Registry**: Every major entry point (`App.jsx`, `Events.jsx`, `StudentDashboard.jsx`, `Login.jsx`) must be periodically audited for hardcoded legacy hostnames.
 
 ---
 

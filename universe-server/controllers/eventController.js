@@ -1,10 +1,11 @@
 const Event = require('../models/event');
+const EventCrew = require('../models/eventCrew');
+const { resolveFilePath } = require('../utils/pathResolver');
 const path = require('path');
 const Speaker = require('../models/speaker'); // Required for populate
 const Review = require('../models/review');
 const Registration = require('../models/registration');
 const AuditLog = require('../models/auditLog');
-const EventCrew = require('../models/eventCrew');
 const CommunityMember = require('../models/communityMember');
 
 const { getAccessibleEventIds, LEADERSHIP_ROLES } = require('../utils/accessControl');
@@ -154,6 +155,8 @@ exports.getAllEvents = async (req, res) => {
       }
     }
 
+    console.log(`[getAllEvents] Filter:`, JSON.stringify(filter));
+    console.log(`[getAllEvents] Found ${events.length} events`);
     res.status(200).json(formattedEvents);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -224,6 +227,7 @@ exports.getMyEvents = async (req, res) => {
       return eventObj;
     });
 
+    console.log(`[getMyEvents] User: ${req.user.id} | Found ${events.length} events`);
     res.status(200).json(formattedEvents);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -355,12 +359,10 @@ exports.createEvent = async (req, res) => {
 
     if (req.files) {
       if (req.files['image']) {
-        const relativePath = path.relative(process.cwd(), req.files['image'][0].path).replace(/\\/g, "/");
-        eventData.image = "/" + relativePath;
+        eventData.image = resolveFilePath(req.files['image'][0]);
       }
       if (req.files['proposal']) {
-        const relativePath = path.relative(process.cwd(), req.files['proposal'][0].path).replace(/\\/g, "/");
-        eventData.proposal = "/" + relativePath;
+        eventData.proposal = resolveFilePath(req.files['proposal'][0]);
       }
     }
 
@@ -487,12 +489,10 @@ exports.updateEvent = async (req, res) => {
     // Handle File Uploads
     if (req.files) {
       if (req.files['image']) {
-        const relativePath = path.relative(process.cwd(), req.files['image'][0].path).replace(/\\/g, "/");
-        updateData.image = "/" + relativePath;
+        updateData.image = resolveFilePath(req.files['image'][0]);
       }
       if (req.files['proposal']) {
-        const relativePath = path.relative(process.cwd(), req.files['proposal'][0].path).replace(/\\/g, "/");
-        updateData.proposal = "/" + relativePath;
+        updateData.proposal = resolveFilePath(req.files['proposal'][0]);
       }
     }
 
@@ -1016,7 +1016,7 @@ exports.createReview = async (req, res) => {
     // 4. Handle Photos
     let photos = [];
     if (req.files && req.files.length > 0) {
-      photos = req.files.map(file => file.path.replace(/\\/g, "/"));
+      photos = req.files.map(file => resolveFilePath(file));
     }
 
     // 5. Create Review

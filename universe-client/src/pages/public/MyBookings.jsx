@@ -20,8 +20,9 @@ import TrueFocus from "@/components/ui/TrueFocus";
 import { cn } from "@/lib/utils";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 const MyBookings = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -168,7 +169,7 @@ const MyBookings = () => {
                     ? `RM ${reg.event_id.ticket_price}`
                     : "Free (+Merit)",
               image: reg.event_id?.image
-                ? `${API_BASE}/${reg.event_id.image}`
+                ? resolveUrl(reg.event_id.image)
                 : "/placeholder-event.jpg",
               qr_code: reg.qr_code_string,
               rawDate: reg.event_id?.date_time || reg.event_snapshot?.date_time,

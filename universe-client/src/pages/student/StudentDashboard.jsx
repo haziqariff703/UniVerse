@@ -57,16 +57,14 @@ const StudentDashboard = ({ user }) => {
 
         const [profileRes, bookingsRes, clubsRes, venuesRes] =
           await Promise.all([
-            fetch("http://localhost:5000/api/users/profile", { headers }).then(
-              (r) => r.json(),
-            ),
-            fetch("http://localhost:5000/api/registrations/my-bookings", {
+            fetch("/api/users/profile", { headers }).then((r) => r.json()),
+            fetch("/api/registrations/my-bookings", {
               headers,
             }).then((r) => r.json()),
-            fetch("http://localhost:5000/api/communities/my-communities", {
+            fetch("/api/communities/my-communities", {
               headers,
             }).then((r) => r.json()),
-            fetch("http://localhost:5000/api/venues").then((r) => r.json()),
+            fetch("/api/venues").then((r) => r.json()),
           ]);
 
         setProfile(profileRes);

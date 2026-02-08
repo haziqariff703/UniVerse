@@ -23,8 +23,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 // Magic UI Simulated Border Beam
 const BorderBeam = () => (
@@ -138,11 +139,7 @@ const EventDetails = () => {
       const mappedEvent = {
         ...data,
         id: data._id,
-        image: data.image
-          ? data.image.startsWith("http")
-            ? data.image
-            : `${API_BASE}/${data.image}`
-          : "/placeholder-event.jpg",
+        image: resolveUrl(data.image) || "/placeholder-event.jpg",
         date: new Date(data.date_time).toLocaleDateString("en-MY", {
           year: "numeric",
           month: "long",

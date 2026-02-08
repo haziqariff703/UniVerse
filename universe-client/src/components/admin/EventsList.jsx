@@ -20,7 +20,11 @@ import {
   TrendingUp,
   Download,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +116,20 @@ const EventsList = () => {
   });
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  // Helper to ensure correct document/image URL
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http")
+      ? url
+      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
+
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
@@ -122,14 +140,11 @@ const EventsList = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/events?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`/api/admin/events?${params}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (!response.ok) throw new Error("Failed to fetch events");
 
@@ -543,13 +558,16 @@ const EventsList = () => {
         onOpenChange={(open) => !open && setSelectedEvent(null)}
       >
         <DialogContent className="max-w-2xl bg-[#0e0e12] border-white/10 text-starlight p-0 overflow-hidden">
+          <DialogDescription className="sr-only">
+            Event details and documentation overview.
+          </DialogDescription>
           {selectedEvent && (
             <>
               {/* Header Image */}
               <div className="w-full h-48 bg-white/5 relative">
                 {selectedEvent.image && (
                   <img
-                    src={`http://localhost:5000/${selectedEvent.image}`}
+                    src={resolveUrl(selectedEvent.image)}
                     alt={selectedEvent.title}
                     className="w-full h-full object-cover"
                   />
@@ -641,7 +659,7 @@ const EventsList = () => {
                         </div>
                       </div>
                       <a
-                        href={`http://localhost:5000/${selectedEvent.proposal}`}
+                        href={resolveUrl(selectedEvent.proposal)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"

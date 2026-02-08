@@ -86,9 +86,13 @@ const ReviewModal = ({
         });
         setComment(reviewData.comment || "");
         // Map server paths to absolute URLs
-        const serverPhotos = (reviewData.photos || []).map((p) =>
-          p.startsWith("http") ? p : `http://localhost:5000/${p}`,
-        );
+        const serverPhotos = (reviewData.photos || []).map((p) => {
+          if (p.startsWith("http")) return p;
+          if (p.includes(":/") || p.includes(":\\"))
+            return "/placeholder-image.jpg"; // Filter out absolute local paths
+          const normalizedPath = p.startsWith("/") ? p : `/${p}`;
+          return `http://localhost:5000${normalizedPath}`;
+        });
         setPhotos(serverPhotos);
       } else {
         // Reset for new submission

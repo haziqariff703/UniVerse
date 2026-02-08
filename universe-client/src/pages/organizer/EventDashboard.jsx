@@ -63,7 +63,7 @@ const EventDashboard = () => {
         const token = localStorage.getItem("token");
 
         // Fetch Event Details
-        const eventRes = await fetch(`http://localhost:5000/api/events/${id}`, {
+        const eventRes = await fetch(`/api/events/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -90,10 +90,9 @@ const EventDashboard = () => {
         }
 
         // Fetch Registrations
-        const regRes = await fetch(
-          `http://localhost:5000/api/registrations/event/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
+        const regRes = await fetch(`/api/registrations/event/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const regData = await regRes.json();
         if (regRes.ok) setRegistrations(Array.isArray(regData) ? regData : []);
       } catch (error) {
@@ -109,17 +108,14 @@ const EventDashboard = () => {
   const updateSchedule = async (newSchedule) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:5000/api/events/${id}/schedule`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ schedule: newSchedule }),
+      const res = await fetch(`/api/events/${id}/schedule`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ schedule: newSchedule }),
+      });
       if (res.ok) {
         const updatedSchedule = await res.json();
         setEvent((prev) => ({ ...prev, schedule: updatedSchedule }));
@@ -132,7 +128,7 @@ const EventDashboard = () => {
   const updateTasks = async (newTasks) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/events/${id}/tasks`, {
+      const res = await fetch(`/api/events/${id}/tasks`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -161,15 +157,12 @@ const EventDashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:5000/api/events/${id}/conclude`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const res = await fetch(`/api/events/${id}/conclude`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       const data = await res.json();
 

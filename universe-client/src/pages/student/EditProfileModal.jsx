@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Camera,
@@ -165,8 +165,8 @@ const EditProfileModal = ({
       const token = localStorage.getItem("token");
       const endpoint =
         type === "avatar"
-          ? "http://localhost:5000/api/users/profile/avatar"
-          : "http://localhost:5000/api/users/profile/cover";
+          ? "/api/users/profile/avatar"
+          : "/api/users/profile/cover";
 
       const res = await fetch(endpoint, {
         method: "PUT",
@@ -204,14 +204,11 @@ const EditProfileModal = ({
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        "http://localhost:5000/api/users/profile/assets",
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        },
-      );
+      const res = await fetch("/api/users/profile/assets", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
 
       const data = await res.json();
 

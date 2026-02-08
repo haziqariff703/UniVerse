@@ -8,14 +8,15 @@ import Testimonials from "@/components/home/Testimonials";
 import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 const mapEventToCardProps = (event) => ({
   id: event._id,
   title: event.title,
   description: event.description,
-  image: event.image ? `${API_BASE}/${event.image}` : "/placeholder-event.jpg",
+  image: event.image ? resolveUrl(event.image) : "/placeholder-event.jpg",
   date: new Date(event.date_time).toLocaleDateString("en-MY", {
     year: "numeric",
     month: "long",

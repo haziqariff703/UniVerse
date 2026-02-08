@@ -28,13 +28,13 @@ const CreateEvent = () => {
           communitiesRes,
           categoriesRes,
         ] = await Promise.all([
-          fetch("http://localhost:5000/api/venues", { headers }),
-          fetch("http://localhost:5000/api/speakers", { headers }),
-          fetch("http://localhost:5000/api/events?status=all", { headers }),
-          fetch("http://localhost:5000/api/communities/my-communities", {
+          fetch("/api/venues", { headers }),
+          fetch("/api/speakers", { headers }),
+          fetch("/api/events?status=all", { headers }),
+          fetch("/api/communities/my-communities", {
             headers,
           }),
-          fetch("http://localhost:5000/api/categories", { headers }),
+          fetch("/api/categories", { headers }),
         ]);
 
         if (venuesRes.ok) {
@@ -137,7 +137,7 @@ const CreateEvent = () => {
     submitData.set("capacity", parseInt(formData.capacity) || 0);
 
     const token = localStorage.getItem("token");
-    const response = await fetch("http://localhost:5000/api/events", {
+    const response = await fetch("/api/events", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

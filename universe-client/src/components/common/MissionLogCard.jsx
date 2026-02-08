@@ -46,18 +46,43 @@ const MissionLogCard = ({ event, onReview }) => {
               </span>
             </div>
             {event.review && (
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "w-3 h-3",
-                      i < event.review.rating
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-slate-600",
-                    )}
-                  />
-                ))}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        "w-3 h-3",
+                        i < event.review.rating
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-slate-600",
+                      )}
+                    />
+                  ))}
+                </div>
+                {/* Visual Evidence Preview */}
+                {event.review.photos && event.review.photos.length > 0 && (
+                  <div className="flex gap-1 mt-1">
+                    {event.review.photos.slice(0, 3).map((photo, idx) => {
+                      const baseUrl = "http://localhost:5000";
+                      const fullUrl = photo.startsWith("http")
+                        ? photo
+                        : `${baseUrl}${photo.startsWith("/") ? photo : "/" + photo}`;
+                      return (
+                        <div
+                          key={idx}
+                          className="w-8 h-8 rounded-lg overflow-hidden border border-white/10"
+                        >
+                          <img
+                            src={fullUrl}
+                            alt="Visual Evidence"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>

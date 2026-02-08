@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { resolveUrl } from "@/utils/urlHelper";
 
 const EventRoadmap = ({ events, readOnly = false }) => {
   const navigate = useNavigate();
@@ -22,12 +23,8 @@ const EventRoadmap = ({ events, readOnly = false }) => {
     const endDate = event.end_time ? new Date(event.end_time) : date;
     const isPast = endDate < new Date();
 
-    // Fix image URL mapping - ensure full path if it's a relative path from the server
-    const imageUrl = event.image
-      ? event.image.startsWith("http")
-        ? event.image
-        : `http://localhost:5000/${event.image}`
-      : null;
+    // Use resolveUrl for image mapping
+    const imageUrl = event.image ? resolveUrl(event.image) : null;
 
     return {
       id: event._id,

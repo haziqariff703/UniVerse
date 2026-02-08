@@ -11,6 +11,7 @@ const Review = require('../models/review');
 const ClubProposal = require('../models/clubProposal');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const { resolveFilePath } = require('../utils/pathResolver');
 
 /**
  * Admin Controller
@@ -826,8 +827,7 @@ exports.createVenue = async (req, res) => {
 
     const images = [];
     if (req.file) {
-      const relativePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, "/");
-      images.push("/" + relativePath);
+      images.push(resolveFilePath(req.file));
     }
 
     const venue = new Venue({ 
@@ -899,9 +899,9 @@ exports.updateVenue = async (req, res) => {
     };
 
     if (req.file) {
-      const relativePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, "/");
-      updateData.image = "/" + relativePath;
-      updateData.images = ["/" + relativePath]; // Set as first image
+      const resolvedPath = resolveFilePath(req.file);
+      updateData.image = resolvedPath;
+      updateData.images = [resolvedPath]; // Set as first image
     }
 
     const venue = await Venue.findByIdAndUpdate(
@@ -1022,12 +1022,10 @@ exports.createSpeaker = async (req, res) => {
 
     if (req.files) {
       if (req.files.image) {
-        const relativePath = path.relative(process.cwd(), req.files.image[0].path).replace(/\\/g, "/");
-        image = "/" + relativePath;
+        image = resolveFilePath(req.files.image[0]);
       }
       if (req.files.proposal) {
-        const relativePath = path.relative(process.cwd(), req.files.proposal[0].path).replace(/\\/g, "/");
-        proposal_url = "/" + relativePath;
+        proposal_url = resolveFilePath(req.files.proposal[0]);
       }
     }
 
@@ -1092,12 +1090,10 @@ exports.updateSpeaker = async (req, res) => {
 
     if (req.files) {
       if (req.files.image) {
-        const relativePath = path.relative(process.cwd(), req.files.image[0].path).replace(/\\/g, "/");
-        updateData.image = "/" + relativePath;
+        updateData.image = resolveFilePath(req.files.image[0]);
       }
       if (req.files.proposal) {
-        const relativePath = path.relative(process.cwd(), req.files.proposal[0].path).replace(/\\/g, "/");
-        updateData.proposal_url = "/" + relativePath;
+        updateData.proposal_url = resolveFilePath(req.files.proposal[0]);
       }
     }
 
@@ -1536,7 +1532,9 @@ exports.getAllCommunities = async (req, res) => {
       { $group: { _id: '$organizer_id', count: { $sum: 1 } } }
     ]);
     const eventStatsMap = eventStats.reduce((acc, curr) => {
-      acc[curr._id] = curr.count;
+      if (curr._id) {
+        acc[curr._id.toString()] = curr.count;
+      }
       return acc;
     }, {});
 
@@ -1547,7 +1545,9 @@ exports.getAllCommunities = async (req, res) => {
       { $group: { _id: '$community_id', count: { $sum: 1 } } }
     ]);
     const memberStatsMap = memberStats.reduce((acc, curr) => {
-      acc[curr._id.toString()] = curr.count; // Ensure ID is string for lookup
+      if (curr._id) {
+        acc[curr._id.toString()] = curr.count; // Ensure ID is string for lookup
+      }
       return acc;
     }, {});
 
@@ -1598,12 +1598,10 @@ exports.createCommunity = async (req, res) => {
     // Handle Image Uploads
     if (req.files) {
       if (req.files.logo) {
-        const relativePath = path.relative(process.cwd(), req.files.logo[0].path).replace(/\\/g, "/");
-        community.logo = "/" + relativePath;
+        community.logo = resolveFilePath(req.files.logo[0]);
       }
       if (req.files.banner) {
-        const relativePath = path.relative(process.cwd(), req.files.banner[0].path).replace(/\\/g, "/");
-        community.banner = "/" + relativePath;
+        community.banner = resolveFilePath(req.files.banner[0]);
       }
     }
 
@@ -1640,12 +1638,10 @@ exports.updateCommunity = async (req, res) => {
     // Handle Image Uploads
     if (req.files) {
       if (req.files.logo) {
-        const relativePath = path.relative(process.cwd(), req.files.logo[0].path).replace(/\\/g, "/");
-        updates.logo = "/" + relativePath;
+        updates.logo = resolveFilePath(req.files.logo[0]);
       }
       if (req.files.banner) {
-        const relativePath = path.relative(process.cwd(), req.files.banner[0].path).replace(/\\/g, "/");
-        updates.banner = "/" + relativePath;
+        updates.banner = resolveFilePath(req.files.banner[0]);
       }
     }
 

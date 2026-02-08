@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -81,7 +81,7 @@ const XpBar = ({ current, max }) => {
 };
 
 // 4. Action Row (Simplified for Signal Center)
-const ActionRow = ({ label, onClick, colorClass }) => (
+const ActionRow = ({ label, onClick, colorClass, icon: Icon }) => (
   <button
     onClick={onClick}
     className={cn(
@@ -110,13 +110,27 @@ const Profile = () => {
   const [showDisconnect, setShowDisconnect] = useState(false);
   const [certificates, setCertificates] = useState([]);
 
+  // Helper to ensure correct document/image URL
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http")
+      ? url
+      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
+
   useEffect(() => {
     // Check if we have a logged in user and fetch their latest data
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const res = await fetch("http://localhost:5000/api/users/profile", {
+          const res = await fetch("/api/users/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -180,7 +194,7 @@ const Profile = () => {
     // 2. Persist to Backend (only text fields, images are already uploaded via modal)
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/users/profile", {
+      await fetch("/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -287,7 +301,9 @@ const Profile = () => {
             {student.coverImage && (
               <div
                 className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-                style={{ backgroundImage: `url(${student.coverImage})` }}
+                style={{
+                  backgroundImage: `url(${resolveUrl(student.coverImage)})`,
+                }}
               />
             )}
 
@@ -314,7 +330,7 @@ const Profile = () => {
             >
               {student.avatar ? (
                 <img
-                  src={student.avatar}
+                  src={resolveUrl(student.avatar)}
                   alt={student.name}
                   className="w-full h-full object-cover transition-opacity duration-300"
                 />
@@ -580,7 +596,7 @@ const Profile = () => {
                         {/* 2. Right Side (Actions) */}
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <a
-                            href={cert.url}
+                            href={resolveUrl(cert.url)}
                             download
                             className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                             title="Download Asset"
@@ -593,7 +609,7 @@ const Profile = () => {
                                 try {
                                   const token = localStorage.getItem("token");
                                   const res = await fetch(
-                                    `http://localhost:5000/api/users/profile/assets/${cert._id}`,
+                                    `/api/users/profile/assets/${cert._id}`,
                                     {
                                       method: "DELETE",
                                       headers: {

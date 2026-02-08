@@ -22,10 +22,16 @@ import {
   UserPlus,
   ArrowLeft,
   FileText,
+  Plus,
 } from "lucide-react";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button"; // Added Button import
 import {
   DropdownMenu,
@@ -288,15 +294,26 @@ const UsersList = ({ onBack }) => {
             <FileText className="h-4 w-4" />
             Export CSV
           </Button>
-          <button
+
+          <Button
+            variant="outline"
             onClick={() => {
               setCurrentPage(1);
               fetchUsers();
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
+            className="gap-2 border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
           >
-            <RefreshCw size={14} /> <span>Refresh</span>
-          </button>
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </Button>
+
+          <Button
+            className="gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 h-10 shadow-lg shadow-violet-500/10 px-6"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add User
+          </Button>
         </div>
       </div>
 
@@ -610,7 +627,11 @@ const UsersList = ({ onBack }) => {
 
       {/* User Details Modal */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="bg-[#050505] border-white/10 text-starlight p-0 overflow-hidden max-w-2xl">
+        <DialogContent className="bg-[#050505] border-white/10 text-starlight p-0 overflow-hidden max-w-2xl max-h-[90vh]">
+          <DialogTitle className="sr-only">User Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed view of user profile and activity
+          </DialogDescription>
           {selectedUser && (
             <div className="flex flex-col">
               {/* Header Banner */}
@@ -750,6 +771,10 @@ const UsersList = ({ onBack }) => {
       {/* Create User Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="bg-[#050505] border-white/10 text-starlight p-0 overflow-hidden max-w-lg">
+          <DialogTitle className="sr-only">Register New User</DialogTitle>
+          <DialogDescription className="sr-only">
+            Fill in the details to create a new user account
+          </DialogDescription>
           <div className="flex flex-col">
             <div className="p-6 border-b border-white/5 bg-white/[0.02]">
               <h2 className="text-xl font-bold text-starlight flex items-center gap-2">

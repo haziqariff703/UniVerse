@@ -1,37 +1,44 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { cloudinaryStorage } = require("../config/cloudinary");
 
-// --- BULLETPROOF STORAGE ENGINE ---
-const storage = multer.diskStorage({
+// --- LOCAL STORAGE ENGINE (Fallback) ---
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // 1. Define the target folder (public/uploads/assets)
     const dir = path.join(process.cwd(), "public/uploads/assets");
-
-    // 2. CHECK & CREATE: If it doesn't exist, make it!
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
       console.log(`📂 Created missing directory: ${dir}`);
     }
-
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    // 3. Rename file to avoid conflicts (userId + timestamp + extension)
     const userId = req.user ? req.user.id : "anonymous";
     const uniqueName = `${userId}-${Date.now()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   },
 });
 
+// --- DYNAMIC STORAGE SELECTION ---
+// If Cloudinary credentials are missing, we fallback to Local Disk
+const isCloudinaryConfigured = 
+  process.env.CLOUDINARY_CLOUD_NAME && 
+  process.env.CLOUDINARY_API_KEY && 
+  process.env.CLOUDINARY_API_SECRET;
+
+const selectedStorage = isCloudinaryConfigured ? cloudinaryStorage : diskStorage;
+
+if (isCloudinaryConfigured) {
+  console.log("☁️  Cloudinary Storage initialized for uploads.");
+} else {
+  console.log("📁 Local Disk Storage initialized for uploads (Cloudinary missing).");
+}
+
 // Check file type
 function checkFileType(file, cb) {
-  // Allowed ext - images and documents
   const filetypes = /jpeg|jpg|png|gif|pdf|webp|doc|docx|txt/;
-  // Check ext
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-  // Check mime - support images and documents
   const allowedMimes = [
     "image/jpeg",
     "image/jpg",
@@ -54,7 +61,7 @@ function checkFileType(file, cb) {
 
 // Init upload
 const upload = multer({
-  storage: storage,
+  storage: selectedStorage,
   limits: { fileSize: 10000000 }, // 10MB limit
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);

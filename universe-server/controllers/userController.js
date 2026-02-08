@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const { resolveFilePath } = require("../utils/pathResolver");
 
 /**
  * @desc    Update current user's profile
@@ -124,8 +125,7 @@ exports.uploadAvatar = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Construct URL (assuming server serves public folder)
-    const avatarUrl = `/public/uploads/assets/${req.file.filename}`;
+    const avatarUrl = resolveFilePath(req.file);
     user.avatar = avatarUrl;
     await user.save();
 
@@ -155,7 +155,7 @@ exports.uploadCover = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const coverUrl = `/public/uploads/assets/${req.file.filename}`;
+    const coverUrl = resolveFilePath(req.file);
     user.coverImage = coverUrl;
     await user.save();
 
@@ -259,7 +259,7 @@ exports.uploadAsset = async (req, res) => {
     const asset = {
       title: title.trim(),
       name: req.file.originalname,
-      url: `/public/uploads/assets/${req.file.filename}`, // Updated path
+      url: resolveFilePath(req.file),
       fileType: req.file.mimetype, // Renamed from 'type'
       size: (req.file.size / 1024 / 1024).toFixed(2) + " MB",
     };

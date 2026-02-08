@@ -14,6 +14,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Spotlight } from "@/components/ui/spotlight";
+import { resolveUrl } from "@/utils/urlHelper";
 
 const EventCard = ({ event, index }) => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const EventCard = ({ event, index }) => {
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/api/registrations`, {
+      const res = await fetch(`/api/registrations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,7 +115,7 @@ const EventCard = ({ event, index }) => {
           {/* Image Section - Enforced Aspect Ratio */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
-              src={event.image}
+              src={resolveUrl(event.image)}
               alt={event.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />

@@ -50,18 +50,6 @@ app.get("/", (req, res) => {
   res.send("UniVerse Backend is Online and Optimized! 🚀");
 });
 
-// Global Error Handler
-app.use((err, req, res, next) => {
-  console.error("=== Global Error Handler ===");
-  console.error("Error:", err);
-  if (err.stack) console.error("Stack:", err.stack);
-
-  res.status(err.status || 500).json({
-    message: err.message || "Internal Server Error",
-    error: process.env.NODE_ENV === "development" ? err : {},
-  });
-});
-
 // Async Server Startup - Wait for DB Connection First
 const startServer = async () => {
   try {
@@ -69,7 +57,7 @@ const startServer = async () => {
     await mongoose.connect(
       process.env.MONGO_URI || "mongodb://127.0.0.1:27017/UniVerse",
     );
-    console.log("UniVerse Database Connected! ✅");
+    console.log(`UniVerse Database Connected! ✅ [DB: ${mongoose.connection.name}]`);
 
     // 2. ONLY THEN Start the Server
     const PORT = process.env.PORT || 5000;

@@ -43,6 +43,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { resolveUrl } from "@/utils/urlHelper";
 
 const OrganizerSpeakers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,12 +71,9 @@ const OrganizerSpeakers = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/speakers/organizer",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch("/api/speakers/organizer", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await response.json();
       setSpeakers(data.speakers || []);
     } catch (err) {
@@ -119,13 +117,10 @@ const OrganizerSpeakers = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/speakers/${speakerId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/speakers/${speakerId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to delete speaker");
 
@@ -497,11 +492,7 @@ const OrganizerSpeakers = () => {
                   <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white/5 group-hover:border-violet-500/50 transition-colors bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center relative">
                     {speaker.image ? (
                       <img
-                        src={
-                          speaker.image.startsWith("http")
-                            ? speaker.image
-                            : `http://localhost:5000/${speaker.image}`
-                        }
+                        src={resolveUrl(speaker.image)}
                         alt={speaker.name}
                         className="w-full h-full object-cover"
                       />
@@ -589,11 +580,7 @@ const OrganizerSpeakers = () => {
                   <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/10 flex-shrink-0">
                     {selectedSpeaker.image ? (
                       <img
-                        src={
-                          selectedSpeaker.image.startsWith("http")
-                            ? selectedSpeaker.image
-                            : `http://localhost:5000/${selectedSpeaker.image}`
-                        }
+                        src={resolveUrl(selectedSpeaker.image)}
                         alt={selectedSpeaker.name}
                         className="w-full h-full object-cover"
                       />

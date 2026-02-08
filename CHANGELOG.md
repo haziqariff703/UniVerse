@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-02-08]
+
+- **Fixed**: Resolved issue where events (e.g., "Bengkel PHP") were not appearing in "Upcoming" or student dashboards due to Atlas date/time desynchronization. Updated event dates to ensure visibility in live/upcoming views.
+- **Improved**: Standardized high-density image and API resolution across the entire frontend (Events, MyEvents, StudentDashboard, EventDetails, App) by replacing hardcoded `http://localhost:5000` URLs with relative paths and the `resolveUrl` utility.
+- **Improved**: Optimized `resolveUrl` to handle a wider variety of path formats (local /public, Cloudinary, absolute) consistently.
+- **Fixed**: Resolved 401/500 errors during registration and profile sync by ensuring consistency between relative frontend paths and Vite proxy settings.
+- **Added**: Centralized `urlHelper.js` utility to maintain URL consistency and reduce code duplication.
+
+## [2026-02-07]
+
+- **Fixed**: Removed problematic embedded PDF previews (iframes) in `EventApprovals`, `OrganizerApprovals`, and `SpeakerApprovals` to resolve 401 errors and browser extension conflicts.
+- **Added**: Implemented direct document links that open proposal and credential PDFs in a new tab with `rel="noopener"`.
+- **Improved**: Standardized URL resolution across the application using a new `resolveUrl` helper function that handles local paths, Cloudinary URLs, and duplicate slashes.
+- **Changed**: Transitioned from hardcoded `http://localhost:5000` base URLs to relative API paths (`/api/...`) throughout the Admin and Student Profile modules, leveraging the Vite proxy.
+- **Improved**: Added `DialogDescription` to all admin modals for enhanced screen reader accessibility.
+- **Improved**: Standardized image rendering in `EventsList` and `OrganizersList` using `resolveUrl` and relative paths.
+
 ## [2026-02-06]
 
 - **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
@@ -8,7 +25,7 @@
 - **Added**: Unified SweetAlert2 logout confirmation for all user roles (Student, Organizer, Association).
 - **Added**: Full document upload support for Club Proposals (Constitution and Advisor Consent Letter) with interactive UI and backend storage.
 - **Changed**: Standardized API URLs to use relative paths throughout the Club Proposal and Organizer Approval modules (Reverted: Replaced with hardcoded `http://localhost:5000` URLs at user's request).
-- **Improved**: Enhanced Admin Panel with a high-fidelity integrated PDF previewer in both the proposal review modal and event approval modal.
+- **Improved**: Enhanced Admin Panel with standardized URL resolution and accessible document links (replaced embedded PDF iframes for better stability).
 - **Added**: Robust document URL normalization to automatically fix missing `/public` prefixes/pathing issues for event proposals.
 - **Improved**: Replaced native browser prompt with a modern `Flatpickr` modal for scheduling interviews in the Workforce module.
 - **Improved**: Admin Panel Community command center now displays real-time member counts for each society.
@@ -17,6 +34,11 @@
 - **Removed**: Standardized relative API paths; reverted to hardcoded localhost URLs for specific modules.
 - **Fixed**: Resolved persistent authenticated UI state (Navbar avatar/menu) appearing on public pages after admin logout.
 - **Fixed**: Resolved "swalConfirm is not defined" error in `App.jsx` and cleaned up unused imports in `Navbar.jsx`.
+- **Fixed**: Club Proposal category display issue by standardizing frontend fetch paths to use relative URLs.
+- **Fixed**: Community image rendering issues by standardizing backend path resolution and sanitizing database records.
+- **Changed**: Updated `adminController.js` and `clubProposalController.js` to use `resolveFilePath` utility.
+- **Fixed**: Restored `AdminDashboard.jsx` to stable state after unsuccessful chart initialization refactor.
+- **Fixed**: Resolved 500 Internal Server Error in `/api/admin/communities` by adding defensive null checks to MongoDB aggregation results.
 
 ## [2026-02-05]
 
@@ -835,9 +857,23 @@
 - **Moving Border Component**: Animated gradient border for secondary buttons (2026-01-29)
 - **Spotlight Component**: Mouse-tracking radial gradient effect for event cards (2026-01-29)
 
-### Changed
+#### [Unreleased] - 2026-02-06
 
-- **Home Page Hero**: Upgraded "Enter the Galaxy" button with vibrant Noise Background and "Explore Events" with Moving Border (2026-01-29)
+### Fixed
+
+- **Server Stability**: Resolved a critical crash in `eventController.js` caused by a duplicate `EventCrew` import.
+- **Database Targeting**: Corrected the MongoDB connection string to explicitly target the `UniVerse` database, preventing data from falling back to the default `test` collection.
+- **Environment Reliability**: Standardized `.env` loading in `index.js` using `path.join(__dirname)` to ensure consistent URI resolution across different execution contexts.
+- Resolved blank screen on Student Profile page caused by missing `motion` import.
+- Fixed broken image rendering in `ReviewModal` and `MissionLogCard` by standardizing path-to-URL mapping.
+- Corrected backend `createReview` controller to save relative public paths instead of absolute local filesystem paths.
+
+### Added
+
+- **Cloudinary Integration**: Implemented a dynamic storage engine in `upload.js` that automatically switches to Cloudinary for media assets when credentials are provided.
+- **Path Resolution Utility**: Created `pathResolver.js` to unify URL construction for both local and cloud-hosted assets.
+- **Manual User Creation**: Added "Register User" feature for Admins in `UsersList.jsx` and connected it to the backend `createUser` endpoint with audit logging.
+- Visual Evidence photo preview to `MissionLogCard` in the Historical Archive section.
 - **Upcoming Events**: Redesigned with Spotlight cards and dynamic faculty-based color theming (Cyan for Tech, Purple for Arts) (2026-01-29)
 - **Newsletter Section**: Completely redesigned into "Dual Command Cards" layout using NoiseBackgrounds (2026-01-29)
 - **Typography**: Standardized all Home page section headings to Clash Display with consistent gradient accents (2026-01-29)

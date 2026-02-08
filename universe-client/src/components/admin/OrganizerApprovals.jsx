@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { downloadCSV } from "@/lib/exportUtils";
@@ -93,7 +94,22 @@ const OrganizerApprovals = () => {
   // Proposal Details Modal State
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Helper to clean Cloudinary URLs and ensure safe access
+  const resolveUrl = (url, isDocument = false) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http") ? url : `/public${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+      // For documents, try to force inline attachment to avoid 401s from browser viewers
+      if (isDocument && !finalUrl.includes("fl_attachment")) {
+        finalUrl = finalUrl.replace("/upload/", "/upload/fl_attachment/");
+      }
+    }
+    return finalUrl;
+  };
 
   const fetchPendingOrganizers = useCallback(async () => {
     setLoading(true);
@@ -105,12 +121,9 @@ const OrganizerApprovals = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/organizers/pending?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/organizers/pending?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to fetch pending organizers");
 
@@ -130,7 +143,6 @@ const OrganizerApprovals = () => {
 
   const viewProposal = (proposal) => {
     setSelectedProposal(proposal);
-    setPreviewUrl(null); // Reset preview when opening modal
     setProposalModalOpen(true);
   };
 
@@ -146,13 +158,10 @@ const OrganizerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/organizers/${id}/approve`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/organizers/${id}/approve`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to approve organizer");
 
@@ -169,17 +178,14 @@ const OrganizerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/organizers/${id}/reject`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ reason }),
+      const response = await fetch(`/api/admin/organizers/${id}/reject`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ reason }),
+      });
 
       if (!response.ok) throw new Error("Failed to reject organizer");
 
@@ -443,11 +449,11 @@ const OrganizerApprovals = () => {
                                 ) : org.confirmation_letter_url ? (
                                   <a
                                     href={
-                                      org.confirmation_letter_url.startsWith(
+                                      org.confirmation_letter_url?.startsWith(
                                         "http",
                                       )
                                         ? org.confirmation_letter_url
-                                        : org.confirmation_letter_url
+                                        : `/public${org.confirmation_letter_url}`
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -479,9 +485,9 @@ const OrganizerApprovals = () => {
                                 {org.id_card_url ? (
                                   <a
                                     href={
-                                      org.id_card_url.startsWith("http")
+                                      org.id_card_url?.startsWith("http")
                                         ? org.id_card_url
-                                        : org.id_card_url
+                                        : `/public${org.id_card_url}`
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -579,6 +585,10 @@ const OrganizerApprovals = () => {
               </div>
               Club Proposal Details
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Review candidate's club proposal documentation, mission, and
+              visual identity.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedProposal && (
@@ -642,9 +652,10 @@ const OrganizerApprovals = () => {
                     {selectedProposal.logo_url ? (
                       <div className="w-24 h-24 rounded-xl border border-white/10 overflow-hidden bg-black/20 p-2 relative group">
                         <img
-                          src={`http://localhost:5000${selectedProposal.logo_url}`}
-                          alt="Club Logo"
+                          src={resolveUrl(selectedProposal.logo_url)}
+                          alt={`${selectedProposal.clubName} Logo`}
                           className="w-full h-full object-contain"
+                          loading="lazy"
                         />
                       </div>
                     ) : (
@@ -661,14 +672,15 @@ const OrganizerApprovals = () => {
                     {selectedProposal.banner_url ? (
                       <div className="w-full h-24 rounded-xl border border-white/10 overflow-hidden bg-black/20 relative group">
                         <img
-                          src={`http://localhost:5000${selectedProposal.banner_url}`}
-                          alt="Club Banner"
+                          src={resolveUrl(selectedProposal.banner_url)}
+                          alt={`${selectedProposal.clubName} Banner`}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                         <a
-                          href={`http://localhost:5000${selectedProposal.banner_url}`}
+                          href={resolveUrl(selectedProposal.banner_url)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener"
                           className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                         >
                           <Download size={16} />
@@ -689,30 +701,24 @@ const OrganizerApprovals = () => {
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   {selectedProposal.constitution_url ? (
-                    <button
-                      onClick={() =>
-                        setPreviewUrl(
-                          `http://localhost:5000${selectedProposal.constitution_url}`,
-                        )
-                      }
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all group ${
-                        previewUrl === selectedProposal.constitution_url
-                          ? "bg-violet-500/30 border-violet-500 shadow-lg shadow-violet-500/10"
-                          : "bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/20"
-                      } border`}
+                    <a
+                      href={resolveUrl(selectedProposal.constitution_url)}
+                      target="_blank"
+                      rel="noopener"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-all group bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/20 border"
                     >
                       <div className="p-2 rounded-lg bg-violet-500 text-white">
                         <FileText size={14} />
                       </div>
                       <div className="flex flex-col text-left">
                         <span className="text-[10px] font-bold text-violet-400 uppercase tracking-tight">
-                          Review Document
+                          Open Document
                         </span>
                         <span className="text-xs font-bold text-starlight truncate max-w-[140px]">
                           Constitution.pdf
                         </span>
                       </div>
-                    </button>
+                    </a>
                   ) : (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 opacity-50">
                       <div className="p-2 rounded-lg bg-white/10 text-starlight/40">
@@ -725,30 +731,24 @@ const OrganizerApprovals = () => {
                   )}
 
                   {selectedProposal.consent_letter_url ? (
-                    <button
-                      onClick={() =>
-                        setPreviewUrl(
-                          `http://localhost:5000${selectedProposal.consent_letter_url}`,
-                        )
-                      }
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all group ${
-                        previewUrl === selectedProposal.consent_letter_url
-                          ? "bg-cyan-500/30 border-cyan-500 shadow-lg shadow-cyan-500/10"
-                          : "bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20"
-                      } border`}
+                    <a
+                      href={resolveUrl(selectedProposal.consent_letter_url)}
+                      target="_blank"
+                      rel="noopener"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-all group bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20 border"
                     >
                       <div className="p-2 rounded-lg bg-cyan-500 text-white">
                         <FileText size={14} />
                       </div>
                       <div className="flex flex-col text-left">
                         <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-tight">
-                          Review Document
+                          Open Document
                         </span>
                         <span className="text-xs font-bold text-starlight truncate max-w-[140px]">
                           Consent Letter.pdf
                         </span>
                       </div>
-                    </button>
+                    </a>
                   ) : (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 opacity-50">
                       <div className="p-2 rounded-lg bg-white/10 text-starlight/40">
@@ -761,33 +761,6 @@ const OrganizerApprovals = () => {
                   )}
                 </div>
               </div>
-
-              {previewUrl && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                      Document Preview
-                    </label>
-                    <div className="flex gap-2">
-                      <a
-                        href={previewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 px-3 rounded-lg bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
-                      >
-                        <Download size={12} /> Fullscreen
-                      </a>
-                    </div>
-                  </div>
-                  <div className="w-full h-[400px] rounded-2xl overflow-hidden border border-white/10 bg-black/20 relative group">
-                    <iframe
-                      src={previewUrl}
-                      className="w-full h-full border-0"
-                      title="Document Preview"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

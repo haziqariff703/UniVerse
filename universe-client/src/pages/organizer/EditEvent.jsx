@@ -31,14 +31,14 @@ const EditEvent = () => {
           communitiesRes,
           categoriesRes,
         ] = await Promise.all([
-          fetch(`http://localhost:5000/api/events/${id}`, { headers }),
-          fetch("http://localhost:5000/api/venues", { headers }),
-          fetch("http://localhost:5000/api/speakers", { headers }),
-          fetch("http://localhost:5000/api/events?status=all", { headers }),
-          fetch("http://localhost:5000/api/communities/my-communities", {
+          fetch(`/api/events/${id}`, { headers }),
+          fetch("/api/venues", { headers }),
+          fetch("/api/speakers", { headers }),
+          fetch("/api/events?status=all", { headers }),
+          fetch("/api/communities/my-communities", {
             headers,
           }),
-          fetch("http://localhost:5000/api/categories", { headers }),
+          fetch("/api/categories", { headers }),
         ]);
 
         if (eventRes.ok) {
@@ -204,7 +204,7 @@ const EditEvent = () => {
     }
 
     const token = localStorage.getItem("token");
-    const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+    const response = await fetch(`/api/events/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,

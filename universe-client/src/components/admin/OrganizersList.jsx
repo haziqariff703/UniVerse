@@ -13,7 +13,11 @@ import {
   TrendingUp,
   Download,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +88,20 @@ const OrganizersList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10); // New state
   const [selectedOrganizer, setSelectedOrganizer] = useState(null);
 
+  // Helper to ensure correct document/image URL
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http")
+      ? url
+      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
+
   const fetchOrganizers = useCallback(async () => {
     setLoading(true);
     try {
@@ -95,12 +113,9 @@ const OrganizersList = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/users?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to fetch organizers");
 
@@ -397,6 +412,9 @@ const OrganizersList = () => {
         onOpenChange={(open) => !open && setSelectedOrganizer(null)}
       >
         <DialogContent className="max-w-md bg-[#0e0e12] border-white/10 text-starlight">
+          <DialogDescription className="sr-only">
+            Organizer profile details and verified credentials.
+          </DialogDescription>
           {selectedOrganizer && (
             <div className="space-y-6">
               <div className="flex items-center gap-4">
@@ -446,13 +464,9 @@ const OrganizersList = () => {
                   <div className="flex gap-2">
                     {selectedOrganizer.confirmation_letter_url && (
                       <a
-                        href={
-                          selectedOrganizer.confirmation_letter_url.startsWith(
-                            "http",
-                          )
-                            ? selectedOrganizer.confirmation_letter_url
-                            : `http://localhost:5000/${selectedOrganizer.confirmation_letter_url}`
-                        }
+                        href={resolveUrl(
+                          selectedOrganizer.confirmation_letter_url,
+                        )}
                         target="_blank"
                         className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 text-blue-400 text-xs hover:bg-blue-500 hover:text-white transition-colors"
                       >

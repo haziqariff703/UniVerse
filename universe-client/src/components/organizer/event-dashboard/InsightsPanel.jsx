@@ -60,8 +60,8 @@ const InsightsPanel = (props) => {
 
         // Use event-specific endpoint if eventId is provided
         const endpoint = eventId
-          ? `http://localhost:5000/api/events/${eventId}/analytics`
-          : "http://localhost:5000/api/events/organizer/finance-stats";
+          ? `/api/events/${eventId}/analytics`
+          : "/api/events/organizer/finance-stats";
 
         const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },

@@ -14,14 +14,15 @@ import ReviewModal from "@/components/common/ReviewModal";
 import EventCard from "@/components/common/EventCard";
 import EventCarousel from "@/components/public/EventCarousel";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 const mapEventToCardProps = (event) => ({
   id: event._id,
   title: event.title,
   description: event.description,
-  image: event.image ? `${API_BASE}/${event.image}` : "/placeholder-event.jpg",
+  image: resolveUrl(event.image) || "/placeholder-event.jpg",
   date: new Date(event.date_time).toLocaleDateString("en-MY", {
     year: "numeric",
     month: "long",
@@ -77,15 +78,15 @@ const Events = () => {
 
       const [featRes, upRes, pastRes, registrationsRes, catRes] =
         await Promise.all([
-          fetch(`${API_BASE}/api/events?is_featured=true&upcoming=true`),
-          fetch(`${API_BASE}/api/events?upcoming=true`),
-          fetch(`${API_BASE}/api/events?upcoming=false`),
+          fetch(`/api/events?is_featured=true&upcoming=true`),
+          fetch(`/api/events?upcoming=true`),
+          fetch(`/api/events?upcoming=false`),
           token
-            ? fetch(`${API_BASE}/api/registrations/my-bookings`, {
+            ? fetch(`/api/registrations/my-bookings`, {
                 headers: { Authorization: `Bearer ${token}` },
               })
             : Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
-          fetch(`${API_BASE}/api/categories`),
+          fetch(`/api/categories`),
         ]);
 
       const [feat, up, past, regs, cats] = await Promise.all([
@@ -133,7 +134,7 @@ const Events = () => {
 
       // Fetch user profile stats for merit tracking
       if (token) {
-        const profRes = await fetch(`${API_BASE}/api/users/profile`, {
+        const profRes = await fetch(`/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (profRes.ok) {

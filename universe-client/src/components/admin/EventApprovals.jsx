@@ -34,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -59,24 +60,18 @@ const EventApprovals = ({ onBack }) => {
   // Details Modal State
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   // Helper to ensure correct document URL (handles missing /public prefix if needed)
-  const getDocumentUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith("http")) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    // Ensure /public prefix exists if not already present (assuming typical storage)
-    const finalPath = cleanPath.startsWith("/public")
-      ? cleanPath
-      : `/public${cleanPath}`;
-    return `http://localhost:5000${finalPath}`;
-  };
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http") ? url : `/public${url}`;
 
-  // Reset preview when modal closes
-  useEffect(() => {
-    if (!detailsModalOpen) setPreviewUrl(null);
-  }, [detailsModalOpen]);
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
 
   const fetchPendingEvents = useCallback(async () => {
     setLoading(true);
@@ -88,12 +83,9 @@ const EventApprovals = ({ onBack }) => {
         limit: itemsPerPage,
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/events/pending?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/events/pending?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to fetch pending events");
 
@@ -124,13 +116,10 @@ const EventApprovals = ({ onBack }) => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/events/${id}/approve`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/events/${id}/approve`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to approve event");
 
@@ -146,17 +135,14 @@ const EventApprovals = ({ onBack }) => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/events/${id}/reject`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ reason }),
+      const response = await fetch(`/api/admin/events/${id}/reject`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ reason }),
+      });
 
       if (!response.ok) throw new Error("Failed to reject event");
 
@@ -609,25 +595,16 @@ const EventApprovals = ({ onBack }) => {
                               >
                                 {event.proposal ? (
                                   <a
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      const url = getDocumentUrl(
-                                        event.proposal,
-                                      );
-                                      if (url) {
-                                        setSelectedEvent(event);
-                                        setPreviewUrl(url);
-                                        setDetailsModalOpen(true);
-                                      }
-                                    }}
-                                    href="#"
+                                    href={resolveUrl(event.proposal)}
+                                    target="_blank"
+                                    rel="noopener"
                                     className="flex items-center gap-2 w-full"
                                   >
                                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
                                       <FileText size={16} />
                                     </div>
                                     <span className="font-bold text-xs uppercase tracking-widest text-blue-400">
-                                      Examine Document
+                                      Open Document
                                     </span>
                                   </a>
                                 ) : (
@@ -691,6 +668,10 @@ const EventApprovals = ({ onBack }) => {
                     </span>
                     {selectedEvent?.title}
                   </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Review and verify event details, capacity, and supporting
+                    documentation before authorization.
+                  </DialogDescription>
                 </DialogHeader>
 
                 {selectedEvent && (
@@ -699,8 +680,8 @@ const EventApprovals = ({ onBack }) => {
                     {selectedEvent.image && (
                       <div className="w-full h-48 rounded-xl overflow-hidden border border-white/10">
                         <img
-                          src={`http://localhost:5000/${selectedEvent.image}`}
-                          alt="Event Cover"
+                          src={resolveUrl(selectedEvent.image)}
+                          alt={`${selectedEvent.title} Cover`}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -783,7 +764,7 @@ const EventApprovals = ({ onBack }) => {
                         {selectedEvent.proposal ? (
                           <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 text-left">
                                 <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
                                   <FileText size={24} />
                                 </div>
@@ -791,59 +772,20 @@ const EventApprovals = ({ onBack }) => {
                                   <p className="font-bold text-blue-400">
                                     Event Proposal.pdf
                                   </p>
-                                  <p className="text-xs text-blue-300/60">
-                                    Review this document before approval
+                                  <p className="text-xs text-blue-300/60 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                                    Verify documentation before approval
                                   </p>
                                 </div>
                               </div>
-                              <button
-                                onClick={() =>
-                                  setPreviewUrl(
-                                    getDocumentUrl(selectedEvent.proposal),
-                                  )
-                                }
-                                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${
-                                  previewUrl ===
-                                  getDocumentUrl(selectedEvent.proposal)
-                                    ? "bg-blue-500 text-white shadow-lg"
-                                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                                }`}
+                              <a
+                                href={resolveUrl(selectedEvent.proposal)}
+                                target="_blank"
+                                rel="noopener"
+                                className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
                               >
-                                <Eye size={16} />
-                                {previewUrl ===
-                                getDocumentUrl(selectedEvent.proposal)
-                                  ? "Viewing"
-                                  : "View Document"}
-                              </button>
+                                <Download size={14} /> Open
+                              </a>
                             </div>
-
-                            {/* Integrated Preview */}
-                            {previewUrl && (
-                              <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                                <div className="flex items-center justify-between">
-                                  <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                                    Live Preview
-                                  </label>
-                                  <div className="flex gap-2">
-                                    <a
-                                      href={previewUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-1 px-3 rounded-lg bg-white/5 text-starlight/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
-                                    >
-                                      <Download size={12} /> New Tab
-                                    </a>
-                                  </div>
-                                </div>
-                                <div className="w-full h-[500px] rounded-2xl overflow-hidden border border-white/10 bg-black/20 relative group">
-                                  <iframe
-                                    src={previewUrl}
-                                    className="w-full h-full border-0"
-                                    title="Proposal Preview"
-                                  />
-                                </div>
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-400">

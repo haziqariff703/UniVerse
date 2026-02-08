@@ -21,8 +21,9 @@ import VenueHeatmap from "@/components/venues/VenueHeatmap";
 import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom"; // Added useParams, useNavigate
 import { useState, useEffect } from "react"; // Added useState, useEffect
+import { resolveUrl } from "@/utils/urlHelper";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 const VenueDetails = () => {
   const { id } = useParams();
@@ -108,13 +109,7 @@ const VenueDetails = () => {
           initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5 }}
-          src={
-            venue.image
-              ? venue.image.startsWith("http")
-                ? venue.image
-                : `${API_BASE}/${venue.image}`
-              : "/placeholder-venue.jpg"
-          }
+          src={venue.image ? resolveUrl(venue.image) : "/placeholder-venue.jpg"}
           className="absolute inset-0 w-full h-full object-cover grayscale-[20%]"
         />
 
@@ -287,9 +282,7 @@ const VenueDetails = () => {
                         <img
                           src={
                             event.image
-                              ? event.image.startsWith("http")
-                                ? event.image
-                                : `${API_BASE}/${event.image}`
+                              ? resolveUrl(event.image)
                               : "/placeholder-event.jpg"
                           }
                           className="w-full h-full object-cover"

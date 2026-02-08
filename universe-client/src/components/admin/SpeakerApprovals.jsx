@@ -32,7 +32,7 @@ import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
 
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * KPI Card Component
@@ -95,6 +95,20 @@ const SpeakerApprovals = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedDoc, setSelectedDoc] = useState(null);
 
+  // Helper to ensure correct document URL
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http")
+      ? url
+      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
+
   const fetchPendingSpeakers = useCallback(async () => {
     setLoading(true);
     try {
@@ -105,12 +119,9 @@ const SpeakerApprovals = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/speakers/pending?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await fetch(`/api/admin/speakers/pending?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) throw new Error("Failed to fetch pending speakers");
 
@@ -144,17 +155,14 @@ const SpeakerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/speakers/${id}/verify`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action }),
+      const response = await fetch(`/api/admin/speakers/${id}/verify`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ action }),
+      });
 
       if (!response.ok) throw new Error(`Failed to ${action} speaker`);
 
@@ -613,17 +621,38 @@ const SpeakerApprovals = () => {
                   </button>
                 </div>
               </div>
-              <div className="flex-1 bg-neutral-900/50 relative overflow-hidden">
-                {selectedDoc.endsWith(".pdf") ? (
-                  <iframe
-                    src={selectedDoc}
-                    className="w-full h-full border-none"
-                    title="Document Preview"
-                  />
+              <div className="flex-1 bg-neutral-900/50 relative overflow-hidden flex items-center justify-center p-8">
+                {selectedDoc.toLowerCase().endsWith(".pdf") ? (
+                  <div className="text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="w-24 h-24 rounded-3xl bg-blue-500/10 flex items-center justify-center mx-auto border border-blue-500/20 text-blue-400">
+                      <FileText size={48} />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-bold text-white">
+                        Credential Verification
+                      </h4>
+                      <p className="text-starlight/40 text-sm max-w-xs mx-auto">
+                        Forensic audit of candidate documentation is required
+                        before certification.
+                      </p>
+                    </div>
+                    <a
+                      href={resolveUrl(selectedDoc)}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-blue-500/20 group"
+                    >
+                      <Download
+                        size={18}
+                        className="group-hover:translate-y-0.5 transition-transform"
+                      />
+                      Download & Verify
+                    </a>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
                     <img
-                      src={selectedDoc}
+                      src={resolveUrl(selectedDoc)}
                       alt="Document Preview"
                       className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
                     />
