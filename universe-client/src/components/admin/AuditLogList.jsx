@@ -18,11 +18,16 @@ import {
   RefreshCw,
   X,
   TrendingUp,
-  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 const KpiCard = ({
   title,
@@ -93,6 +98,8 @@ const AuditLogList = () => {
     totalLogs: 0,
   });
   const [selectedLog, setSelectedLog] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Memoize fetchLogs to fix useEffect dependency lint
   const fetchLogs = useCallback(async () => {
@@ -129,13 +136,21 @@ const AuditLogList = () => {
     }
   }, [filters, pagination.currentPage]);
 
+  const filteredLogs = logs.filter((log) =>
+    matchesDateRange(log, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "timestamp",
+    ]),
+  );
+
   const handleExport = () => {
-    if (logs.length === 0) {
+    if (filteredLogs.length === 0) {
       toast.error("No logs available to export");
       return;
     }
 
-    const exportData = logs.map((l) => ({
+    const exportData = filteredLogs.map((l) => ({
       Timestamp: new Date(l.createdAt).toLocaleString(),
       Admin: l.admin_id?.name || "System",
       Action: l.action,
@@ -279,91 +294,100 @@ const AuditLogList = () => {
           value={stats.venueActions.toLocaleString()}
           icon={MapPin}
           color="text-emerald-400"
-          subValue="Integrity check"
           description="Audit trail for all physical venue provisioning and facility data updates."
         />
       </div>
 
-      {/* Filters & Control Bar */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap gap-4 items-center">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
-          />
-          <input
-            name="search"
-            value={filters.search}
-            onChange={handleFilterChange}
-            type="text"
-            placeholder="Search Registry IDs or Entities..."
-            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <select
-            name="action"
-            value={filters.action}
-            onChange={handleFilterChange}
-            className="bg-[#050505]/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none"
-          >
-            <option value="">All Procedures</option>
-            <option value="APPROVE_EVENT">Approve Event</option>
-            <option value="REJECT_EVENT">Reject Event</option>
-            <option value="DELETE_EVENT">Delete Event</option>
-            <option value="APPROVE_ORGANIZER">Approve Organizer</option>
-            <option value="REJECT_ORGANIZER">Reject Organizer</option>
-            <option value="CREATE_VENUE">Create Venue</option>
-            <option value="UPDATE_VENUE">Update Venue</option>
-            <option value="DELETE_VENUE">Delete Venue</option>
-            <option value="DELETE_USER">Delete User</option>
-            <option value="UPDATE_USER_ROLE">Update Role</option>
-          </select>
-
-          <select
-            name="target_type"
-            value={filters.target_type}
-            onChange={handleFilterChange}
-            className="bg-[#050505]/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none"
-          >
-            <option value="">All Entities</option>
-            <option value="Event">Event</option>
-            <option value="Venue">Venue</option>
-            <option value="User">User</option>
-            <option value="Registration">Registration</option>
-          </select>
-
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={filters.limit || 15}
-              onChange={(e) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  limit: Number(e.target.value),
-                }));
-                setPagination((prev) => ({ ...prev, currentPage: 1 }));
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={15}>15 Entries</option>
-              <option value={20}>20 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+            />
+            <input
+              name="search"
+              value={filters.search}
+              onChange={handleFilterChange}
+              type="text"
+              placeholder="Search Registry IDs or Entities..."
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
+            />
           </div>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <Download size={18} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              name="action"
+              value={filters.action}
+              onChange={handleFilterChange}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+            >
+              <option value="">All Procedures</option>
+              <option value="APPROVE_EVENT">Approve Event</option>
+              <option value="REJECT_EVENT">Reject Event</option>
+              <option value="DELETE_EVENT">Delete Event</option>
+              <option value="APPROVE_ORGANIZER">Approve Organizer</option>
+              <option value="REJECT_ORGANIZER">Reject Organizer</option>
+              <option value="CREATE_VENUE">Create Venue</option>
+              <option value="UPDATE_VENUE">Update Venue</option>
+              <option value="DELETE_VENUE">Delete Venue</option>
+              <option value="DELETE_USER">Delete User</option>
+              <option value="UPDATE_USER_ROLE">Update Role</option>
+            </select>
+
+            <select
+              name="target_type"
+              value={filters.target_type}
+              onChange={handleFilterChange}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+            >
+              <option value="">All Entities</option>
+              <option value="Event">Event</option>
+              <option value="Venue">Venue</option>
+              <option value="User">User</option>
+              <option value="Registration">Registration</option>
+            </select>
+
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={filters.limit || 15}
+                onChange={(e) => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    limit: Number(e.target.value),
+                  }));
+                  setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={15}>15 Entries</option>
+                <option value={20}>20 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={filteredLogs.length === 0}
+            />
+          </div>
         </div>
       </div>
 
@@ -403,7 +427,7 @@ const AuditLogList = () => {
                     </p>
                   </td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="p-20 text-center">
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
@@ -415,7 +439,7 @@ const AuditLogList = () => {
                   </td>
                 </tr>
               ) : (
-                logs.map((log) => (
+                filteredLogs.map((log) => (
                   <tr
                     key={log._id}
                     className="hover:bg-white/[0.02] transition-all group"
@@ -479,7 +503,7 @@ const AuditLogList = () => {
         {pagination.totalPages > 1 && (
           <div className="p-6 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
             <p className="text-[10px] font-black text-starlight/40 uppercase tracking-[0.2em]">
-              Showing {logs.length} / {pagination.totalLogs} Logistics
+              Showing {filteredLogs.length} / {pagination.totalLogs} Logistics
             </p>
             <div className="flex gap-3">
               <button

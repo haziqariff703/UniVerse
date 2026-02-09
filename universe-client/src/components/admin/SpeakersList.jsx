@@ -17,7 +17,6 @@ import {
   Zap,
   ShieldCheck,
   TrendingUp,
-  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -39,8 +38,13 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
-import { FileText } from "lucide-react";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 const KpiCard = ({
   title,
@@ -113,6 +117,8 @@ const SpeakersList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const stats = {
     total: speakers.length,
@@ -160,12 +166,12 @@ const SpeakersList = () => {
   }, [currentPage, itemsPerPage, searchQuery]);
 
   const handleExport = () => {
-    if (speakers.length === 0) {
+    if (filteredSpeakers.length === 0) {
       toast.error("No data available to export");
       return;
     }
 
-    const exportData = speakers.map((s) => ({
+    const exportData = filteredSpeakers.map((s) => ({
       Name: s.name,
       Role: s.role,
       Expertise: s.expertise,
@@ -295,7 +301,14 @@ const SpeakersList = () => {
   };
 
   // Search is now handled by API
-  const filteredSpeakers = speakers;
+  const filteredSpeakers = speakers.filter((speaker) =>
+    matchesDateRange(speaker, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]),
+  );
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -368,57 +381,68 @@ const SpeakersList = () => {
           title="Connectivity Index"
           value={`${stats.connectivityIndex}%`}
           icon={Sparkles}
-          color="text-cyan-400"
           subValue="Social reach"
           description="Percentage of talent profiles with verified social media and web presence."
         />
       </div>
 
-      {/* 3. Control Bar Section */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap gap-4 items-center">
-        <div className="relative flex-1 min-w-[300px]">
-          <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
-          />
-          <input
-            type="text"
-            placeholder="Search by name or expertise area..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full bg-[#050505]/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/10 font-bold text-xs"
-          />
-        </div>
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+            />
+            <input
+              type="text"
+              placeholder="Search by name or expertise area..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-          <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-            Limit:
-          </span>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-          >
-            <option value={10}>10 Entries</option>
-            <option value={25}>25 Entries</option>
-            <option value={50}>50 Entries</option>
-            <option value={100}>100 Entries</option>
-          </select>
-        </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
 
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-        >
-          <Download size={16} className="text-violet-400" />
-          <span>Export CSV</span>
-        </button>
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={filteredSpeakers.length === 0}
+            />
+          </div>
+        </div>
       </div>
 
       {/* 4. Registry Implementation */}

@@ -13,7 +13,6 @@ import {
   TrendingUp,
   MoreVertical,
   Eye,
-  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +32,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 /**
  * KPI Card Component
@@ -95,6 +100,8 @@ const ReviewsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -123,12 +130,12 @@ const ReviewsList = () => {
   }, [currentPage, itemsPerPage]);
 
   const handleExport = () => {
-    if (reviews.length === 0) {
+    if (filteredReviews.length === 0) {
       toast.error("No reviews available to export");
       return;
     }
 
-    const exportData = reviews.map((r) => ({
+    const exportData = filteredReviews.map((r) => ({
       Event: r.event_id?.title || "N/A",
       Reviewer: r.user_id?.name || "N/A",
       Rating: r.rating,
@@ -190,7 +197,12 @@ const ReviewsList = () => {
     const matchesRating =
       ratingFilter === "all" || r.rating === parseInt(ratingFilter);
 
-    return matchesSearch && matchesRating;
+    const matchesDate = matchesDateRange(r, startDate, endDate, [
+      "created_at",
+      "createdAt",
+    ]);
+
+    return matchesSearch && matchesRating && matchesDate;
   });
 
   return (
@@ -248,73 +260,70 @@ const ReviewsList = () => {
       </div>
 
       {/* 3. Filter Matrix */}
-      <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4">
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
-              size={18}
+              size={16}
             />
             <input
               type="text"
               placeholder="Search feedback, reviewers, or specific events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-starlight/60"
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
             />
           </div>
 
-          <div className="flex items-center gap-2 px-4 bg-black/40 border border-white/5 rounded-2xl min-w-[170px]">
-            <Filter size={14} className="text-starlight/60" />
+          <div className="flex flex-wrap items-center gap-3">
             <select
               value={ratingFilter}
               onChange={(e) => setRatingFilter(e.target.value)}
-              className="bg-transparent text-sm text-starlight/60 focus:outline-none w-full py-4 cursor-pointer font-bold"
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
             >
-              <option value="all" className="bg-[#0A0A0A]">
-                All Ratings
-              </option>
-              <option value="5" className="bg-[#0A0A0A]">
-                5 Stars Only
-              </option>
-              <option value="4" className="bg-[#0A0A0A]">
-                4 Stars & Above
-              </option>
-              <option value="3" className="bg-[#0A0A0A]">
-                3 Stars & Below
-              </option>
-              <option value="2" className="bg-[#0A0A0A]">
-                Critical (1-2)
-              </option>
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars Only</option>
+              <option value="4">4 Stars & Above</option>
+              <option value="3">3 Stars & Below</option>
+              <option value="2">Critical (1-2)</option>
             </select>
-          </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
-          </div>
+            />
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <Download size={16} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={filteredReviews.length === 0}
+            />
+          </div>
         </div>
       </div>
 

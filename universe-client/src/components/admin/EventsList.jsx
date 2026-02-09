@@ -18,7 +18,6 @@ import {
   Clock,
   MoreVertical,
   TrendingUp,
-  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +35,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 const KpiCard = ({
   title,
@@ -107,6 +112,8 @@ const EventsList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [stats, setStats] = useState({
     total: 0,
     approved: 0,
@@ -165,19 +172,13 @@ const EventsList = () => {
     fetchEvents();
   }, [fetchEvents, statusFilter]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchEvents();
-  };
-
   const handleExport = () => {
-    if (events.length === 0) {
+    if (filteredEvents.length === 0) {
       toast.error("No events to export");
       return;
     }
 
-    const exportData = events.map((e) => ({
+    const exportData = filteredEvents.map((e) => ({
       Title: e.title,
       Organizer: e.organizer_id?.name || "N/A",
       Category: e.category,
@@ -231,6 +232,9 @@ const EventsList = () => {
     statusFilter === "all"
       ? events
       : events.filter((e) => e.status === statusFilter);
+  const dateFilteredEvents = filteredEvents.filter((event) =>
+    matchesDateRange(event, startDate, endDate, ["date_time", "created_at"]),
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -245,24 +249,6 @@ const EventsList = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = filteredEvents.map((event) => ({
-                Title: event.title,
-                Organizer: event.organizer_id?.name || "N/A",
-                Date: new Date(event.date_time).toLocaleDateString(),
-                Status: event.status,
-                Capacity: event.max_capacity,
-                Type: event.event_type,
-              }));
-              downloadCSV(exportData, "events_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={() => {
               setCurrentPage(1);
@@ -307,73 +293,92 @@ const EventsList = () => {
           title="Total Registrations"
           value={stats.registrations}
           icon={BarChart3}
-          color="text-cyan-400"
           subValue="Aggregate attendance"
           description="The aggregate number of tickets and seats reserved across all platform events."
         />
       </div>
 
-      {/* 3. Controls */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <form onSubmit={handleSearch} className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search events..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
-          />
-        </form>
-
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-starlight/40" />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer text-xs font-bold"
-            >
-              <option value="all">All Status</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
-              <option value="completed">Completed</option>
-            </select>
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+            />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
-          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
+              <Filter size={14} className="text-starlight/60" />
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-starlight/60 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-[#0A0A0A]">
+                  All Status
+                </option>
+                <option value="approved" className="bg-[#0A0A0A]">
+                  Approved
+                </option>
+                <option value="pending" className="bg-[#0A0A0A]">
+                  Pending
+                </option>
+                <option value="rejected" className="bg-[#0A0A0A]">
+                  Rejected
+                </option>
+                <option value="completed" className="bg-[#0A0A0A]">
+                  Completed
+                </option>
+              </select>
+            </div>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <Download size={16} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={dateFilteredEvents.length === 0}
+            />
+          </div>
         </div>
       </div>
 
@@ -383,7 +388,7 @@ const EventsList = () => {
           <div className="p-12 text-center text-starlight/40">
             Loading events...
           </div>
-        ) : filteredEvents.length === 0 ? (
+        ) : dateFilteredEvents.length === 0 ? (
           <div className="p-12 text-center text-starlight/40">
             No events found.
           </div>
@@ -414,7 +419,7 @@ const EventsList = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredEvents.map((event) => (
+                  {dateFilteredEvents.map((event) => (
                     <tr
                       key={event._id}
                       className="hover:bg-white/[0.02] transition-colors group"

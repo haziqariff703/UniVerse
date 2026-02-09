@@ -337,6 +337,31 @@ To maintain high architectural standards during rapid development, the system ut
   - **Terminal Management**: Handling package installations, git operations, and environment configuration.
 - **Protocol Integrity**: Every feature implementation follows a "Plan-Confirm-Execute" cycle, ensuring that the final code adheres to the project's strict quality standards defined in `.agent/rules/agent_protocols.md`.
 
+## 30. Admin Filter Matrix Protocol (UI Standardization)
+
+The platform implements a standardized "Filter Matrix" for all administrative list and management views to ensure a cohesive "Command Center" aesthetic and high operational throughput.
+
+### A. Structural Blueprint
+
+The standardized filter container follows a strict vertical hierarchy:
+
+1.  **Parent Container**: `div` with `space-y-4` and `bg-[#050505]/50` (glassmorphism background).
+2.  **Filter Matrix Grid**: A `div` using `grid grid-cols-1 md:grid-cols-2 gap-4` to handle multi-column controls.
+3.  **Search Input**: Integrated into the first column of the matrix with consistent `h-11`, `bg-zinc-900/50`, and `font-medium` styling.
+4.  **Action Groups**: Functional selects (Category, Status, Role) are grouped logically within the grid, removing unnecessary icon wrappers to maintain a clean registry look.
+
+### B. Spacing & Density Constants
+
+- **Padding**: `p-4 md:p-6` for the main filter block.
+- **Inner Gap**: `gap-4` between matrix items.
+- **Vertical Rhythm**: `space-y-4` between the filter matrix and the date-range controls.
+
+### C. Control Normalization
+
+- **Common Classes**: `ADMIN_FILTER_CONTAINER_CLASS` is maintained for core flex-row desktop alignment but is used in conjunction with the new grid matrix for internal control density.
+- **Search Interaction**: Uses the shared `Input` component with absolute-positioned search icons for consistent visual cues.
+- **Dropdown Integration**: `Select` components are used without external icons to ensure alignment with the "Registry" design philosophy.
+
 ---
 
 _Created by Antigravity_

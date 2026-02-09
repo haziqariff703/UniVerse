@@ -3,7 +3,6 @@ import {
   Search,
   Filter,
   RefreshCw,
-  Download,
   Trash2,
   ChevronLeft,
   ChevronRight,
@@ -21,7 +20,6 @@ import {
   TrendingUp,
   UserPlus,
   ArrowLeft,
-  FileText,
   Plus,
 } from "lucide-react";
 import { downloadCSV } from "@/lib/exportUtils";
@@ -42,6 +40,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 /**
  * UsersList "Command Center"
@@ -56,6 +60,8 @@ const UsersList = ({ onBack }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [roleFilter, setRoleFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [deleteProcessing, setDeleteProcessing] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -114,12 +120,6 @@ const UsersList = ({ onBack }) => {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchUsers();
-  };
 
   const handleDeleteUser = async (userId) => {
     const result = await swalConfirm({
@@ -256,6 +256,10 @@ const UsersList = ({ onBack }) => {
     }
   };
 
+  const filteredUsers = users.filter((user) =>
+    matchesDateRange(user, startDate, endDate, ["created_at", "createdAt"]),
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* 1. Dashboard Header */}
@@ -277,24 +281,6 @@ const UsersList = ({ onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = users.map((user) => ({
-                Name: user.name,
-                Email: user.email,
-                Role: user.role,
-                Student_ID: user.student_id || "N/A",
-                Joined: new Date(user.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "users_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
-
           <Button
             variant="outline"
             onClick={() => {
@@ -347,64 +333,100 @@ const UsersList = ({ onBack }) => {
           title="Administrators"
           value={loading && stats.admin === 0 ? "..." : stats.admin}
           icon={Shield}
-          color="text-rose-400"
           subValue="Safety & Governance"
           description="Root-level accounts with full access to platform governance and infrastructure."
         />
       </div>
 
-      {/* 3. Control Toolbar */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <form onSubmit={handleSearch} className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
-          />
-        </form>
-
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-starlight/40" />
-            <select
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
-            >
-              <option value="all">All Roles</option>
-              <option value="student">Student</option>
-              <option value="organizer">Organizer</option>
-              <option value="association">Association</option>
-              <option value="admin">Admin</option>
-            </select>
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+            />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
+              <Filter size={14} className="text-starlight/60" />
+              <select
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-starlight/60 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-[#0A0A0A]">
+                  All Roles
+                </option>
+                <option value="student" className="bg-[#0A0A0A]">
+                  Student
+                </option>
+                <option value="organizer" className="bg-[#0A0A0A]">
+                  Organizer
+                </option>
+                <option value="association" className="bg-[#0A0A0A]">
+                  Association
+                </option>
+                <option value="admin" className="bg-[#0A0A0A]">
+                  Admin
+                </option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
               }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
+            />
+
+            <AdminExportCsvButton
+              onClick={() => {
+                const exportData = filteredUsers.map((user) => ({
+                  Name: user.name,
+                  Email: user.email,
+                  Role: user.role,
+                  Student_ID: user.student_id || "N/A",
+                  Joined: new Date(user.created_at).toLocaleDateString(),
+                }));
+                downloadCSV(exportData, "users_report");
+              }}
+              disabled={filteredUsers.length === 0}
+            />
           </div>
         </div>
       </div>
@@ -429,7 +451,7 @@ const UsersList = ({ onBack }) => {
               Retry
             </button>
           </div>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div className="p-12 text-center min-h-[400px] flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
               <UserCheck size={32} className="text-starlight/60" />
@@ -465,7 +487,7 @@ const UsersList = ({ onBack }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr
                     key={user._id}
                     className="hover:bg-white/[0.02] transition-colors group"

@@ -18,6 +18,12 @@
 - **Improved**: Optimized `resolveUrl` to handle a wider variety of path formats (local /public, Cloudinary, absolute) consistently.
 - **Fixed**: Resolved 401/500 errors during registration and profile sync by ensuring consistency between relative frontend paths and Vite proxy settings.
 - **Added**: Centralized `urlHelper.js` utility to maintain URL consistency and reduce code duplication.
+- **Changed**: Finalized and standardized the **Admin Filter Matrix** layout across all 12 operational modules (`UsersList`, `EventsList`, `OrganizersList`, `CommunityManager`, `CategoryManager`, `ReviewsList`, `SpeakersList`, `SpeakerApprovals`, `OrganizerApprovals`, `EventApprovals`, `VenueManager`, and `AuditLogList`).
+  - Implemented a consistent 2-column "Matrix" grid for filter controls.
+  - Standardized search inputs, dropdown selects, and date range filters with unified spacing (`space-y-4`).
+  - Resolved structural duplication and CSS class inconsistencies.
+- **Changed**: Unified all admin CSV actions to a single shared `AdminExportCsvButton` component and removed duplicated top-header export actions beside refresh buttons.
+- **Added**: Introduced shared `AdminDateRangeFilter` controls and wired date-range filtering to list rendering and CSV export datasets on all admin list/approval pages.
 
 ## [2026-02-07]
 

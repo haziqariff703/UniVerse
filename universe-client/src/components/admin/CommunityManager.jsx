@@ -41,8 +41,13 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
-import { FileText } from "lucide-react";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 const API_BASE = "http://localhost:5000";
 
@@ -109,6 +114,8 @@ const CommunityManager = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [verificationFilter, setVerificationFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -299,7 +306,16 @@ const CommunityManager = () => {
       (verificationFilter === "verified" && comm.is_verified) ||
       (verificationFilter === "unverified" && !comm.is_verified);
 
-    return matchesSearch && matchesCategory && matchesVerification;
+    const matchesDate = matchesDateRange(comm, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]);
+
+    return (
+      matchesSearch && matchesCategory && matchesVerification && matchesDate
+    );
   });
 
   return (
@@ -315,23 +331,6 @@ const CommunityManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = filteredCommunities.map((comm) => ({
-                Name: comm.name,
-                Category: comm.category,
-                Verified: comm.is_verified ? "Yes" : "No",
-                Members: comm.memberCount || 0,
-                Slug: comm.slug,
-              }));
-              downloadCSV(exportData, "communities_report");
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchCommunities}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -389,7 +388,7 @@ const CommunityManager = () => {
       </div>
 
       {/* 3. Filter Matrix */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
@@ -401,64 +400,38 @@ const CommunityManager = () => {
               placeholder="Search by name, slug or mission..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2 text-xs font-bold text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
-              <Filter size={14} className="text-starlight/60" />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-transparent text-xs text-starlight/60 focus:outline-none cursor-pointer"
-              >
-                <option value="all" className="bg-[#0A0A0A]">
-                  All Categories
-                </option>
-                <option value="Academic" className="bg-[#0A0A0A]">
-                  Academic
-                </option>
-                <option value="Leadership" className="bg-[#0A0A0A]">
-                  Leadership
-                </option>
-                <option value="Uniformed" className="bg-[#0A0A0A]">
-                  Uniformed
-                </option>
-                <option value="Creative" className="bg-[#0A0A0A]">
-                  Creative
-                </option>
-                <option value="Lifestyle" className="bg-[#0A0A0A]">
-                  Lifestyle
-                </option>
-                <option value="Community" className="bg-[#0A0A0A]">
-                  Community
-                </option>
-              </select>
-            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+            >
+              <option value="all">All Categories</option>
+              <option value="Academic">Academic</option>
+              <option value="Leadership">Leadership</option>
+              <option value="Uniformed">Uniformed</option>
+              <option value="Creative">Creative</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Community">Community</option>
+            </select>
 
-            <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
-              <ShieldCheck size={14} className="text-starlight/60" />
-              <select
-                value={verificationFilter}
-                onChange={(e) => setVerificationFilter(e.target.value)}
-                className="bg-transparent text-xs text-starlight/60 focus:outline-none cursor-pointer"
-              >
-                <option value="all" className="bg-[#0A0A0A]">
-                  All Status
-                </option>
-                <option value="verified" className="bg-[#0A0A0A]">
-                  Verified Only
-                </option>
-                <option value="unverified" className="bg-[#0A0A0A]">
-                  Unverified
-                </option>
-              </select>
-            </div>
+            <select
+              value={verificationFilter}
+              onChange={(e) => setVerificationFilter(e.target.value)}
+              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight/60 focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="verified">Verified Only</option>
+              <option value="unverified">Unverified</option>
+            </select>
 
             <div className="flex items-center gap-2 border-l border-white/5 pl-4">
               <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-                Per Page:
+                Limit:
               </span>
               <select
                 value={itemsPerPage}
@@ -466,13 +439,38 @@ const CommunityManager = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold"
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer"
               >
                 <option value={10}>10 Entries</option>
                 <option value={25}>25 Entries</option>
                 <option value={50}>50 Entries</option>
               </select>
             </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={() => {
+                const exportData = filteredCommunities.map((comm) => ({
+                  Name: comm.name,
+                  Category: comm.category,
+                  Verified: comm.is_verified ? "Yes" : "No",
+                  Members: comm.memberCount || 0,
+                  Slug: comm.slug,
+                }));
+                downloadCSV(exportData, "communities_report");
+              }}
+              disabled={filteredCommunities.length === 0}
+            />
           </div>
         </div>
       </div>

@@ -33,6 +33,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 const KpiCard = ({
   title,
@@ -90,10 +96,20 @@ const OrganizerApprovals = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Proposal Details Modal State
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const filteredOrganizers = organizers.filter((organizer) =>
+    matchesDateRange(organizer, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]),
+  );
 
   // Helper to clean Cloudinary URLs and ensure safe access
   const resolveUrl = (url, isDocument = false) => {
@@ -260,17 +276,17 @@ const OrganizerApprovals = () => {
               .length
           }
           icon={FileText}
-          color="text-cyan-400"
           subValue="Policy compliance check"
           description="Applications that have submitted official documentation or club proposals for verification."
         />
       </div>
 
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="flex flex-col md:flex-row gap-4 items-center flex-1">
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
               size={16}
             />
             <input
@@ -281,44 +297,54 @@ const OrganizerApprovals = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
             />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-            </select>
-          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+              </select>
+            </div>
 
-          <button
-            onClick={() => {
-              const exportData = organizers.map((org) => ({
-                Name: org.name,
-                Email: org.email,
-                Bio: org.bio || "",
-                Applied_Date: new Date(org.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "UniVerse_Pending_Organizers");
-              toast.success("Pending organizers list exported successfully");
-            }}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <Download size={16} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={() => {
+                const exportData = filteredOrganizers.map((org) => ({
+                  Name: org.name,
+                  Email: org.email,
+                  Bio: org.bio || "",
+                  Applied_Date: new Date(org.created_at).toLocaleDateString(),
+                }));
+                downloadCSV(exportData, "UniVerse_Pending_Organizers");
+                toast.success("Pending organizers list exported successfully");
+              }}
+              disabled={filteredOrganizers.length === 0}
+            />
+          </div>
         </div>
       </div>
 
@@ -327,7 +353,7 @@ const OrganizerApprovals = () => {
           <div className="p-12 text-center text-starlight/40">
             Loading requests...
           </div>
-        ) : organizers.length === 0 ? (
+        ) : filteredOrganizers.length === 0 ? (
           <div className="p-12 text-center text-starlight/40">
             No pending requests found. Good job!
           </div>
@@ -352,7 +378,7 @@ const OrganizerApprovals = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {organizers.map((org) => (
+                  {filteredOrganizers.map((org) => (
                     <tr
                       key={org._id}
                       className="hover:bg-white/[0.02] transition-colors group"

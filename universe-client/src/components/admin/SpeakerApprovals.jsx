@@ -31,6 +31,12 @@ import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -94,6 +100,8 @@ const SpeakerApprovals = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Helper to ensure correct document URL
   const resolveUrl = (url) => {
@@ -176,7 +184,14 @@ const SpeakerApprovals = () => {
   };
 
   // Search is now handled by API
-  const filteredSpeakers = speakers;
+  const filteredSpeakers = speakers.filter((speaker) =>
+    matchesDateRange(speaker, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]),
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -227,19 +242,18 @@ const SpeakerApprovals = () => {
           title="System Breadth"
           value={new Set(speakers.map((s) => s.expertise)).size}
           icon={Award}
-          color="text-emerald-400"
           subValue="Targeted specialties"
           description="Total number of unique professional expertise niches discovered in current batch."
         />
       </div>
 
-      {/* 3. Search Bar */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="flex flex-col md:flex-row gap-4 items-center flex-1 w-full">
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-              size={16}
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
             />
             <input
               type="text"
@@ -249,46 +263,56 @@ const SpeakerApprovals = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold text-xs"
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
             />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
-          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
 
-          <button
-            onClick={() => {
-              const exportData = speakers.map((s) => ({
-                Name: s.name,
-                Email: s.email,
-                Expertise: s.expertise,
-                Bio: s.bio || "",
-                Applied_Date: new Date(s.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "UniVerse_Speaker_Proposals");
-              toast.success("Speaker proposals exported successfully");
-            }}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <Download size={16} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={() => {
+                const exportData = filteredSpeakers.map((s) => ({
+                  Name: s.name,
+                  Email: s.email,
+                  Expertise: s.expertise,
+                  Bio: s.bio || "",
+                  Applied_Date: new Date(s.created_at).toLocaleDateString(),
+                }));
+                downloadCSV(exportData, "UniVerse_Speaker_Proposals");
+                toast.success("Speaker proposals exported successfully");
+              }}
+              disabled={filteredSpeakers.length === 0}
+            />
+          </div>
         </div>
       </div>
 

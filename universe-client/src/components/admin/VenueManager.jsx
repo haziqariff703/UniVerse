@@ -34,6 +34,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 /**
  * Common facilities usually available on campus.
@@ -81,6 +87,8 @@ const VenueManager = ({ onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [customBestFor, setCustomBestFor] = useState(""); // State for "Best For" tag input
 
   const fetchVenues = useCallback(async () => {
@@ -125,12 +133,12 @@ const VenueManager = ({ onBack }) => {
   }, [currentPage, itemsPerPage, searchQuery, filterFacility]);
 
   const handleExport = () => {
-    if (venues.length === 0) {
+    if (filteredVenues.length === 0) {
       toast.error("No venues available to export");
       return;
     }
 
-    const exportData = venues.map((v) => ({
+    const exportData = filteredVenues.map((v) => ({
       Name: v.name,
       Code: v.location_code,
       Type: v.type,
@@ -365,7 +373,14 @@ const VenueManager = ({ onBack }) => {
 
   // --- Filtering ---
   // Filtering is now handled by API
-  const filteredVenues = venues;
+  const filteredVenues = venues.filter((venue) =>
+    matchesDateRange(venue, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]),
+  );
 
   const uniqueFacilitiesList = [
     ...new Set(venues.flatMap((v) => v.facilities || [])),
@@ -437,19 +452,18 @@ const VenueManager = ({ onBack }) => {
           title="Unique Facilities"
           value={new Set(venues.flatMap((v) => v.facilities || [])).size}
           icon={Cpu}
-          color="text-emerald-400"
           subValue="Facility velocity"
           description="Total number of distinct equipment and service types across all venues."
         />
       </div>
 
-      {/* 3. Control Toolbar */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center shadow-sm">
-        <div className="flex flex-col md:flex-row gap-4 items-center flex-1 w-full">
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-              size={16}
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
             />
             <input
               type="text"
@@ -459,57 +473,67 @@ const VenueManager = ({ onBack }) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60 font-bold text-xs"
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all font-bold"
             />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Facility:
-            </span>
-            <select
-              value={filterFacility}
-              onChange={(e) => {
-                setFilterFacility(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value="all">All Facilities</option>
-              {uniqueFacilitiesList.sort().map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Facility:
+              </span>
+              <select
+                value={filterFacility}
+                onChange={(e) => {
+                  setFilterFacility(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value="all">All Facilities</option>
+                {uniqueFacilitiesList.sort().map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
-          </div>
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <FileText size={18} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={filteredVenues.length === 0}
+            />
+          </div>
         </div>
       </div>
 
@@ -572,7 +596,7 @@ const VenueManager = ({ onBack }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {venues.map((venue) => (
+                  {filteredVenues.map((venue) => (
                     <tr
                       key={venue._id}
                       className="hover:bg-white/[0.02] transition-colors group"

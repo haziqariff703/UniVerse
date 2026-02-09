@@ -11,7 +11,6 @@ import {
   MoreVertical,
   Users,
   TrendingUp,
-  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,6 +28,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 const KpiCard = ({
   title,
   value,
@@ -86,6 +91,8 @@ const OrganizersList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10); // New state
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selectedOrganizer, setSelectedOrganizer] = useState(null);
 
   // Helper to ensure correct document/image URL
@@ -133,19 +140,13 @@ const OrganizersList = () => {
     fetchOrganizers();
   }, [fetchOrganizers]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    // fetchOrganizers triggers via dependency
-  };
-
   const handleExport = () => {
-    if (organizers.length === 0) {
+    if (filteredOrganizers.length === 0) {
       toast.error("No organizers available to export");
       return;
     }
 
-    const exportData = organizers.map((o) => ({
+    const exportData = filteredOrganizers.map((o) => ({
       Name: o.name,
       Email: o.email,
       Joined: new Date(o.createdAt).toLocaleDateString(),
@@ -156,6 +157,13 @@ const OrganizersList = () => {
     downloadCSV(exportData, "UniVerse_Organizers_Registry");
     toast.success("Organizers registry exported successfully");
   };
+
+  const filteredOrganizers = organizers.filter((organizer) =>
+    matchesDateRange(organizer, startDate, endDate, [
+      "created_at",
+      "createdAt",
+    ]),
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -170,22 +178,6 @@ const OrganizersList = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-2 border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 h-10"
-            onClick={() => {
-              const exportData = organizers.map((org) => ({
-                Name: org.name,
-                Email: org.email,
-                Status: org.status || "active",
-                JoinedAt: new Date(org.created_at).toLocaleDateString(),
-              }));
-              downloadCSV(exportData, "organizers_report");
-            }}
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
           <button
             onClick={fetchOrganizers}
             className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
@@ -225,66 +217,74 @@ const OrganizersList = () => {
           title="Verification Status"
           value="100%"
           icon={Shield}
-          color="text-amber-400"
           subValue="Policy compliance"
           description="Compliance rate for identity verification and policy adherence."
         />
       </div>
 
-      {/* 3. Control Toolbar */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center">
-        <form onSubmit={handleSearch} className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-starlight/40"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search organizers by name, email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-starlight/60"
-          />
-        </form>
-
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          {/* Limit Selector (Consistent with EventsList) */}
-          <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-            <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
-              Limit:
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
-            >
-              <option value={10}>10 Entries</option>
-              <option value={25}>25 Entries</option>
-              <option value={50}>50 Entries</option>
-              <option value={100}>100 Entries</option>
-            </select>
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search organizers by name, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+            />
           </div>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <FileText size={16} className="text-violet-400" />
-            <span>Export CSV</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={filteredOrganizers.length === 0}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table grid container */}
       <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
         {loading ? (
           <div className="p-12 text-center text-starlight/40">
             Loading organizers...
           </div>
-        ) : organizers.length === 0 ? (
+        ) : filteredOrganizers.length === 0 ? (
           <div className="p-12 text-center text-starlight/40">
             No organizers found.
           </div>
@@ -309,7 +309,7 @@ const OrganizersList = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {organizers.map((user) => (
+                  {filteredOrganizers.map((user) => (
                     <tr
                       key={user._id}
                       className="hover:bg-white/[0.02] transition-colors group"

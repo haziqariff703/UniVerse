@@ -18,7 +18,6 @@ import {
   BarChart3,
   Layers,
   Users,
-  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -41,8 +40,13 @@ import {
 import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
-import { FileText } from "lucide-react";
 import { swalConfirm } from "@/lib/swalConfig";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
 
 /**
  * Intelligence Card Component
@@ -106,6 +110,8 @@ const CategoryManager = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [usageFilter, setUsageFilter] = useState("all"); // Extra filter: High Usage, Low Usage, Unused
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -150,12 +156,12 @@ const CategoryManager = () => {
   };
 
   const handleExport = () => {
-    if (categories.length === 0) {
+    if (filteredCategories.length === 0) {
       toast.error("No categories available to export");
       return;
     }
 
-    const exportData = categories.map((c) => ({
+    const exportData = filteredCategories.map((c) => ({
       Name: c.name,
       Description: c.description || "N/A",
       Status: c.is_active ? "Active" : "Inactive",
@@ -260,7 +266,14 @@ const CategoryManager = () => {
       (usageFilter === "low" && cat.usageCount > 0 && cat.usageCount < 10) ||
       (usageFilter === "unused" && cat.usageCount === 0);
 
-    return matchesSearch && matchesStatus && matchesUsage;
+    const matchesDate = matchesDateRange(cat, startDate, endDate, [
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+    ]);
+
+    return matchesSearch && matchesStatus && matchesUsage && matchesDate;
   });
 
   return (
@@ -334,7 +347,7 @@ const CategoryManager = () => {
       </div>
 
       {/* 3. Filter Matrix */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search
@@ -412,13 +425,21 @@ const CategoryManager = () => {
               </select>
             </div>
 
-            <button
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
               onClick={handleExport}
-              className="flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-starlight hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest"
-            >
-              <Download size={16} className="text-violet-400" />
-              <span>Export CSV</span>
-            </button>
+              disabled={filteredCategories.length === 0}
+            />
           </div>
         </div>
       </div>
