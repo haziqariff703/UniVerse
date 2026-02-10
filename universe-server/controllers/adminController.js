@@ -27,26 +27,63 @@ exports.getDashboardStats = async (req, res) => {
   try {
     const range = req.query.range || 'year';
     const now = new Date();
-    
-    // 1. Define Date Ranges (Current vs Previous)
-    let startDate = new Date();
-    let prevStartDate = new Date();
-    // Default values if 'year'
-    startDate.setFullYear(now.getFullYear() - 1);
-    prevStartDate.setFullYear(now.getFullYear() - 2);
 
-    switch(range) {
-      case 'week':
-        startDate.setDate(now.getDate() - 7);
-        prevStartDate.setDate(now.getDate() - 14);
+    const startOfDay = (date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    const getWeekStart = (date) => {
+      const day = date.getDay(); // 0 = Sunday, 1 = Monday
+      const diffToMonday = (day + 6) % 7;
+      const start = startOfDay(date);
+      start.setDate(start.getDate() - diffToMonday);
+      return start;
+    };
+    
+    // 1. Define Date Ranges (Calendar periods: current vs previous)
+    let startDate;
+    let prevStartDate;
+    let prevEndDate;
+
+    switch (range) {
+      case 'week': {
+        startDate = getWeekStart(now);
+        prevStartDate = new Date(startDate);
+        prevStartDate.setDate(prevStartDate.getDate() - 7);
+        prevEndDate = new Date(now);
+        prevEndDate.setDate(prevEndDate.getDate() - 7);
         break;
-      case 'month':
-        startDate.setDate(now.getDate() - 30);
-        prevStartDate.setDate(now.getDate() - 60);
+      }
+      case 'month': {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const previousMonthAnchor = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          1
+        );
+        const lastDayOfPrevMonth = new Date(
+          previousMonthAnchor.getFullYear(),
+          previousMonthAnchor.getMonth() + 1,
+          0
+        ).getDate();
+        prevEndDate = new Date(previousMonthAnchor);
+        prevEndDate.setDate(Math.min(now.getDate(), lastDayOfPrevMonth));
+        prevEndDate.setHours(
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds(),
+          now.getMilliseconds()
+        );
         break;
+      }
       case 'year':
-        // Already set defaults
+      default: {
+        startDate = new Date(now.getFullYear(), 0, 1);
+        prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
+        prevEndDate = new Date(now);
+        prevEndDate.setFullYear(prevEndDate.getFullYear() - 1);
         break;
+      }
     }
 
     // 2. KPI Counts (Filtered by Range)
@@ -58,16 +95,22 @@ exports.getDashboardStats = async (req, res) => {
       currentBookings, 
       prevBookings,
       pendingEvents,
-      activeEvents
+      activeEvents,
+      registrationCount,
+      checkedInCount,
+      reviewCount
     ] = await Promise.all([
       User.countDocuments({ created_at: { $gte: startDate } }),
-      User.countDocuments({ created_at: { $gte: prevStartDate, $lt: startDate } }),
+      User.countDocuments({ created_at: { $gte: prevStartDate, $lt: prevEndDate } }),
       Event.countDocuments({ created_at: { $gte: startDate } }),
-      Event.countDocuments({ created_at: { $gte: prevStartDate, $lt: startDate } }),
+      Event.countDocuments({ created_at: { $gte: prevStartDate, $lt: prevEndDate } }),
       Registration.countDocuments({ booking_time: { $gte: startDate } }),
-      Registration.countDocuments({ booking_time: { $gte: prevStartDate, $lt: startDate } }),
+      Registration.countDocuments({ booking_time: { $gte: prevStartDate, $lt: prevEndDate } }),
       Event.countDocuments({ status: 'pending' }),
-      Event.countDocuments({ status: 'approved', end_time: { $gte: new Date() } })
+      Event.countDocuments({ status: 'approved', end_time: { $gte: new Date() } }),
+      Registration.countDocuments({ booking_time: { $gte: startDate } }),
+      Registration.countDocuments({ booking_time: { $gte: startDate }, status: 'CheckedIn' }),
+      Review.countDocuments({ created_at: { $gte: startDate } })
     ]);
 
     // Total counts (Lifetime) - helpful for context
@@ -109,7 +152,108 @@ exports.getDashboardStats = async (req, res) => {
     ]);
     const totalRevenue = revenueDocs.length > 0 ? revenueDocs[0].totalRevenue : 0;
 
-    // 4. Daily Traffic (Last 7 Days - constant window but relevant for "Daily")
+    // 4. Revenue Breakdown (Category / Audience / Organizer)
+    const revenueByCategory = await Registration.aggregate([
+      { 
+        $match: { 
+          status: { $ne: 'Cancelled' },
+          booking_time: { $gte: startDate }
+        } 
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $group: {
+          _id: { $ifNull: ['$event.category', 'Uncategorized'] },
+          value: { $sum: { $ifNull: ['$event.ticket_price', 0] } }
+        }
+      },
+      { $sort: { value: -1 } },
+      { $limit: 6 }
+    ]);
+
+    const revenueByAudience = await Registration.aggregate([
+      { 
+        $match: { 
+          status: { $ne: 'Cancelled' },
+          booking_time: { $gte: startDate }
+        } 
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $group: {
+          _id: { $ifNull: ['$event.target_audience', 'General'] },
+          value: { $sum: { $ifNull: ['$event.ticket_price', 0] } }
+        }
+      },
+      { $sort: { value: -1 } },
+      { $limit: 6 }
+    ]);
+
+    const revenueByOrganizer = await Registration.aggregate([
+      { 
+        $match: { 
+          status: { $ne: 'Cancelled' },
+          booking_time: { $gte: startDate }
+        } 
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event_id',
+          foreignField: '_id',
+          as: 'event'
+        }
+      },
+      { $unwind: '$event' },
+      {
+        $group: {
+          _id: '$event.organizer_id',
+          value: { $sum: { $ifNull: ['$event.ticket_price', 0] } }
+        }
+      },
+      { $sort: { value: -1 } },
+      { $limit: 6 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'organizer'
+        }
+      },
+      { $unwind: { path: '$organizer', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          name: { $ifNull: ['$organizer.name', 'Unknown Organizer'] },
+          value: 1
+        }
+      }
+    ]);
+
+    const conversionFunnel = [
+      { name: 'Registrations', value: registrationCount },
+      { name: 'Checked In', value: checkedInCount },
+      { name: 'Reviews', value: reviewCount }
+    ];
+
+    // 5. Daily Traffic (Last 7 Days - constant window but relevant for "Daily")
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
@@ -133,7 +277,7 @@ exports.getDashboardStats = async (req, res) => {
       };
     });
 
-    // 5. Trending Events (Top 5 by Registrations in specified range)
+    // 6. Trending Events (Top 5 by Registrations in specified range)
     const trendingEvents = await Registration.aggregate([
       { $match: { booking_time: { $gte: startDate } } },
       {
@@ -163,7 +307,7 @@ exports.getDashboardStats = async (req, res) => {
       }
     ]);
 
-    // 6. User Satisfaction (Real aggregation from Reviews)
+    // 7. User Satisfaction (Real aggregation from Reviews)
     const reviewStats = await Review.aggregate([
       {
         $group: {
@@ -178,7 +322,7 @@ exports.getDashboardStats = async (req, res) => {
       }
     ]);
 
-    // 7. Platform Activity (Revenue Trend over time)
+    // 8. Platform Activity (Revenue Trend over time)
     let groupBy;
     switch(range) {
       case 'week':
@@ -255,6 +399,52 @@ exports.getDashboardStats = async (req, res) => {
       total: reviewStats[0].total
     } : { score: 0, positive: 0, total: 0 };
 
+    // 9. Upcoming Events (Next 7 days)
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const upcomingEvents = await Event.find({
+      status: 'approved',
+      date_time: { $gte: now, $lte: nextWeek }
+    })
+      .populate('venue_id', 'name')
+      .sort({ date_time: 1 })
+      .limit(10)
+      .lean();
+
+    const upcomingWithCounts = await Promise.all(
+      upcomingEvents.map(async (evt) => {
+        const regCount = await Registration.countDocuments({ event_id: evt._id });
+        return {
+          _id: evt._id,
+          title: evt.title,
+          date_time: evt.date_time,
+          venue: evt.venue_id?.name || 'TBA',
+          registrations: regCount,
+          max_capacity: evt.max_capacity || 0
+        };
+      })
+    );
+
+    // 10. Pending Actions (counts for Quick Actions widget)
+    const [pendingOrganizerCount, pendingSpeakerCount] = await Promise.all([
+      User.countDocuments({ organizerRequest: true }),
+      Speaker.countDocuments({ status: 'pending' })
+    ]);
+
+    // 11. Gender Distribution
+    const genderAgg = await User.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ['$gender', 'Not specified'] },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    const genderDistribution = genderAgg.map(g => ({
+      name: g._id,
+      value: g.count
+    }));
+
     res.json({
       stats: {
         totalEvents: range === 'year' ? totalEvents : currentEvents,
@@ -266,10 +456,32 @@ exports.getDashboardStats = async (req, res) => {
         pendingEvents,
         activeEvents,
         revenue: totalRevenue,
+        revenueBreakdown: {
+          category: revenueByCategory.map((item) => ({
+            name: item._id || 'Uncategorized',
+            value: item.value || 0
+          })),
+          audience: revenueByAudience.map((item) => ({
+            name: item._id || 'General',
+            value: item.value || 0
+          })),
+          organizer: revenueByOrganizer.map((item) => ({
+            name: item.name || 'Unknown Organizer',
+            value: item.value || 0
+          }))
+        },
+        conversionFunnel,
         trafficData,
         trendingEvents,
         satisfaction: satisfactionData,
-        activityStats: formattedActivityData
+        activityStats: formattedActivityData,
+        upcomingEvents: upcomingWithCounts,
+        pendingActions: {
+          events: pendingEvents,
+          organizers: pendingOrganizerCount,
+          speakers: pendingSpeakerCount
+        },
+        genderDistribution
       }
     });
   } catch (error) {

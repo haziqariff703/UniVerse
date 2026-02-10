@@ -9,7 +9,7 @@ const { resolveFilePath } = require("../utils/pathResolver");
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, preferences, currentPassword, newPassword, bio, links, dna } =
+    const { name, preferences, currentPassword, newPassword, bio, links, dna, gender, date_of_birth } =
       req.body;
 
     const user = await User.findById(req.user.id);
@@ -23,6 +23,8 @@ exports.updateProfile = async (req, res) => {
     if (bio !== undefined) user.bio = bio;
     if (links) user.links = links;
     if (dna) user.dna = dna;
+    if (gender !== undefined) user.gender = gender;
+    if (date_of_birth !== undefined) user.date_of_birth = date_of_birth;
 
     // Handle password change
     if (newPassword) {
@@ -59,6 +61,8 @@ exports.updateProfile = async (req, res) => {
         dna: user.dna,
         avatar: user.avatar,
         coverImage: user.coverImage,
+        gender: user.gender,
+        date_of_birth: user.date_of_birth,
       },
     });
   } catch (error) {

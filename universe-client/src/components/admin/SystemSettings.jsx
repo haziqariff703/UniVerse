@@ -47,6 +47,10 @@ const SystemSettings = () => {
           <Save size={18} /> Save Changes
         </button>
       </div>
+      <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200 font-semibold">
+        Disclaimer: This page is a demo UI only. Settings are not persisted
+        until deployment features are implemented.
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Global Toggles */}

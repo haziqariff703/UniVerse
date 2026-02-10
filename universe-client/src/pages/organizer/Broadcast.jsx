@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Eye,
   Bell,
+  Filter,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -39,12 +41,20 @@ const Broadcast = () => {
   const [activeCategory, setActiveCategory] = useState("club");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState("all");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchMyEvents();
     fetchHistory();
   }, []);
+
+  useEffect(() => {
+    if (isHistoryModalOpen) {
+      setHistoryFilter("all");
+    }
+  }, [isHistoryModalOpen]);
 
   const fetchHistory = async () => {
     try {
@@ -153,6 +163,26 @@ const Broadcast = () => {
     } finally {
       setSending(false);
     }
+  };
+
+  const recentHistory = history.slice(0, 5);
+  const filteredHistory = history.filter((item) => {
+    if (historyFilter === "all") return true;
+    if (historyFilter === "general") return !item.event_id;
+    return item.event_id === historyFilter;
+  });
+
+  const formatBroadcastDate = (value) => {
+    if (!value) return "";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -515,42 +545,58 @@ const Broadcast = () => {
         {/* Info & History */}
         <div className="space-y-8">
           <div className="bg-[#050505] border border-white/10 rounded-3xl p-6">
-            <h4 className="text-white font-bold mb-4 flex items-center gap-2">
-              <Clock size={16} className="text-violet-400" />
-              Recent Broadcasts
-            </h4>
-            <div className="space-y-4">
-              {history.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] transition-colors group cursor-default"
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-white font-bold flex items-center gap-2">
+                <Clock size={16} className="text-violet-400" />
+                Recent Broadcasts
+              </h4>
+              {history.length > 0 && (
+                <button
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  className="text-[10px] font-bold uppercase tracking-widest text-violet-400 hover:text-violet-300 transition-colors bg-violet-400/5 px-3 py-1.5 rounded-lg border border-violet-400/10"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 size={10} />
-                      {item.status}
-                    </span>
-                    <span className="text-[10px] font-bold text-white/20">
-                      {item.date}
-                    </span>
+                  View All
+                </button>
+              )}
+            </div>
+            <div className="space-y-4">
+              {recentHistory.length > 0 ? (
+                recentHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] transition-colors group cursor-default"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={10} />
+                        {item.status}
+                      </span>
+                      <span className="text-[10px] font-bold text-white/20">
+                        {item.date}
+                      </span>
+                    </div>
+                    <h5 className="text-sm font-bold text-white mb-1 truncate">
+                      {item.subject}
+                    </h5>
+                    <p className="text-[10px] text-white/40 font-medium mb-3">
+                      {item.event}
+                    </p>
+                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+                      <span className="text-white/40">
+                        Recipients: {item.sent_to}
+                      </span>
+                      <button className="text-violet-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Details
+                        <ChevronRight size={10} />
+                      </button>
+                    </div>
                   </div>
-                  <h5 className="text-sm font-bold text-white mb-1 truncate">
-                    {item.subject}
-                  </h5>
-                  <p className="text-[10px] text-white/40 font-medium mb-3">
-                    {item.event}
-                  </p>
-                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                    <span className="text-white/40">
-                      Recipients: {item.sent_to}
-                    </span>
-                    <button className="text-violet-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Details
-                      <ChevronRight size={10} />
-                    </button>
-                  </div>
+                ))
+              ) : (
+                <div className="text-white/40 text-xs uppercase tracking-widest font-bold text-center py-10 border border-white/5 rounded-2xl bg-white/[0.02]">
+                  No broadcasts yet
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -578,6 +624,129 @@ const Broadcast = () => {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isHistoryModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          >
+            <motion.button
+              aria-label="Close broadcast history"
+              onClick={() => setIsHistoryModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 20 }}
+              className="relative w-full max-w-4xl bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-zinc-950/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-violet-500/10 rounded-lg">
+                    <Clock size={20} className="text-violet-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white leading-none mb-1">
+                      Broadcast History
+                    </h2>
+                    <p className="text-xs text-white/40 uppercase tracking-widest font-bold">
+                      Full transmission archive
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 bg-zinc-900/30 border-b border-white/5 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 text-white/60 text-xs font-bold uppercase tracking-wider">
+                  <Filter size={14} />
+                  <span>Filter by Event:</span>
+                </div>
+                <select
+                  value={historyFilter}
+                  onChange={(e) => setHistoryFilter(e.target.value)}
+                  className="bg-[#0A0A0A] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500/50 flex-1 min-w-[240px]"
+                >
+                  <option value="all">All Broadcasts</option>
+                  <option value="general">General</option>
+                  {events.map((event) => (
+                    <option key={event._id} value={event._id}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                {filteredHistory.length > 0 ? (
+                  filteredHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-5 bg-white/5 border border-white/5 rounded-2xl hover:border-white/10 transition-all"
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">
+                              {item.event || "General"}
+                            </span>
+                            <h4 className="text-white font-bold text-lg">
+                              {item.subject}
+                            </h4>
+                            <p className="text-sm text-white/70 mt-2 whitespace-pre-wrap">
+                              {item.message}
+                            </p>
+                          </div>
+                          <div className="text-right text-[10px] font-bold uppercase tracking-widest text-white/30 min-w-[120px]">
+                            {formatBroadcastDate(item.created_at) || item.date}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-widest">
+                          <span className="px-2.5 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            Type: {item.type || "info"}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            Priority: {item.priority || "low"}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            Category: {item.category || "campus"}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            Audience: {item.target_role || "all"}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            Status: {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock size={28} className="text-white/20" />
+                    </div>
+                    <p className="text-white/40 font-medium">
+                      No broadcasts found for this selection.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

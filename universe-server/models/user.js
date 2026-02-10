@@ -37,14 +37,6 @@ const userSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
-  ic_number: {
-    type: String,
-    sparse: true,
-    unique: true,
-    trim: true,
-    minlength: 10, // More flexible - allow 10-15 characters
-    maxlength: 15,
-  },
   gender: {
     type: String,
     enum: ["Male", "Female"],

@@ -2,6 +2,19 @@ import React from "react";
 import { Star, MessageSquare } from "lucide-react";
 
 const ReviewFeed = ({ reviews }) => {
+  if (!reviews || reviews.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-white/40">
+        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+          <MessageSquare size={20} className="text-white/30" />
+        </div>
+        <p className="text-xs uppercase tracking-widest font-bold">
+          No Recent Feedback
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
       {reviews.map((review) => (

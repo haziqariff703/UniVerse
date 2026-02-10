@@ -220,6 +220,8 @@ const Profile = () => {
               },
               dna: userData.dna || [],
               assets: userData.assets || [],
+              gender: userData.gender || "",
+              date_of_birth: userData.date_of_birth || "",
 
               // XP/Merit: Use backend current_merit
               xp: userData.current_merit || 0,
@@ -269,6 +271,8 @@ const Profile = () => {
           bio: updatedData.bio,
           links: updatedData.links,
           dna: updatedData.dna,
+          gender: updatedData.gender,
+          date_of_birth: updatedData.date_of_birth,
           // avatar/cover/assets are handled separately in modal via upload endpoint
         }),
       });

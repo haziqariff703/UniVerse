@@ -311,13 +311,20 @@ exports.getOrganizerBroadcasts = async (req, res) => {
       broadcasts: broadcasts.map(b => ({
         id: b._id,
         subject: b.title,
-        event: b.target_event_id?.title || "Unknown Event",
+        event: b.target_event_id?.title || "General",
+        event_id: b.target_event_id?._id ? b.target_event_id._id.toString() : null,
         message: b.message,
         date: new Date(b.created_at).toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "short",
           year: "numeric",
         }),
+        created_at: b.created_at,
+        type: b.type,
+        priority: b.priority,
+        category: b.category,
+        target_role: b.target_role,
+        is_public: b.is_public,
         status: "delivered", // Static for now as we don't track per-recipient delivery
         sent_to: "N/A" // We could count recipients if needed
       }))

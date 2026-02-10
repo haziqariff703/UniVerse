@@ -294,10 +294,10 @@ const UsersList = ({ onBack }) => {
           </Button>
 
           <Button
-            className="gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 h-10 shadow-lg shadow-violet-500/10 px-6"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-all shadow-lg shadow-violet-500/20 h-10"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus size={18} />
             Add User
           </Button>
         </div>
@@ -692,15 +692,6 @@ const UsersList = ({ onBack }) => {
                             Student ID
                           </p>
                           <p>{selectedUser.student_id || "Not registered"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-starlight/80">
-                        <CreditCard size={16} className="text-cyan-400" />
-                        <div>
-                          <p className="text-[10px] text-starlight/40 uppercase">
-                            IC Number
-                          </p>
-                          <p>{selectedUser.ic_number || "Not provided"}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-starlight/80">

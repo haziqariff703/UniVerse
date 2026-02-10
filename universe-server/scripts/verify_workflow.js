@@ -41,8 +41,7 @@ async function run() {
       email: adminEmail,
       password: hashedPass,
       role: 'admin',
-      student_id: 'ADMIN99909',
-      ic_number: '990101019999'
+      student_id: 'ADMIN99909'
     });
     await admin.save();
     
@@ -64,8 +63,7 @@ async function run() {
       password: hashedPass,
       role: 'student',
       organizerRequest: true,
-      student_id: 'STUDENT999',
-      ic_number: '990101018888' 
+      student_id: 'STUDENT999'
     });
     await user.save();
     userId = user._id.toString();

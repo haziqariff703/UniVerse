@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-11]
+
+- **Removed**: Dead `temp_email` field from `eventCrew.js` schema — never read or written by any controller or frontend component.
+- **Removed**: `ic_number` field from `user.js` schema and all references across `authController.js`, `UsersList.jsx`, and `verify_workflow.js` for PDPA compliance — sensitive identity data should not be stored without encryption and consent mechanisms.
+- **Added**: `gender` and `date_of_birth` fields wired end-to-end — editable in Edit Profile modal (Identity tab), persisted via `userController.js`, and visible in Admin user details.
+- **Added**: Admin Dashboard — Upcoming Events strip (next 7 days with venue + registration progress), Quick Actions panel (pending events/organizers/speakers), User Demographics donut chart (gender distribution).
+- **Changed**: Admin Dashboard — Trending Events capped to top 5, removed Export Report button from Daily Traffic card.
+
 ## [2026-02-10]
 
 - **Fixed**: Resolved a critical Node.js crash in `universe-server` caused by a missing `@supabase/supabase-js` dependency.

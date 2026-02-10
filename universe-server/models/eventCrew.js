@@ -11,9 +11,8 @@ const eventCrewSchema = new mongoose.Schema({
     ref: 'User',
     required: false // Can be null if inviting by email/name before they join, but for now let's assume valid users
   },
-  // If inviting a non-user, we might store name/email temporarily
+  // If inviting a non-user, we might store name temporarily
   temp_name: String,
-  temp_email: String,
 
   role: {
     type: String,

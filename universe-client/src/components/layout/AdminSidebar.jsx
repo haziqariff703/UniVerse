@@ -8,7 +8,6 @@ import {
   MapPin,
   Settings,
   LogOut,
-  HelpCircle,
   ChevronRight,
   ChevronLeft,
   Rocket,
@@ -287,13 +286,6 @@ const AdminSidebar = ({ collapsed, handleLogout }) => {
           label="Settings"
           active={currentPath.includes("/admin/settings")}
           onClick={() => navigate("/admin/settings")}
-          collapsed={collapsed}
-        />
-        <SidebarItem
-          icon={HelpCircle}
-          label="Help & Support"
-          active={false}
-          onClick={() => {}}
           collapsed={collapsed}
         />
       </div>

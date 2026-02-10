@@ -10,6 +10,8 @@ import {
   Globe,
   Hash,
   FileText,
+  Calendar,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -300,6 +302,64 @@ const EditProfileModal = ({
                       textarea
                       icon={FileText}
                     />
+                  </div>
+
+                  {/* Personal Details */}
+                  <div className="space-y-4 pt-4 border-t border-white/5">
+                    <h3 className="text-xs font-mono uppercase text-white/40">
+                      Personal Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Gender */}
+                      <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+                          <UserCircle className="w-3 h-3 text-fuchsia-500" />
+                          Gender
+                        </label>
+                        <select
+                          value={formData.gender || ""}
+                          onChange={(e) =>
+                            handleChange("gender", e.target.value || undefined)
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-fuchsia-500/50 transition-colors appearance-none cursor-pointer"
+                        >
+                          <option value="" className="bg-[#0a0a0f]">
+                            Select gender
+                          </option>
+                          <option value="Male" className="bg-[#0a0a0f]">
+                            Male
+                          </option>
+                          <option value="Female" className="bg-[#0a0a0f]">
+                            Female
+                          </option>
+                        </select>
+                      </div>
+
+                      {/* Date of Birth */}
+                      <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+                          <Calendar className="w-3 h-3 text-fuchsia-500" />
+                          Date of Birth
+                        </label>
+                        <input
+                          type="date"
+                          value={
+                            formData.date_of_birth
+                              ? new Date(formData.date_of_birth)
+                                  .toISOString()
+                                  .split("T")[0]
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleChange(
+                              "date_of_birth",
+                              e.target.value || undefined,
+                            )
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-fuchsia-500/50 transition-colors [color-scheme:dark]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Social Links */}

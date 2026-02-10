@@ -28,6 +28,7 @@ const NotificationsManager = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   // New Notification Form State
   const [title, setTitle] = useState("");
@@ -43,6 +44,10 @@ const NotificationsManager = () => {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    setShowAllLogs(false);
+  }, [notifications]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -167,16 +172,16 @@ const NotificationsManager = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column: Broadcast Form */}
         <div className="lg:col-span-1">
-          <div className="glass-panel p-6 rounded-2xl border border-violet-500/20 shadow-lg shadow-violet-500/5">
+          <div className="glass-panel p-8 rounded-2xl border border-violet-500/20 shadow-lg shadow-violet-500/5">
             <h2 className="text-lg font-bold text-starlight mb-4 flex items-center gap-2">
               <Send size={18} className="text-violet-400" />
               Compose Broadcast
             </h2>
 
-            <form onSubmit={handleBroadcast} className="space-y-4">
+            <form onSubmit={handleBroadcast} className="space-y-6">
               <div className="space-y-2">
                 <Label>Broadcast Title</Label>
                 <Input
@@ -350,15 +355,18 @@ const NotificationsManager = () => {
         </div>
 
         {/* Right Column: History List */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-starlight flex items-center gap-2">
               <Clock size={18} className="text-starlight/40" />
               Recent Logs
             </h2>
-            <span className="text-xs text-starlight/40">
-              Last 50 Logged Notifications
-            </span>
+            {notifications.length > 0 && (
+              <span className="text-xs text-starlight/40">
+                Last log:{" "}
+                {new Date(notifications[0].created_at).toLocaleString()}
+              </span>
+            )}
           </div>
 
           <div className="glass-panel rounded-2xl overflow-hidden min-h-[400px]">
@@ -372,7 +380,8 @@ const NotificationsManager = () => {
               </div>
             ) : (
               <div className="divide-y divide-white/5">
-                {notifications.map((notif) => (
+                {(showAllLogs ? notifications : notifications.slice(0, 10)).map(
+                  (notif) => (
                   <div
                     key={notif._id}
                     className="p-4 hover:bg-white/[0.02] transition-colors flex items-start gap-4"
@@ -436,7 +445,19 @@ const NotificationsManager = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                ))}
+                ),
+                )}
+              </div>
+            )}
+
+            {!showAllLogs && notifications.length > 10 && (
+              <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+                <button
+                  onClick={() => setShowAllLogs(true)}
+                  className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-starlight/70 text-[10px] font-bold uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
+                >
+                  Load More Logs
+                </button>
               </div>
             )}
           </div>

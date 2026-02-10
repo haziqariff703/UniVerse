@@ -670,10 +670,11 @@ exports.getOrganizerReviews = async (req, res) => {
 
     // Get all accessible events (owned, crew, or community leader)
     let eventIds = await getAccessibleEventIds(organizerId);
+    const eventIdStrings = eventIds.map((id) => id.toString());
 
     // If a specific event_id is requested, filter to just that one (if accessible)
     if (event_id) {
-      if (eventIds.includes(event_id.toString())) {
+      if (eventIdStrings.includes(event_id.toString())) {
         eventIds = [event_id];
       } else {
         return res.status(403).json({ message: "Unauthorized" });

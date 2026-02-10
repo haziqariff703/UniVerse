@@ -16,20 +16,17 @@ exports.register = async (req, res) => {
       password, 
       role, 
       preferences,
-      ic_number,
       gender,
       date_of_birth
     } = req.body;
 
     // Sanitize unique fields: convert empty strings to undefined
     const sanitizedStudentId = student_id === "" ? undefined : student_id;
-    const sanitizedIcNumber = ic_number === "" ? undefined : ic_number;
 
     // Check if user already exists
     // Build query dynamically based on what's provided
     const orConditions = [{ email }];
     if (sanitizedStudentId) orConditions.push({ student_id: sanitizedStudentId });
-    if (sanitizedIcNumber) orConditions.push({ ic_number: sanitizedIcNumber });
 
     const existingUser = await User.findOne({ 
       $or: orConditions
@@ -37,7 +34,7 @@ exports.register = async (req, res) => {
     
     if (existingUser) {
       return res.status(400).json({ 
-        message: 'User with this email, student ID, or IC number already exists.' 
+        message: 'User with this email or student ID already exists.' 
       });
     }
 
@@ -59,7 +56,6 @@ exports.register = async (req, res) => {
       roles: ['student'], // Always start as student
       organizerRequest: role === 'organizer', // Capture intent
       preferences: preferences || [],
-      ic_number: sanitizedIcNumber,
       gender,
       date_of_birth
     });
@@ -84,7 +80,6 @@ exports.register = async (req, res) => {
         role: user.role,
         roles: user.roles,
         preferences: user.preferences,
-        ic_number: user.ic_number,
         gender: user.gender
       }
     });
