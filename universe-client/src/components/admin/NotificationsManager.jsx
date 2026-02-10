@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
@@ -29,13 +30,31 @@ const NotificationsManager = () => {
   const [sending, setSending] = useState(false);
 
   // New Notification Form State
+  const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [type, setType] = useState("info"); // info, alert, success
   const [targetRole, setTargetRole] = useState("all"); // all, student, organizer
+  const [category, setCategory] = useState("campus");
+  const [priority, setPriority] = useState("low");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -58,20 +77,35 @@ const NotificationsManager = () => {
 
   const handleBroadcast = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !title.trim()) {
+      toast.error("Title and Message are required");
+      return;
+    }
 
     try {
       setSending(true);
       const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("message", message);
+      formData.append("type", type);
+      formData.append("target_role", targetRole);
+      formData.append("title", title);
+      formData.append("category", category);
+      formData.append("priority", priority);
+      formData.append("is_public", true);
+
+      if (imageFile) {
+        formData.append("poster", imageFile);
+      }
+
       const response = await fetch(
         "http://localhost:5000/api/admin/notifications",
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ message, type, target_role: targetRole }),
+          body: formData,
         },
       );
 
@@ -80,7 +114,11 @@ const NotificationsManager = () => {
       const data = await response.json();
       toast.success(`Success: ${data.message}`);
 
+      setTitle("");
       setMessage("");
+      setPriority("low");
+      setImageFile(null);
+      setImagePreview(null);
       fetchNotifications();
     } catch (error) {
       console.error("Error sending notification:", error);
@@ -140,77 +178,170 @@ const NotificationsManager = () => {
 
             <form onSubmit={handleBroadcast} className="space-y-4">
               <div className="space-y-2">
-                <Label>Message Content</Label>
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="System maintenance scheduled for..."
-                  className="bg-black/20 border-white/10 min-h-[120px]"
+                <Label>Broadcast Title</Label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Campus Renovation Update"
+                  className="bg-black/20 border-white/10"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Notification Type</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    {
-                      id: "info",
-                      label: "Info",
-                      color: "bg-blue-500/10 border-blue-500/20 text-blue-400",
-                    },
-                    {
-                      id: "alert",
-                      label: "Alert",
-                      color:
-                        "bg-amber-500/10 border-amber-500/20 text-amber-400",
-                    },
-                    {
-                      id: "success",
-                      label: "Success",
-                      color:
-                        "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
-                    },
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setType(option.id)}
-                      className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
-                        type === option.id
-                          ? option.color
-                          : "bg-white/5 border-transparent text-starlight/40 hover:bg-white/10"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                <Label>Message Content</Label>
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Detailed announcement content..."
+                  className="bg-black/20 border-white/10 min-h-[100px]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50"
+                  >
+                    <option value="campus">Campus</option>
+                    <option value="club">Club</option>
+                    <option value="official">Official</option>
+                    <option value="event">Event</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="transport">Transport</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <div className="flex gap-1">
+                    {["low", "medium", "high"].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPriority(p)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase border transition-all ${
+                          priority === p
+                            ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
+                            : "bg-white/5 border-transparent text-starlight/40"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Target Audience</Label>
-                <select
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50"
-                >
-                  <option value="all">All Users</option>
-                  <option value="student">Students Only</option>
-                  <option value="organizer">Organizers Only</option>
-                </select>
+                <Label>Campus Hub Banner (Optional)</Label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  className="hidden"
+                  accept="image/*"
+                />
+                <div className="flex gap-4 items-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-black/20 border-white/10 text-starlight h-12 hover:bg-white/10 flex-1"
+                  >
+                    Choose Poster File
+                  </Button>
+                  {imagePreview && (
+                    <div className="relative w-24 h-12 rounded-xl overflow-hidden border border-white/10 group">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                        className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl-lg text-white/60 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-starlight/20 italic">
+                  High-priority news with posters will appear in the Hero
+                  Slider.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Notification Type</Label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      {
+                        id: "info",
+                        color:
+                          "bg-blue-500/10 border-blue-500/20 text-blue-400",
+                      },
+                      {
+                        id: "alert",
+                        color:
+                          "bg-amber-500/10 border-amber-500/20 text-amber-400",
+                      },
+                      {
+                        id: "success",
+                        color:
+                          "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+                      },
+                    ].map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setType(option.id)}
+                        className={`py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                          type === option.id
+                            ? option.color
+                            : "bg-white/5 border-transparent text-starlight/40 hover:bg-white/10"
+                        }`}
+                      >
+                        {option.id.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Target Audience</Label>
+                  <select
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-starlight focus:outline-none focus:border-violet-500/50"
+                  >
+                    <option value="all">All Users</option>
+                    <option value="student">Students Only</option>
+                    <option value="organizer">Organizers Only</option>
+                  </select>
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={sending}
-                className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-all shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-all shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
               >
                 {sending ? (
                   "Sending..."
                 ) : (
                   <>
-                    <Send size={16} /> Broadcast Message
+                    <Send size={16} /> Broadcast Signal
                   </>
                 )}
               </button>

@@ -2,6 +2,11 @@
 
 ## [2026-02-09]
 
+- [2026-02-10]
+- **Changed**: Refined `Broadcast.jsx` and `NotificationsManager.jsx` to use **file uploads** for posters/banners instead of URLs.
+- **Added**: Integrated `multer` in notification routes and updated backend controllers to handle file storage.
+- **Changed**: Updated `News.jsx` to fetch from `/api/public/news` and support keyword filtering.
+
 - **Changed**: Migrated cloud storage provider from Cloudinary to **Supabase Storage**.
   - Implemented custom Multer storage engine for Supabase in `universe-server/utils/supabaseStorage.js`.
   - Configured Supabase client in `universe-server/config/supabase.js`.

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -29,13 +30,18 @@ const Broadcast = () => {
   const [targetEvent, setTargetEvent] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [intensity, setIntensity] = useState("pulse"); // pulse, frequency, nova
   const [sending, setSending] = useState(false);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState([]);
   const [targetAudience, setTargetAudience] = useState("attendees");
+  const [activeCategory, setActiveCategory] = useState("club");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchMyEvents();
     fetchHistory();
   }, []);
@@ -77,24 +83,53 @@ const Broadcast = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSend = async () => {
     try {
       setSending(true);
       const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("event_id", targetEvent);
+      formData.append("subject", subject);
+      formData.append("message", message);
+      const intensityMap = {
+        pulse: { type: "info", priority: "low" },
+        frequency: { type: "success", priority: "medium" },
+        nova: { type: "alert", priority: "high" },
+      };
+
+      formData.append("type", intensityMap[intensity].type);
+      formData.append("priority", intensityMap[intensity].priority);
+      formData.append("target_audience", targetAudience);
+      formData.append(
+        "category",
+        targetAudience === "students" ? activeCategory : "event",
+      );
+      formData.append("is_public", targetAudience === "students");
+
+      if (imageFile) {
+        formData.append("poster", imageFile);
+      }
+
       const response = await fetch(
         "http://localhost:5000/api/notifications/organizer",
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            event_id: targetEvent,
-            subject,
-            message,
-            target_audience: targetAudience,
-          }),
+          body: formData,
         },
       );
 
@@ -108,6 +143,9 @@ const Broadcast = () => {
 
       setSubject("");
       setMessage("");
+      setIntensity("pulse");
+      setImageFile(null);
+      setImagePreview(null);
       fetchHistory();
     } catch (err) {
       console.error(err);
@@ -223,17 +261,214 @@ const Broadcast = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
-                  Subject Line
-                </label>
+              <div className="space-y-6 pt-6 border-t border-white/5">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                        Transmission Intensity
+                      </label>
+                      <p className="text-[10px] text-white/20 ml-1 mt-0.5">
+                        Determines inbox impact & news hub escalation strength
+                      </p>
+                    </div>
+                  </div>
 
-                <Input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g. Important Update regarding tomorrow's schedule"
-                  className="bg-white/5 border-white/10 text-white h-12 focus-visible:ring-violet-400/50"
-                />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {[
+                      {
+                        id: "pulse",
+                        label: "Pulse",
+                        impact: "Subtle",
+                        desc: "Standard Inbox + Quick Signal",
+                        color: "text-blue-400",
+                        bg: "bg-blue-500/10",
+                        border: "border-blue-500/20",
+                      },
+                      {
+                        id: "frequency",
+                        label: "Frequency",
+                        impact: "Featured",
+                        desc: "Success Tone + Main Feed",
+                        color: "text-emerald-400",
+                        bg: "bg-emerald-500/10",
+                        border: "border-emerald-500/20",
+                      },
+                      {
+                        id: "nova",
+                        label: "Nova",
+                        impact: "Critical",
+                        desc: "Alert Tone + Hero Slider",
+                        color: "text-amber-400",
+                        bg: "bg-amber-500/10",
+                        border: "border-amber-500/20",
+                      },
+                    ].map((level) => (
+                      <button
+                        key={level.id}
+                        type="button"
+                        onClick={() => setIntensity(level.id)}
+                        className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden group ${
+                          intensity === level.id
+                            ? `${level.bg} ${level.border} scale-[1.02] shadow-2xl shadow-black`
+                            : "bg-white/5 border-transparent opacity-40 hover:opacity-100 hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-1 relative z-10">
+                          <span
+                            className={`text-[10px] font-clash font-bold uppercase tracking-widest ${level.color}`}
+                          >
+                            {level.label}
+                          </span>
+                          <span className="text-white text-xs font-bold">
+                            {level.impact} Level
+                          </span>
+                          <p className="text-[10px] text-white/40 leading-tight mt-1">
+                            {level.desc}
+                          </p>
+                        </div>
+                        {intensity === level.id && (
+                          <motion.div
+                            layoutId="active-intensity"
+                            className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Impact Matrix Table */}
+                  <div className="bg-black/40 rounded-2xl border border-white/5 overflow-hidden">
+                    <table className="w-full text-[10px] text-left">
+                      <thead>
+                        <tr className="bg-white/5 border-b border-white/5">
+                          <th className="px-4 py-2 font-bold text-white/40 uppercase tracking-tighter">
+                            Setting
+                          </th>
+                          <th className="px-4 py-2 font-bold text-white/40 uppercase tracking-tighter text-center">
+                            In-App Notification
+                          </th>
+                          <th className="px-4 py-2 font-bold text-white/40 uppercase tracking-tighter text-center">
+                            News Hub Visibility
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        <tr>
+                          <td className="px-4 py-2 text-white/60 font-medium">
+                            Style (Inbox)
+                          </td>
+                          <td className="px-4 py-2 text-center italic text-white/30">
+                            {intensity === "pulse"
+                              ? "Blue (Info)"
+                              : intensity === "frequency"
+                                ? "Emerald (Success)"
+                                : "Amber (Alert)"}
+                          </td>
+                          <td className="px-4 py-2 text-center text-white/20">
+                            —
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 text-white/60 font-medium">
+                            Priority (Hub)
+                          </td>
+                          <td className="px-4 py-2 text-center text-white/20">
+                            —
+                          </td>
+                          <td className="px-4 py-2 text-center italic text-white/30 capitalize">
+                            {intensity === "pulse"
+                              ? "Low (Quick)"
+                              : intensity === "frequency"
+                                ? "Medium (Feed)"
+                                : "High (Hero)"}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                    Subject Line
+                  </label>
+
+                  <Input
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Important Update regarding tomorrow's schedule"
+                    className="bg-white/5 border-white/10 text-white h-12 focus-visible:ring-violet-400/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                      Banner Poster (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      className="hidden"
+                      accept="image/*"
+                    />
+                    <div className="flex gap-4 items-start">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-white/5 border-white/10 text-white h-12 hover:bg-white/10"
+                      >
+                        Choose File
+                      </Button>
+                      {imagePreview && (
+                        <div className="relative w-24 h-12 rounded-lg overflow-hidden border border-white/20">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => {
+                              setImageFile(null);
+                              setImagePreview(null);
+                            }}
+                            className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl-lg text-white/60 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {targetAudience === "students" && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">
+                        News Category
+                      </label>
+                      <Select
+                        value={activeCategory}
+                        onValueChange={setActiveCategory}
+                      >
+                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12">
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#0f0f0f] border-white/10 text-white">
+                          <SelectItem value="club">Club News</SelectItem>
+                          <SelectItem value="official">
+                            Official Announcement
+                          </SelectItem>
+                          <SelectItem value="lifestyle">Lifestyle</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -244,7 +479,7 @@ const Broadcast = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Write your message here..."
-                  className="bg-white/5 border-white/10 text-white min-h-[200px] focus-visible:ring-violet-400/50 leading-relaxed"
+                  className="bg-white/5 border-white/10 text-white min-h-[180px] focus-visible:ring-violet-400/50 leading-relaxed"
                 />
               </div>
 

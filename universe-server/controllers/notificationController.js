@@ -73,8 +73,22 @@ exports.markAllAsRead = async (req, res) => {
  */
 exports.createAdminBroadcast = async (req, res) => {
   try {
-    const { message, type, target_role } = req.body;
-    const title = type === "alert" ? "Action Required" : type === "success" ? "Success Alert" : "System Information";
+    const { message, type, target_role, category, priority, is_public } = req.body;
+    let title = req.body.title;
+    
+    if (!title) {
+      title = type === "alert" ? "Action Required" : type === "success" ? "Success Alert" : "System Information";
+    }
+
+    let image_url = null;
+    if (req.file) {
+      const isSupabaseConfigured = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (isSupabaseConfigured) {
+        image_url = req.file.path; // Supabase URL
+      } else {
+        image_url = `/public/uploads/assets/${req.file.filename}`;
+      }
+    }
 
     // 1. Create Broadcast Log
     const broadcast = new BroadcastLog({
@@ -83,6 +97,10 @@ exports.createAdminBroadcast = async (req, res) => {
       message,
       title,
       type: type || "info",
+      category: category || "campus",
+      priority: priority || "low",
+      image_url,
+      is_public: is_public === "false" ? false : true,
     });
     await broadcast.save();
 
@@ -111,6 +129,23 @@ exports.createAdminBroadcast = async (req, res) => {
   } catch (error) {
     console.error("Admin broadcast error:", error);
     res.status(500).json({ message: "Failed to send broadcast" });
+  }
+};
+
+/**
+ * @desc    Get public news broadcasts
+ * @route   GET /api/public/news
+ * @access  Public
+ */
+exports.getPublicNews = async (req, res) => {
+  try {
+    const news = await BroadcastLog.find({ is_public: true })
+      .sort({ created_at: -1 });
+
+    res.json({ news });
+  } catch (error) {
+    console.error("Get public news error:", error);
+    res.status(500).json({ message: "Failed to fetch news" });
   }
 };
 
@@ -158,7 +193,7 @@ exports.deleteBroadcast = async (req, res) => {
  */
 exports.createOrganizerBroadcast = async (req, res) => {
   try {
-    const { event_id, subject, message, target_audience } = req.body;
+    const { event_id, subject, message, target_audience, category, priority, is_public, type } = req.body;
 
     if (!target_audience) {
       return res.status(400).json({ message: "Target audience is required" });
@@ -205,26 +240,44 @@ exports.createOrganizerBroadcast = async (req, res) => {
     }
 
     if (recipientIds.length === 0) {
-      return res.status(400).json({ message: "No recipients found for the selected audience" });
+      return res.status(200).json({ 
+        message: "Broadcast saved in logs, but no active recipients were found for the selected audience.",
+        warning: true
+      });
     }
 
-    // 2. Log the broadcast
+    // 2. Determine image URL if file uploaded
+    let image_url = null;
+    if (req.file) {
+      const isSupabaseConfigured = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (isSupabaseConfigured) {
+        image_url = req.file.path; // Supabase URL
+      } else {
+        image_url = `/public/uploads/assets/${req.file.filename}`;
+      }
+    }
+
+    // 3. Log the broadcast
     const broadcast = new BroadcastLog({
       sender_id: req.user.id,
       target_event_id: relatedEvent ? relatedEvent._id : null,
       target_role: target_audience === 'students' ? 'student' : 'all',
       title: subject,
       message,
-      type: "info",
+      type: type || "info",
+      category: category || (target_audience === 'students' ? 'club' : 'event'),
+      priority: priority || "low",
+      image_url: image_url || req.body.image_url, // Support both file and legacy URL
+      is_public: is_public === "false" ? false : is_public === "true" ? true : target_audience === 'students',
     });
     await broadcast.save();
 
-    // 3. Fan-out notifications
+    // 4. Fan-out notifications
     const notifications = recipientIds.map(uid => ({
       recipient_id: uid,
       title: subject,
       message,
-      type: "info",
+      type: type || "info",
       related_event_id: relatedEvent ? relatedEvent._id : null
     }));
 
@@ -232,6 +285,7 @@ exports.createOrganizerBroadcast = async (req, res) => {
 
     res.status(201).json({ 
       message: `Broadcast message sent to ${recipientIds.length} members`,
+      recipientCount: recipientIds.length,
       broadcast 
     });
   } catch (error) {

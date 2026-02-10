@@ -50,7 +50,7 @@ router.delete('/reviews/:id', auth, authorize('admin'), adminController.deleteRe
 // Notification Management
 const notificationController = require('../controllers/notificationController');
 router.get('/notifications', auth, authorize('admin'), notificationController.getAdminBroadcasts);
-router.post('/notifications', auth, authorize('admin'), notificationController.createAdminBroadcast);
+router.post('/notifications', auth, authorize('admin'), upload.single('poster'), notificationController.createAdminBroadcast);
 router.delete('/notifications/:id', auth, authorize('admin'), notificationController.deleteBroadcast);
 
 

@@ -364,4 +364,21 @@ The standardized filter container follows a strict vertical hierarchy:
 
 ---
 
+## 31. Campus News Hub & Real-time Signals (Operational Awareness)
+
+The Campus News Hub transforms the platform's internal broadcast logs into a public-facing awareness center.
+
+- **Kinetic Data Mapping**: The `News.jsx` component implements a "Signal Transformer" pattern, converting raw `BroadcastLog` data into tiered UI elements:
+  - **High-Priority/Alerts**: Roasted to the Cinematic Hero Slider (requires `image_url`).
+  - **Standard Signals**: Routed to the Bento Grid Main Feed.
+  - **Quick Signals**: Routed to the right-side ticker.
+- **Dynamic Category Mapping**: Messages are categorized (Campus, Club, Official, Lifestyle) at the point of creation. The News Hub utilizes these tags for real-time client-side filtering and visual branding.
+- **Admin/Organizer Integration**: The broadcast interfaces were extended to allow curators to set `title`, `category`, `priority`, and `image_url` during composition, ensuring that news items are correctly "tagged" for the public hub.
+- **Unified File-Based Broadcasting**:
+  - **Transmission**: Broadcasts now use `multipart/form-data` to send posters directly from the UI.
+  - **Resolution**: Backend routes (`notificationRoutes.js`, `adminRoutes.js`) use `multer` to handle `poster` files, persisting them to Supabase Storage or local disk.
+  - **Fallback**: The system automatically generates a standard "Information" signal if no poster is provided.
+
+---
+
 _Created by Antigravity_

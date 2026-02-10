@@ -29,6 +29,24 @@ const broadcastLogSchema = new mongoose.Schema({
     enum: ["info", "alert", "success"],
     default: "info",
   },
+  category: {
+    type: String,
+    enum: ["campus", "club", "official", "event", "lifestyle", "transport"],
+    default: "campus",
+  },
+  priority: {
+    type: String,
+    enum: ["low", "medium", "high"],
+    default: "low",
+  },
+  image_url: {
+    type: String,
+    default: null,
+  },
+  is_public: {
+    type: Boolean,
+    default: true,
+  },
   created_at: {
     type: Date,
     default: Date.now,
