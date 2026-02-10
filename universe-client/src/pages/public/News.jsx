@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // eslint-disable-line no-unused-vars
 import { cn } from "@/lib/utils";
-import {
-  ArrowRight,
-  Zap,
-  Clock,
-  CalendarDays,
-  X,
-} from "lucide-react";
+import { ArrowRight, Zap, Clock, CalendarDays, X } from "lucide-react";
 import SplitText from "@/components/ui/SplitText";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -100,12 +94,11 @@ const News = () => {
 
   useEffect(() => {
     setShowAllFeed(false);
+    setCurrentSlide(0);
   }, [activeCategory, searchQuery, broadcasts]);
 
-  const normalize = (value) =>
-    (value ?? "").toString().trim().toLowerCase();
-  const isHeroSignal = (broadcast) =>
-    normalize(broadcast?.priority) === "high";
+  const normalize = (value) => (value ?? "").toString().trim().toLowerCase();
+  const isHeroSignal = (broadcast) => normalize(broadcast?.priority) === "high";
 
   // UI Transformers
   const heroSlides = filteredBroadcasts
@@ -141,27 +134,26 @@ const News = () => {
           },
         ];
 
-  const mainFeed = filteredBroadcasts
-    .map((b) => ({
-      id: b._id,
-      type: "feature",
-      title: b.title,
-      description: b.message,
-      image:
-        b.image_url ||
-        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1",
-      category: b.category?.toUpperCase() || "GENERAL",
-      signalTime:
-        new Date(b.created_at).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }) +
-        " | " +
-        new Date(b.created_at).toLocaleDateString([], {
-          day: "2-digit",
-          month: "short",
-        }),
-    }));
+  const mainFeed = filteredBroadcasts.map((b) => ({
+    id: b._id,
+    type: "feature",
+    title: b.title,
+    description: b.message,
+    image:
+      b.image_url ||
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1",
+    category: b.category?.toUpperCase() || "GENERAL",
+    signalTime:
+      new Date(b.created_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) +
+      " | " +
+      new Date(b.created_at).toLocaleDateString([], {
+        day: "2-digit",
+        month: "short",
+      }),
+  }));
 
   const quickUpdates = filteredBroadcasts.slice(0, 5).map((b) => ({
     id: b._id,
@@ -319,9 +311,12 @@ const News = () => {
               className="absolute inset-0"
             >
               <img
-                src={finalHeroSlides[currentSlide].image}
+                src={
+                  finalHeroSlides[currentSlide]?.image ||
+                  finalHeroSlides[0].image
+                }
                 className="w-full h-full object-cover"
-                alt={finalHeroSlides[currentSlide].title}
+                alt={finalHeroSlides[currentSlide]?.title || "News Highlight"}
               />
               {/* Refined Gradient: Lighter bottom, focused readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-80" />
@@ -340,15 +335,15 @@ const News = () => {
               {/* Soft Glass Backdrop for Text */}
               <div className="inline-block p-6 md:p-8 rounded-[2rem] bg-black/20 backdrop-blur-md border border-white/5">
                 <span className="inline-block px-3 py-1 mb-4 rounded bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-md">
-                  {finalHeroSlides[currentSlide].urgentTag}
+                  {finalHeroSlides[currentSlide]?.urgentTag}
                 </span>
 
                 <h2 className="text-4xl md:text-6xl font-clash font-extrabold text-white mb-4 leading-[1.1] tracking-tight drop-shadow-2xl">
-                  {finalHeroSlides[currentSlide].title}
+                  {finalHeroSlides[currentSlide]?.title}
                 </h2>
 
                 <p className="text-white/90 text-lg md:text-xl max-w-xl font-sans leading-relaxed text-balance drop-shadow-md">
-                  {finalHeroSlides[currentSlide].subtitle}
+                  {finalHeroSlides[currentSlide]?.subtitle}
                 </p>
                 <button
                   onClick={() => setSelectedNews(finalHeroSlides[currentSlide])}

@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-02-10]
+
+- **Fixed**: Resolved a critical Node.js crash in `universe-server` caused by a missing `@supabase/supabase-js` dependency.
+- **Fixed**: Resolved a `TypeError` crash in `News.jsx` caused by an out-of-bounds array access in the Hero Slider when filtering signals.
+
 ## [2026-02-09]
 
 - [2026-02-10]
