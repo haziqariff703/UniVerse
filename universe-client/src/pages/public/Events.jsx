@@ -47,6 +47,7 @@ const mapEventToCardProps = (event) => ({
 const Events = () => {
   const [view, setView] = useState("upcoming");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCommunity, setSelectedCommunity] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -55,6 +56,7 @@ const Events = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [pastEvents, setPastEvents] = useState([]);
   const [categories, setCategories] = useState(["All"]);
+  const [communities, setCommunities] = useState([]);
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewEvent, setReviewEvent] = useState(null);
@@ -76,7 +78,7 @@ const Events = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const [featRes, upRes, pastRes, registrationsRes, catRes] =
+      const [featRes, upRes, pastRes, registrationsRes, catRes, commRes] =
         await Promise.all([
           fetch(`/api/events?is_featured=true&upcoming=true`),
           fetch(`/api/events?upcoming=true`),
@@ -87,18 +89,29 @@ const Events = () => {
               })
             : Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
           fetch(`/api/categories`),
+          fetch(`/api/communities`),
         ]);
 
-      const [feat, up, past, regs, cats] = await Promise.all([
+      const [feat, up, past, regs, cats, comms] = await Promise.all([
         featRes.json(),
         upRes.json(),
         pastRes.json(),
         registrationsRes.ok ? registrationsRes.json() : Promise.resolve([]),
         catRes.ok ? catRes.json() : Promise.resolve([]),
+        commRes.ok ? commRes.json() : Promise.resolve([]),
       ]);
 
       if (Array.isArray(cats)) {
         setCategories(["All", ...cats.map((c) => c.name)]);
+      }
+
+      if (Array.isArray(comms)) {
+        setCommunities(
+          comms.map((c) => ({
+            id: String(c._id),
+            name: c.name,
+          })),
+        );
       }
 
       const registeredEventIds = new Set(
@@ -122,6 +135,9 @@ const Events = () => {
         ...mapEventToCardProps(event),
         isRegistered: registeredEventIds.has(event._id),
         review: reviewMap[event._id] || null, // Link review data
+        communityId: event.community_id
+          ? String(event.community_id?._id || event.community_id)
+          : null,
       });
 
       setFeaturedEvents(Array.isArray(feat) ? feat.map(mapWithReg) : []);
@@ -168,7 +184,9 @@ const Events = () => {
         e.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCat =
       selectedCategory === "All" || e.category === selectedCategory;
-    return matchesSearch && matchesCat;
+    const matchesCommunity =
+      selectedCommunity === "All" || e.communityId === selectedCommunity;
+    return matchesSearch && matchesCat && matchesCommunity;
   });
 
   const handleReview = (event) => {
@@ -287,16 +305,38 @@ const Events = () => {
             onSubmit={(e) => e.preventDefault()}
           />
         </div>
-        <div className="flex flex-wrap gap-2 justify-center md:justify-end">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setSelectedCategory(c)}
-              className={`px-4 py-2 rounded-full text-sm font-bold font-clash border transition-all ${selectedCategory === c ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "bg-slate-900/50 text-slate-400 border-slate-700/50 hover:border-slate-500"}`}
-            >
-              {c}
-            </button>
-          ))}
+        <div className="flex flex-col gap-3 items-center md:items-end">
+          <div className="flex flex-wrap gap-2 justify-center md:justify-end">
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCategory(c)}
+                className={`px-4 py-2 rounded-full text-sm font-bold font-clash border transition-all ${selectedCategory === c ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "bg-slate-900/50 text-slate-400 border-slate-700/50 hover:border-slate-500"}`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 justify-center md:justify-end">
+            <div className="relative">
+              <select
+                value={selectedCommunity}
+                onChange={(e) => setSelectedCommunity(e.target.value)}
+                className="appearance-none bg-slate-900/50 border border-slate-700/50 hover:border-slate-500 text-slate-200 rounded-full pl-4 pr-10 py-2 text-sm font-bold font-clash transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+              >
+                <option value="All">All Communities</option>
+                {communities.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <Filter
+                size={14}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+            </div>
+          </div>
         </div>
       </div>
 

@@ -36,6 +36,7 @@ const Communities = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClub, setSelectedClub] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showJoinedOnly, setShowJoinedOnly] = useState(false);
   const [communities, setCommunities] = useState([]);
   const [joinedCommunities, setJoinedCommunities] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -206,7 +207,7 @@ const Communities = () => {
 
   // Segment Data
   const myCommunities = useMemo(() => {
-    if (!user || user.role !== "student") return [];
+    if (!user) return [];
 
     // Prioritize API data if available, otherwise fallback to local IDs
     if (joinedCommunities.length > 0) {
@@ -223,6 +224,14 @@ const Communities = () => {
     return [];
   }, [communities, joinedCommunities, user, filterClubs]);
 
+  const joinedIds = useMemo(() => {
+    const ids =
+      joinedCommunities.length > 0
+        ? joinedCommunities.map((c) => c.id)
+        : user?.memberClubIds || [];
+    return new Set(ids.map((id) => String(id)));
+  }, [joinedCommunities, user]);
+
   // Dynamic Tabs Generation
   const tabItems = useMemo(() => {
     const baseTabs = [
@@ -232,7 +241,7 @@ const Communities = () => {
         icon: CheckCircle,
         activeColor: "text-cyan-300",
         bg: "bg-cyan-500/20",
-        hidden: !user || user.role !== "student",
+        hidden: !user,
       },
       {
         value: "all",
@@ -312,6 +321,21 @@ const Communities = () => {
             />
           </div>
         </div>
+        {user && (
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setShowJoinedOnly((prev) => !prev)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold font-clash border transition-all ${
+                showJoinedOnly
+                  ? "bg-cyan-500/20 text-cyan-200 border-cyan-500/40 shadow-[0_0_15px_rgba(34,211,238,0.25)]"
+                  : "bg-slate-900/50 text-slate-400 border-slate-700/50 hover:border-slate-500"
+              }`}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Joined Only
+            </button>
+          </div>
+        )}
 
         {/* SECTION: My Communities (Priority Row) */}
         {myCommunities.length > 0 && (
@@ -378,6 +402,10 @@ const Communities = () => {
               content = filterClubs(
                 communities.filter((c) => c.category === tab.value),
               );
+            }
+
+            if (showJoinedOnly && user) {
+              content = content.filter((c) => joinedIds.has(String(c.id)));
             }
 
             return (

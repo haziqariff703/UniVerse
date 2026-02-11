@@ -339,6 +339,7 @@ exports.updateStatus = async (req, res) => {
 
     const isOwner = event.organizer_id.toString() === req.user.id;
     const isAdmin = req.user.roles.includes('admin');
+    const isRegistrant = registration.user_id.toString() === req.user.id;
 
     // Check if user is a crew member or leader who can update status
     let isAuthorized = isOwner || isAdmin;
@@ -355,7 +356,9 @@ exports.updateStatus = async (req, res) => {
        }
     }
 
-    if (!isAuthorized) {
+    const isSelfCancel = isRegistrant && status === 'Cancelled';
+
+    if (!isAuthorized && !isSelfCancel) {
       return res.status(403).json({ message: "Not authorized to update this registration." });
     }
 

@@ -290,6 +290,8 @@ const EventDetails = () => {
   if (!event) return null;
 
   const fillPercentage = currentFill;
+  const hasSpeakers =
+    Array.isArray(event.speaker_ids) && event.speaker_ids.length > 0;
 
   return (
     <div className="min-h-screen bg-black/20 text-white selection:bg-fuchsia-500/30 font-inter overflow-x-hidden">
@@ -460,7 +462,7 @@ const EventDetails = () => {
             )}
 
             {/* 3. FEATURED TALENT (DYNAMIC) */}
-            {event.speaker_ids && event.speaker_ids.length > 0 && (
+            {hasSpeakers ? (
               <section className="space-y-12">
                 <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">
                   Featured Talent
@@ -501,6 +503,18 @@ const EventDetails = () => {
                       </div>
                     </Link>
                   ))}
+                </div>
+              </section>
+            ) : (
+              <section className="space-y-6">
+                <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">
+                  Featured Talent
+                </h3>
+                <div className="flex items-center gap-3 p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10">
+                  <Info className="w-4 h-4 text-rose-400" />
+                  <p className="text-sm text-rose-200">
+                    no speaker assigned for this event
+                  </p>
                 </div>
               </section>
             )}

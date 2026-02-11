@@ -38,6 +38,24 @@ export default function StudentNavbar({
       .replace(",", " •");
   };
 
+  const roleLabel = (() => {
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
+    const primaryRole = user?.role;
+    const isAssociation =
+      primaryRole === "association" || roles.includes("association");
+    if (isAssociation) return "Association";
+
+    const isStudent = primaryRole === "student" || roles.includes("student");
+    const isOrganizer =
+      primaryRole === "organizer" || roles.includes("organizer");
+
+    if (isStudent && isOrganizer) return "Student/Organizer";
+    if (isStudent) return "Student";
+    if (isOrganizer) return "Organizer";
+
+    return "User";
+  })();
+
   // 2. Helper for Mobile Title
   const getPageTitle = () => {
     const pathSegments = location.pathname.split("/").filter(Boolean);
@@ -137,7 +155,7 @@ export default function StudentNavbar({
                     {user?.name || "Cadet"}
                   </p>
                   <p className="text-xs text-white/40 font-geist">
-                    Student • Online
+                    {roleLabel} • Online
                   </p>
                 </div>
 

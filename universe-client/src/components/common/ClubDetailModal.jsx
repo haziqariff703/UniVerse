@@ -27,9 +27,10 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
   const [applied, setApplied] = useState(false);
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [contactEmail, setContactEmail] = useState("");
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetchCommunityDetails = async () => {
       if (!club?.slug || !isOpen) return;
       setLoadingMembers(true);
       try {
@@ -37,6 +38,8 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members || []);
+          const ownerEmail = data?.community?.owner_id?.email;
+          if (ownerEmail) setContactEmail(ownerEmail);
         }
       } catch (err) {
         console.error("Fetch members error:", err);
@@ -45,7 +48,8 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
       }
     };
 
-    fetchMembers();
+    setContactEmail(club?.social?.email || "");
+    fetchCommunityDetails();
   }, [club?.slug, isOpen]);
 
   const handleExploreEvents = () => {
@@ -54,7 +58,9 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
   };
 
   const handleContactAdmin = () => {
-    window.location.href = `mailto:${club.social.email}?subject=Inquiry about ${club.title}`;
+    const email = contactEmail || club?.social?.email || "";
+    if (!email) return;
+    window.location.href = `mailto:${email}?subject=Inquiry about ${club.title}`;
   };
 
   const handleApply = async () => {
@@ -230,12 +236,12 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
                 </span>
               </a>
               <a
-                href={`mailto:${club.social.email}`}
+                href={`mailto:${contactEmail || club.social.email}`}
                 className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-cyan-500/10 border border-white/5 hover:border-cyan-500/30 transition-all group"
               >
                 <Mail className="w-5 h-5 text-cyan-500 group-hover:text-cyan-400" />
                 <span className="text-sm text-foreground group-hover:text-cyan-200">
-                  {club.social.email}
+                  {contactEmail || club.social.email}
                 </span>
               </a>
             </div>

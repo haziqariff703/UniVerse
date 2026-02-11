@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,16 +13,35 @@ import { cn } from "@/lib/utils";
 
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [signals, setSignals] = useState([]);
+  const [allSignals, setAllSignals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const lastNonEmptySignalsRef = useRef([]);
+  const emptyReloadAttemptedRef = useRef(false);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
 
-  const fetchNotifications = async () => {
+  useEffect(() => {
+    if (allSignals.length > 0) {
+      lastNonEmptySignalsRef.current = allSignals;
+      emptyReloadAttemptedRef.current = false;
+    }
+  }, [allSignals]);
+
+  useEffect(() => {
+    if (
+      activeTab === "all" &&
+      allSignals.length === 0 &&
+      lastNonEmptySignalsRef.current.length > 0
+    ) {
+      setAllSignals(lastNonEmptySignalsRef.current);
+    }
+  }, [activeTab, allSignals.length]);
+
+  const fetchNotifications = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:5000/api/notifications", {
         headers: { Authorization: `Bearer ${token}` },
@@ -53,6 +72,9 @@ const Notifications = () => {
           groupLabel = "Older";
         }
 
+        const isRead =
+          n.read === true || n.read === "true" || n.read === 1;
+
         return {
           id: n._id,
           title:
@@ -65,17 +87,30 @@ const Notifications = () => {
           type: n.type,
           time: timeLabel,
           group: groupLabel,
-          isRead: n.read,
+          isRead,
         };
       });
 
-      setSignals(processed);
+      setAllSignals(processed);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      activeTab === "all" &&
+      allSignals.length === 0 &&
+      !loading &&
+      !emptyReloadAttemptedRef.current &&
+      lastNonEmptySignalsRef.current.length === 0
+    ) {
+      emptyReloadAttemptedRef.current = true;
+      fetchNotifications({ silent: true });
+    }
+  }, [activeTab, allSignals.length, loading]);
 
   const markAllRead = async () => {
     try {
@@ -84,7 +119,7 @@ const Notifications = () => {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSignals(signals.map((s) => ({ ...s, isRead: true })));
+      setAllSignals((prev) => prev.map((s) => ({ ...s, isRead: true })));
     } catch (err) {
       console.error("Failed to mark all read:", err);
     }
@@ -97,8 +132,8 @@ const Notifications = () => {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSignals(
-        signals.map((s) => (s.id === id ? { ...s, isRead: true } : s)),
+      setAllSignals((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, isRead: true } : s)),
       );
     } catch (err) {
       console.error("Failed to mark read:", err);
@@ -131,16 +166,26 @@ const Notifications = () => {
     }
   };
 
-  const filteredSignals = signals.filter((s) => {
-    if (activeTab === "unread") return !s.isRead;
-    return true;
-  });
+  const unreadCount = useMemo(
+    () => allSignals.filter((s) => !s.isRead).length,
+    [allSignals],
+  );
 
-  const groupedSignals = {
-    Today: filteredSignals.filter((s) => s.group === "Today"),
-    Yesterday: filteredSignals.filter((s) => s.group === "Yesterday"),
-    Older: filteredSignals.filter((s) => s.group === "Older"),
-  };
+  const filteredSignals = useMemo(() => {
+    if (activeTab === "unread") {
+      return allSignals.filter((s) => !s.isRead);
+    }
+    return allSignals;
+  }, [activeTab, allSignals]);
+
+  const groupedSignals = useMemo(
+    () => ({
+      Today: filteredSignals.filter((s) => s.group === "Today"),
+      Yesterday: filteredSignals.filter((s) => s.group === "Yesterday"),
+      Older: filteredSignals.filter((s) => s.group === "Older"),
+    }),
+    [filteredSignals],
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -185,7 +230,12 @@ const Notifications = () => {
             {["all", "unread"].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  if (tab === "all" && !loading) {
+                    fetchNotifications({ silent: true });
+                  }
+                }}
                 className={cn(
                   "relative px-6 py-2.5 rounded-full text-xs font-bold font-mono uppercase tracking-widest transition-all",
                   activeTab === tab
@@ -194,7 +244,7 @@ const Notifications = () => {
                 )}
               >
                 {tab}
-                {tab === "unread" && signals.some((s) => !s.isRead) && (
+                {tab === "unread" && unreadCount > 0 && (
                   <span className="ml-2 w-2 h-2 inline-block rounded-full bg-fuchsia-500 animate-pulse shadow-[0_0_10px_#d946ef]" />
                 )}
               </button>

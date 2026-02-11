@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
 import { resolveUrl } from "@/utils/urlHelper";
+import { swalConfirm } from "@/lib/swalConfig";
 
 const API_BASE = "";
 
@@ -30,10 +31,46 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [cancelingId, setCancelingId] = useState(null);
 
   // Review System State
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewEvent, setReviewEvent] = useState(null);
+
+  const isCancelledStatus = (status) => {
+    if (!status) return false;
+    const normalized = String(status).toLowerCase();
+    return normalized === "cancelled" || normalized === "canceled";
+  };
+
+  const getEventEndDate = (booking) => {
+    const raw =
+      booking?.endDateRaw ||
+      booking?.rawDate ||
+      booking?.eventEndDate ||
+      booking?.eventDate;
+    if (!raw) return null;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const isEventEnded = (booking) => {
+    const endDate = getEventEndDate(booking);
+    if (!endDate) return false;
+    return endDate < new Date();
+  };
+
+  const shouldAutoCancel = (booking) => {
+    if (!booking) return false;
+    if (isCancelledStatus(booking.status)) return false;
+    if (booking.status === "CheckedIn") return false;
+    return isEventEnded(booking);
+  };
+
+  const isPassInvalid = (booking) => {
+    if (!booking) return false;
+    return isCancelledStatus(booking.status) || shouldAutoCancel(booking);
+  };
 
   const handleOpenReview = (booking) => {
     // Only allow reviewing checked-in events
@@ -108,6 +145,116 @@ const MyBookings = () => {
     }
   };
 
+  const handleCancelBooking = async (booking) => {
+    if (!booking?.id) return;
+
+    const result = await swalConfirm({
+      title: "Cancel booking?",
+      text: "This will void your entry pass and mark the booking as cancelled.",
+      confirmButtonText: "Yes, cancel it",
+      confirmButtonColor: "#ef4444",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Cancel Failed", {
+          description: "You must be logged in to cancel a booking.",
+        });
+        return;
+      }
+
+      setCancelingId(booking.id);
+      const res = await fetch(
+        `${API_BASE}/api/registrations/${booking.id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "Cancelled" }),
+        },
+      );
+
+      let data = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await res.json();
+      } else {
+        data = { message: await res.text() };
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to cancel booking");
+      }
+
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === booking.id ? { ...b, status: "Cancelled" } : b,
+        ),
+      );
+
+      if (selectedBooking?.id === booking.id) {
+        setSelectedBooking((prev) => ({ ...prev, status: "Cancelled" }));
+      }
+
+      toast.success("Booking Cancelled", {
+        description: "Your entry pass is now invalid.",
+      });
+    } catch (err) {
+      console.error("Cancel booking error:", err);
+      toast.error("Cancel Failed", {
+        description: err.message,
+      });
+    } finally {
+      setCancelingId(null);
+    }
+  };
+
+  const autoCancelExpiredBookings = async (currentBookings, token) => {
+    if (!token || !Array.isArray(currentBookings)) return currentBookings;
+
+    const toCancel = currentBookings.filter(shouldAutoCancel);
+    if (toCancel.length === 0) return currentBookings;
+
+    const results = await Promise.all(
+      toCancel.map(async (booking) => {
+        try {
+          const res = await fetch(
+            `${API_BASE}/api/registrations/${booking.id}/status`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ status: "Cancelled" }),
+            },
+          );
+          return res.ok;
+        } catch (err) {
+          console.error("Auto-cancel error:", err);
+          return false;
+        }
+      }),
+    );
+
+    const succeededIds = new Set(
+      toCancel.filter((_, i) => results[i]).map((b) => b.id),
+    );
+
+    if (succeededIds.size === 0) return currentBookings;
+
+    return currentBookings.map((booking) =>
+      succeededIds.has(booking.id)
+        ? { ...booking, status: "Cancelled" }
+        : booking,
+    );
+  };
+
   // Fetch bookings on mount - read token directly from localStorage
   useEffect(() => {
     const fetchBookings = async () => {
@@ -173,10 +320,21 @@ const MyBookings = () => {
                 : "/placeholder-event.jpg",
               qr_code: reg.qr_code_string,
               rawDate: reg.event_id?.date_time || reg.event_snapshot?.date_time,
+              endDateRaw:
+                reg.event_id?.end_time ||
+                reg.event_snapshot?.end_time ||
+                reg.event_id?.end_date ||
+                reg.event_snapshot?.end_date ||
+                reg.event_id?.date_time ||
+                reg.event_snapshot?.date_time,
             }))
           : [];
 
-        setBookings(mapped);
+        const updatedBookings = await autoCancelExpiredBookings(
+          mapped,
+          token,
+        );
+        setBookings(updatedBookings);
       } catch (err) {
         console.error("Fetch bookings error", err);
       } finally {
@@ -191,7 +349,7 @@ const MyBookings = () => {
     { id: "all", label: "All Passes" },
     { id: "confirmed", label: "Scheduled" },
     { id: "checkedin", label: "Completed" },
-    { id: "cancelled", label: "Canceled" },
+    { id: "cancelled", label: "Cancelled" },
   ];
 
   const filteredBookings =
@@ -218,6 +376,7 @@ const MyBookings = () => {
           </div>
         );
       case "Cancelled":
+      case "Canceled":
         return (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold font-mono uppercase tracking-wider">
             <XCircle className="w-3 h-3" />
@@ -418,19 +577,44 @@ const MyBookings = () => {
                           </button>
                         )}
 
-                        {pass.status !== "Canceled" && (
+                        {pass.status === "Confirmed" && (
                           <button
-                            onClick={() => {
-                              setSelectedBooking(pass);
-                              setShowQRModal(true);
-                            }}
-                            className="w-full relative group/btn px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:bg-white/10 active:scale-95 mb-3"
+                            onClick={() => handleCancelBooking(pass)}
+                            disabled={cancelingId === pass.id}
+                            className={cn(
+                              "w-full relative group/btn px-8 py-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-200 font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all hover:bg-rose-500/20 active:scale-95 mb-3",
+                              cancelingId === pass.id &&
+                                "opacity-60 cursor-not-allowed",
+                            )}
                           >
                             <span className="relative z-10 flex items-center justify-center gap-2">
-                              Show Entry Pass <Ticket className="w-4 h-4" />
+                              {cancelingId === pass.id
+                                ? "Cancelling..."
+                                : "Cancel Booking"}
+                              <XCircle className="w-4 h-4" />
                             </span>
                           </button>
                         )}
+
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(pass);
+                            setShowQRModal(true);
+                          }}
+                          className={cn(
+                            "w-full relative group/btn px-8 py-4 border rounded-2xl font-clash font-bold text-xs uppercase tracking-[0.2em] transition-all active:scale-95 mb-3",
+                            isPassInvalid(pass)
+                              ? "bg-rose-500/10 border-rose-500/30 text-rose-200 hover:bg-rose-500/20"
+                              : "bg-white/5 border-white/10 text-white hover:bg-white/10",
+                          )}
+                        >
+                          <span className="relative z-10 flex items-center justify-center gap-2">
+                            {isPassInvalid(pass)
+                              ? "View Pass (Invalid)"
+                              : "Show Entry Pass"}{" "}
+                            <Ticket className="w-4 h-4" />
+                          </span>
+                        </button>
 
                         <Link
                           to={`/events/${pass.eventId}`}
@@ -504,12 +688,19 @@ const MyBookings = () => {
                   {selectedBooking.title}
                 </p>
 
-                <div className="p-6 bg-white rounded-3xl mb-8">
+                <div className="p-6 bg-white rounded-3xl mb-8 relative overflow-hidden">
                   <QRCode
                     value={selectedBooking.qr_code || "INVALID"}
                     size={200}
                     level="H"
                   />
+                  {isPassInvalid(selectedBooking) && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                      <div className="px-4 py-2 rounded-full border border-rose-400 text-rose-300 text-[10px] font-black uppercase tracking-[0.4em] bg-black/60">
+                        Invalid
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="w-full space-y-4">
@@ -525,8 +716,19 @@ const MyBookings = () => {
                     <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
                       Status
                     </span>
-                    <span className="text-xs font-mono text-emerald-400">
-                      Verified Access
+                    <span
+                      className={cn(
+                        "text-xs font-mono",
+                        isPassInvalid(selectedBooking)
+                          ? "text-rose-400"
+                          : "text-emerald-400",
+                      )}
+                    >
+                      {isCancelledStatus(selectedBooking.status)
+                        ? "Cancelled"
+                        : shouldAutoCancel(selectedBooking)
+                          ? "Expired"
+                          : "Verified Access"}
                     </span>
                   </div>
                 </div>
