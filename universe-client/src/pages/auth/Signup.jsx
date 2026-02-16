@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,7 +47,7 @@ const Signup = () => {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(API_URL + "/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -323,3 +324,4 @@ const Signup = () => {
 };
 
 export default Signup;
+

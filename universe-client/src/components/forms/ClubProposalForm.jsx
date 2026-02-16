@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import { useState, useEffect, useRef } from "react";
 import {
   School,
@@ -45,7 +46,7 @@ const ClubProposalForm = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch(API_URL + "/categories");
         if (res.ok) {
           const data = await res.json();
           setCategories(data);
@@ -106,7 +107,7 @@ const ClubProposalForm = () => {
       if (formData.logo) data.append("logo", formData.logo);
       if (formData.banner) data.append("banner", formData.banner);
 
-      const res = await fetch("/api/proposals", {
+      const res = await fetch(API_URL + "/proposals", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -560,3 +561,4 @@ const ClubProposalForm = () => {
 };
 
 export default ClubProposalForm;
+

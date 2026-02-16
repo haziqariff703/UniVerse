@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -28,13 +29,13 @@ const CreateEvent = () => {
           communitiesRes,
           categoriesRes,
         ] = await Promise.all([
-          fetch("/api/venues", { headers }),
-          fetch("/api/speakers", { headers }),
-          fetch("/api/events?status=all", { headers }),
-          fetch("/api/communities/my-communities", {
+          fetch(API_URL + "/venues", { headers }),
+          fetch(API_URL + "/speakers", { headers }),
+          fetch(API_URL + "/events?status=all", { headers }),
+          fetch(API_URL + "/communities/my-communities", {
             headers,
           }),
-          fetch("/api/categories", { headers }),
+          fetch(API_URL + "/categories", { headers }),
         ]);
 
         if (venuesRes.ok) {
@@ -137,7 +138,7 @@ const CreateEvent = () => {
     submitData.set("capacity", parseInt(formData.capacity) || 0);
 
     const token = localStorage.getItem("token");
-    const response = await fetch("/api/events", {
+    const response = await fetch(API_URL + "/events", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -350,3 +351,4 @@ const CreateEvent = () => {
 };
 
 export default CreateEvent;
+

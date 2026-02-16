@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import { Suspense, lazy } from "react";
 import {
   BrowserRouter as Router,
@@ -120,7 +121,7 @@ const Layout = ({ children }) => {
       if (!token) return;
 
       try {
-        const res = await fetch("/api/users/profile", {
+        const res = await fetch(API_URL + "/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -159,7 +160,7 @@ const Layout = ({ children }) => {
       const timer = setTimeout(() => {
         const syncUserProfile = async () => {
           try {
-            const res = await fetch("/api/users/profile", {
+            const res = await fetch(API_URL + "/users/profile", {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -688,3 +689,4 @@ function App() {
 }
 
 export default App;
+

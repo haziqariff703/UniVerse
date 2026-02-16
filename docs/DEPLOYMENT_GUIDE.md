@@ -126,8 +126,8 @@ Fill in these settings:
 | **Project Name**     | `universe-client`                               |
 | **Framework Preset** | `Vite` (should auto-detect)                     |
 | **Root Directory**   | Click "Edit" → type `universe-client` → confirm |
-| **Build Command**    | `npm run build` (default)                       |
-| **Output Directory** | `dist` (default for Vite)                       |
+| **Build Command**    | npm run build                                   |
+| **Output Directory** | dist                                            |
 
 ### Step 4: Add Environment Variable
 

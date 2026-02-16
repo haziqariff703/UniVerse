@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +36,7 @@ const OrganizerVenues = () => {
     const fetchVenues = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("/api/admin/venues", {
+        const response = await fetch(API_URL + "/admin/venues", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -247,3 +248,4 @@ const OrganizerVenues = () => {
 };
 
 export default OrganizerVenues;
+

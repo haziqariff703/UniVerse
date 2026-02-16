@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // eslint-disable-line no-unused-vars
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ const News = () => {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const response = await fetch("/api/public/news", { headers });
+        const response = await fetch(API_URL + "/public/news", { headers });
         const data = await response.json();
 
         if (Array.isArray(data.news)) {
@@ -577,3 +578,4 @@ const News = () => {
 };
 
 export default News;
+

@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -167,8 +168,8 @@ const EditProfileModal = ({
       const token = localStorage.getItem("token");
       const endpoint =
         type === "avatar"
-          ? "/api/users/profile/avatar"
-          : "/api/users/profile/cover";
+          ? API_URL + "/users/profile/avatar"
+          : API_URL + "/users/profile/cover";
 
       const res = await fetch(endpoint, {
         method: "PUT",
@@ -206,7 +207,7 @@ const EditProfileModal = ({
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/profile/assets", {
+      const res = await fetch(API_URL + "/users/profile/assets", {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
@@ -609,3 +610,4 @@ const EditProfileModal = ({
 };
 
 export default EditProfileModal;
+

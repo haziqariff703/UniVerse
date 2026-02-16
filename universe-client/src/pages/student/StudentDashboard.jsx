@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -57,14 +58,14 @@ const StudentDashboard = ({ user }) => {
 
         const [profileRes, bookingsRes, clubsRes, venuesRes] =
           await Promise.all([
-            fetch("/api/users/profile", { headers }).then((r) => r.json()),
-            fetch("/api/registrations/my-bookings", {
+            fetch(API_URL + "/users/profile", { headers }).then((r) => r.json()),
+            fetch(API_URL + "/registrations/my-bookings", {
               headers,
             }).then((r) => r.json()),
-            fetch("/api/communities/my-communities", {
+            fetch(API_URL + "/communities/my-communities", {
               headers,
             }).then((r) => r.json()),
-            fetch("/api/venues").then((r) => r.json()),
+            fetch(API_URL + "/venues").then((r) => r.json()),
           ]);
 
         setProfile(profileRes);
@@ -662,3 +663,4 @@ const StudentDashboard = ({ user }) => {
 };
 
 export default StudentDashboard;
+
