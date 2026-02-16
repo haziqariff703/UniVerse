@@ -107,4 +107,9 @@ const eventSchema = new mongoose.Schema({
   }]
 });
 
+// Strategic Compound Indexes for Query Performance
+eventSchema.index({ date_time: 1, status: 1 });      // Event listing sorted by date + filtered by status
+eventSchema.index({ category: 1, date_time: 1 });     // Category filtering with date sort
+eventSchema.index({ organizer_id: 1, status: 1 });    // Organizer dashboard queries
+
 module.exports = mongoose.model('Event', eventSchema);

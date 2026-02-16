@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026-02-17]
+
+- **Added**: Production Security Middleware — `helmet` (with cross-origin policy for images), `express-mongo-sanitize`, `xss-clean`, `hpp`, and `express-rate-limit` (100 req/10min) configured in `universe-server/index.js`.
+- **Changed**: Frontend SEO — Updated `index.html` with descriptive title ("UniVerse | Campus Event Management"), meta description, and Open Graph tags for social media previews.
+- **Added**: Compound Indexes for query performance — `event.js` (date_time+status, category+date_time, organizer_id+status), `auditLog.js` (admin_id+created_at, action+created_at, target_type+target_id). `registration.js` already had a unique compound index (event_id+user_id).
+- **Changed**: Updated `README.md` to a comprehensive Evaluator's Guide with setup instructions, `.env` templates, and login credentials.
+
 ## [2026-02-13]
 
 - **Added**: Comprehensive `docs/QUERY_GUIDE.md` containing sample Mongoose CRUD and advanced aggregation queries for developers.

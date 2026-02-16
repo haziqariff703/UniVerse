@@ -65,4 +65,9 @@ const auditLogSchema = new mongoose.Schema({
   }
 });
 
+// Strategic Compound Indexes for Admin Queries
+auditLogSchema.index({ admin_id: 1, created_at: -1 });  // Admin activity history (newest first)
+auditLogSchema.index({ action: 1, created_at: -1 });    // Filter by action type with time sort
+auditLogSchema.index({ target_type: 1, target_id: 1 }); // Lookup all actions on a specific entity
+
 module.exports = mongoose.model('AuditLog', auditLogSchema);

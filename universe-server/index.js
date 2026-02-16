@@ -16,11 +16,31 @@ const venueRoutes = require("./routes/venueRoutes");
 const speakerRoutes = require("./routes/speakerRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
+const rateLimit = require("express-rate-limit");
 
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Security Middleware
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); // Allow images to load
+app.use(mongoSanitize()); // Prevent NoSQL injection
+app.use(xss()); // Prevent XSS attacks
+app.use(hpp()); // Prevent HTTP Parameter Pollution
+
+// Rate Limiting (100 requests per 10 mins)
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, 
+  max: 100,
+  message: "Too many requests from this IP, please try again later."
+});
+app.use("/api", limiter); // Apply to all API routes
+
 app.use("/public", express.static("public"));
 
 // API Routes
