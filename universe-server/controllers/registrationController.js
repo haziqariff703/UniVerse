@@ -9,17 +9,24 @@ const User = require('../models/user');
  */
 exports.registerForEvent = async (req, res) => {
   try {
-    const { event_id } = req.body;
+    const { event_id, eventId } = req.body;
+    const actualEventId = event_id || eventId;
     const user_id = req.user.id;
 
+    if (!actualEventId) {
+      return res.status(400).json({ message: "Event ID is required." });
+    }
+
     // Check if event exists
-    const event = await Event.findById(event_id).populate('venue_id', 'name');
+    const event = await Event.findById(actualEventId).populate('venue_id', 'name');
     if (!event) {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    // Check if event is open
-    if (event.status !== 'Open') {
+    // Check if event is open for registration
+    // Both 'approved' and 'Open' should allow registration
+    const allowedStatuses = ['approved', 'Open'];
+    if (!allowedStatuses.includes(event.status)) {
       return res.status(400).json({ message: `Event is ${event.status}. Registration not available.` });
     }
 
@@ -29,7 +36,7 @@ exports.registerForEvent = async (req, res) => {
     }
 
     // Check if user already registered
-    const existingRegistration = await Registration.findOne({ event_id, user_id });
+    const existingRegistration = await Registration.findOne({ event_id: actualEventId, user_id });
     if (existingRegistration) {
       return res.status(400).json({ message: "You are already registered for this event." });
     }
@@ -39,11 +46,11 @@ exports.registerForEvent = async (req, res) => {
 
     // Create registration with snapshots (NoSQL denormalization pattern)
     const registration = new Registration({
-      event_id,
+      event_id: actualEventId,
       user_id,
       status: 'Confirmed',
       booking_time: new Date(),
-      qr_code_string: `UNIV-${event_id.slice(-4)}-${user_id.slice(-4)}-${Date.now()}`,
+      qr_code_string: `UNIV-${actualEventId.toString().slice(-4)}-${user_id.toString().slice(-4)}-${Date.now()}`,
       event_snapshot: {
         title: event.title,
         date_time: event.date_time,
@@ -58,7 +65,7 @@ exports.registerForEvent = async (req, res) => {
     await registration.save();
 
     // Update event attendee count atomically
-    await Event.findByIdAndUpdate(event_id, { $inc: { current_attendees: 1 } });
+    await Event.findByIdAndUpdate(actualEventId, { $inc: { current_attendees: 1 } });
 
     // Update event status if full
     if (event.current_attendees + 1 >= event.capacity) {
@@ -81,17 +88,84 @@ exports.registerForEvent = async (req, res) => {
 };
 
 /**
+ * @desc    Get all registrations for a specific event (Organizer View)
+ * @route   GET /api/registrations/event/:id
+ * @access  Private (Organizer/Admin)
+ */
+exports.getEventRegistrations = async (req, res) => {
+  try {
+    const event_id = req.params.id;
+    
+    // Verify ownership
+    const event = await Event.findById(event_id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    const isAdmin = (req.user.roles || []).includes('admin');
+    
+    let isCommunityMember = false;
+    if (event.community_id) {
+      const CommunityMember = require('../models/communityMember');
+      const membership = await CommunityMember.findOne({
+        community_id: event.community_id,
+        user_id: req.user.id,
+        status: 'Approved'
+      });
+      if (membership) isCommunityMember = true;
+    }
+
+    if (!isOwner && !isAdmin && !isCommunityMember && !isCrew) {
+      return res.status(403).json({ message: "Not authorized to view these registrations." });
+    }
+
+    const registrations = await Registration.find({ event_id })
+      .sort({ booking_time: -1 });
+
+    res.status(200).json(registrations);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
  * @desc    Get user's registrations (my bookings)
  * @route   GET /api/registrations/my-bookings
  * @access  Private
  */
 exports.getMyBookings = async (req, res) => {
   try {
+    const Review = require('../models/review');
     const registrations = await Registration.find({ user_id: req.user.id })
-      .populate('event_id', 'title date_time status')
+      .populate({
+        path: 'event_id',
+        select: 'title date_time status ticket_price category image merit_points',
+        populate: {
+          path: 'venue_id',
+          select: 'name location_code'
+        }
+      })
       .sort({ booking_time: -1 });
 
-    res.status(200).json(registrations);
+    // Fetch all reviews by this user to attach to registrations
+    const reviews = await Review.find({ user_id: req.user.id });
+
+    // Map reviews by event_id for easy lookup
+    const reviewMap = {};
+    reviews.forEach(r => {
+      reviewMap[r.event_id.toString()] = r;
+    });
+
+    // Attach review to each registration
+    const registrationsWithReviews = registrations.map(reg => {
+      const regObj = reg.toObject();
+      const eventId = reg.event_id?._id?.toString() || reg.event_snapshot?._id?.toString();
+      regObj.review = reviewMap[eventId] || null;
+      return regObj;
+    });
+
+    res.status(200).json(registrationsWithReviews);
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
   }
@@ -111,7 +185,7 @@ exports.cancelRegistration = async (req, res) => {
     }
 
     // Check ownership
-    if (registration.user_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (registration.user_id.toString() !== req.user.id && !req.user.roles.includes('admin')) {
       return res.status(403).json({ message: "Not authorized to cancel this registration." });
     }
 
@@ -144,10 +218,29 @@ exports.checkIn = async (req, res) => {
   try {
     const { qr_code } = req.body;
 
-    const registration = await Registration.findOne({ qr_code_string: qr_code });
+    const registration = await Registration.findOne({ qr_code_string: qr_code })
+      .populate('event_id', 'date_time merit_points');
 
     if (!registration) {
       return res.status(404).json({ message: "Invalid QR code." });
+    }
+
+    const event = registration.event_id;
+    if (!event || !event.date_time) {
+      return res.status(400).json({
+        message: "Event schedule is not available for check-in.",
+      });
+    }
+
+    const now = new Date();
+    const eventStart = new Date(event.date_time);
+    const msUntilStart = eventStart.getTime() - now.getTime();
+    const checkInWindowMs = 20 * 60 * 1000;
+
+    if (msUntilStart > checkInWindowMs) {
+      return res.status(400).json({
+        message: "Check-in only opens 20 minutes before the event starts.",
+      });
     }
 
     if (registration.status === 'CheckedIn') {
@@ -161,11 +254,142 @@ exports.checkIn = async (req, res) => {
     registration.status = 'CheckedIn';
     await registration.save();
 
+    // Award merit points
+    if (event.merit_points > 0) {
+      await User.findByIdAndUpdate(registration.user_id, {
+        $inc: { current_merit: event.merit_points }
+      });
+    }
+
+    // Robust user data fetching (Fallback if snapshot is missing)
+    let userData = registration.user_snapshot;
+    if (!userData || !userData.name) {
+       const user = await User.findById(registration.user_id);
+       if (user) {
+         userData = { name: user.name, student_id: user.student_id };
+         // Self-healing: update the snapshot for next time
+         registration.user_snapshot = userData;
+         await registration.save();
+       }
+    }
+
     res.status(200).json({
       message: "Check-in successful!",
-      user: registration.user_snapshot
+      user: userData,
+      meritAwarded: event ? event.merit_points : 0
     });
   } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get public registration info for social proof
+ * @route   GET /api/registrations/event/:id/public
+ * @access  Public
+ */
+exports.getPublicEventRegistrations = async (req, res) => {
+  try {
+    const event_id = req.params.id;
+
+    // Get total count
+    const totalCount = await Registration.countDocuments({ event_id, status: { $ne: 'Cancelled' } });
+
+    // Get a few recent names for facepile/social proof
+    const recentRegistrations = await Registration.find({ event_id, status: { $ne: 'Cancelled' } })
+      .select('user_snapshot.name')
+      .sort({ booking_time: -1 })
+      .limit(5);
+
+    const names = recentRegistrations.map(r => r.user_snapshot.name);
+
+    res.status(200).json({
+      totalCount,
+      recentNames: names
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Update registration status manually (Organizer View)
+ * @route   PATCH /api/registrations/:id/status
+ * @access  Private (Organizer/Admin/Staff)
+ */
+exports.updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const registrationId = req.params.id;
+
+    if (!['Confirmed', 'CheckedIn', 'Cancelled'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status." });
+    }
+
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ message: "Registration not found." });
+    }
+
+    // Verify ownership/access
+    const event = await Event.findById(registration.event_id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const isOwner = event.organizer_id.toString() === req.user.id;
+    const isAdmin = req.user.roles.includes('admin');
+    const isRegistrant = registration.user_id.toString() === req.user.id;
+
+    // Check if user is a crew member or leader who can update status
+    let isAuthorized = isOwner || isAdmin;
+    
+    if (!isAuthorized && event.community_id) {
+       const CommunityMember = require('../models/communityMember');
+       const membership = await CommunityMember.findOne({
+          community_id: event.community_id,
+          user_id: req.user.id,
+          status: 'Approved'
+       });
+       if (membership && ['President', 'Vice President', 'High Committee', 'Member'].includes(membership.role)) {
+          isAuthorized = true;
+       }
+    }
+
+    const isSelfCancel = isRegistrant && status === 'Cancelled';
+
+    if (!isAuthorized && !isSelfCancel) {
+      return res.status(403).json({ message: "Not authorized to update this registration." });
+    }
+
+    const oldStatus = registration.status;
+    registration.status = status;
+    await registration.save();
+
+    // Side effects for Cancelled status
+    if (oldStatus !== 'Cancelled' && status === 'Cancelled') {
+      // Decrement attendee count
+      await Event.findByIdAndUpdate(registration.event_id, { $inc: { current_attendees: -1 } });
+    } else if (oldStatus === 'Cancelled' && status !== 'Cancelled') {
+      // Re-increment attendee count if un-cancelling
+      await Event.findByIdAndUpdate(registration.event_id, { $inc: { current_attendees: 1 } });
+    }
+
+    // Award merit points if checked in
+    if (oldStatus !== 'CheckedIn' && status === 'CheckedIn') {
+      if (event.merit_points > 0) {
+        await User.findByIdAndUpdate(registration.user_id, {
+          $inc: { current_merit: event.merit_points }
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: `Status updated to ${status}`,
+      registration
+    });
+  } catch (error) {
+    console.error('Update Status Error:', error);
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };

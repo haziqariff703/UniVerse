@@ -1,0 +1,402 @@
+const mongoose = require("mongoose");
+const Community = require("../models/community");
+const CommunityMember = require("../models/communityMember");
+const User = require("../models/user");
+
+/**
+ * @desc    Create a new community
+ * @route   POST /api/communities
+ * @access  Private (Admin)
+ */
+exports.createCommunity = async (req, res) => {
+  try {
+    const { name, slug, description, category, advisor, owner_id } = req.body;
+
+    const community = new Community({
+      name,
+      slug,
+      description,
+      category,
+      advisor,
+      owner_id: owner_id || req.user.id,
+    });
+
+    await community.save();
+
+    // Automatically add owner as President/Advisor
+    const member = new CommunityMember({
+      community_id: community._id,
+      user_id: community.owner_id,
+      role: "President",
+      status: "Approved",
+      joined_at: new Date(),
+    });
+    await member.save();
+
+    res.status(201).json(community);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get all communities
+ * @route   GET /api/communities
+ * @access  Public
+ */
+exports.getAllCommunities = async (req, res) => {
+  try {
+    const communities = await Community.aggregate([
+      {
+        $lookup: {
+          from: "communitymembers",
+          localField: "_id",
+          foreignField: "community_id",
+          as: "members",
+        },
+      },
+      {
+        $addFields: {
+          "stats.member_count": {
+            $size: {
+              $filter: {
+                input: "$members",
+                as: "member",
+                cond: { $eq: ["$$member.status", "Approved"] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          members: 0,
+        },
+      },
+    ]);
+    res.status(200).json(communities);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get community by slug
+ * @route   GET /api/communities/:slug
+ * @access  Public
+ */
+exports.getCommunityBySlug = async (req, res) => {
+  try {
+    const community = await Community.findOne({
+      slug: req.params.slug,
+    }).populate("owner_id", "name email");
+    if (!community) {
+      return res.status(404).json({ message: "Community not found." });
+    }
+
+    const members = await CommunityMember.find({
+      community_id: community._id,
+      status: "Approved",
+    }).populate("user_id", "name email avatar current_merit");
+
+    res.status(200).json({ community, members });
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Apply to join a community
+ * @route   POST /api/communities/:id/apply
+ * @access  Private
+ */
+exports.applyToCommunity = async (req, res) => {
+  try {
+    const community_id = req.params.id;
+    const user_id = req.user.id;
+
+    const existingMember = await CommunityMember.findOne({
+      community_id,
+      user_id,
+    });
+    if (existingMember) {
+      return res
+        .status(400)
+        .json({ message: "You have already applied or are a member." });
+    }
+
+    const application = new CommunityMember({
+      community_id,
+      user_id,
+      status: "Applied",
+    });
+
+    await application.save();
+    res
+      .status(201)
+      .json({ message: "Application submitted successfully.", application });
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Update member status (Interview, Approve, Reject)
+ * @route   PUT /api/communities/members/:memberId
+ * @access  Private (Organizer)
+ */
+exports.updateMemberStatus = async (req, res) => {
+  try {
+    const { status, role, interview_date, interview_note, department } =
+      req.body;
+    const member = await CommunityMember.findById(req.params.memberId);
+
+    if (!member) {
+      return res.status(404).json({ message: "Membership record not found." });
+    }
+
+    // Authorization check: User must be an owner/President/Admin
+    const community = await Community.findById(member.community_id);
+
+    // Check if user is an approved executive (President) of this community
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id: member.community_id,
+      user_id: req.user.id,
+      status: "Approved"
+    });
+
+    const isAuthorized =
+      community?.owner_id.toString() === req.user.id ||
+      req.user.roles.includes("admin") ||
+      currentUserMembership?.role === "President";
+
+    if (!community || !isAuthorized) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to manage this community." });
+    }
+
+    if (status) member.status = status;
+    if (role) member.role = role;
+    if (interview_date) member.interview_date = interview_date;
+    if (interview_note) member.interview_note = interview_note;
+    if (department) member.department = department;
+
+    if (status === "Approved" && !member.joined_at) {
+      member.joined_at = new Date();
+
+      // If approved as AJK or higher (any role other than Member), grant organizer access
+      const organizerRoles = [
+        "President",
+        "Secretary",
+        "Treasurer",
+        "Committee",
+        "AJK",
+      ];
+      if (organizerRoles.includes(member.role)) {
+        await User.findByIdAndUpdate(member.user_id, {
+          is_organizer_approved: true,
+          $addToSet: { roles: "organizer" },
+        });
+      } else {
+        await User.findByIdAndUpdate(member.user_id, {
+          is_organizer_approved: true,
+        });
+      }
+    }
+
+    await member.save();
+    res.status(200).json(member);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get community applicants for management
+ * @route   GET /api/communities/:id/applicants
+ * @access  Private (Organizer)
+ */
+exports.getCommunityApplicants = async (req, res) => {
+  try {
+    const community_id = req.params.id;
+
+    // Authorization: Owner, Admin, or Approved AJK of this community
+    const community = await Community.findById(community_id);
+    if (!community) {
+      return res.status(404).json({ message: "Community not found." });
+    }
+
+    const isOwner = community.owner_id.toString() === req.user.id;
+    const isAdmin = req.user.roles.includes("admin");
+
+    // Check if user is an approved workforce member (Organizer level)
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id,
+      user_id: req.user.id,
+      status: "Approved",
+    });
+
+    const allowedRoles = [
+      "President",
+      "Vice President",
+      "Secretary",
+      "Treasurer",
+      "Committee",
+      "High Council",
+      "AJK",
+      "Advisor",
+    ];
+
+    if (
+      !isOwner &&
+      !isAdmin &&
+      (!currentUserMembership ||
+        !allowedRoles.includes(currentUserMembership.role))
+    ) {
+      return res.status(403).json({ message: "Not authorized." });
+    }
+
+    const applicants = await CommunityMember.find({ community_id }).populate(
+      "user_id",
+      "name email student_id avatar current_merit",
+    );
+
+    res.status(200).json(applicants);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
+/**
+ * @desc    Directly add a member to community (Invite/Add)
+ * @route   POST /api/communities/:id/members
+ * @access  Private (Organizer)
+ */
+exports.addMember = async (req, res) => {
+  try {
+    const community_id = req.params.id;
+    const { student_id } = req.body;
+
+    if (!student_id) {
+      return res.status(400).json({ message: "Student ID is required." });
+    }
+
+    // 1. Authorization Check
+    const community = await Community.findById(community_id);
+    if (!community)
+      return res.status(404).json({ message: "Community not found." });
+
+    const isOwner = community.owner_id.toString() === req.user.id;
+    const isAdmin = req.user.roles.includes("admin");
+
+    // Check if user is an approved executive (President) of this community
+    const currentUserMembership = await CommunityMember.findOne({
+      community_id,
+      user_id: req.user.id,
+      status: "Approved"
+    });
+
+    if (!isOwner && !isAdmin && currentUserMembership?.role !== "President") {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to add members." });
+    }
+
+    // 2. Find User
+    const user = await User.findOne({ student_id });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Student not found with this ID." });
+    }
+
+    // 3. Check duplicate membership
+    const existingMember = await CommunityMember.findOne({
+      community_id,
+      user_id: user._id,
+    });
+    if (existingMember) {
+      return res.status(400).json({
+        message: `User is already a member with status: ${existingMember.status}`,
+      });
+    }
+
+    // 4. Create Member
+    const newMember = new CommunityMember({
+      community_id,
+      user_id: user._id,
+      status: "Approved", // Auto-approve direct adds
+      role: "AJK", // Standardized from 'Crew' to match Model Enum
+      joined_at: new Date(),
+    });
+
+    await newMember.save();
+
+    // 5. Grant Organizer Access (Same as updateMemberStatus logic)
+    await User.findByIdAndUpdate(user._id, {
+      is_organizer_approved: true,
+      $addToSet: { roles: "organizer" },
+    });
+
+    res
+      .status(201)
+      .json({ message: "Member added successfully", member: newMember, user });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get communities where user is owner or approved member
+ * @route   GET /api/communities/my-communities
+ * @access  Private
+ */
+exports.getMyCommunities = async (req, res) => {
+  try {
+    const roles = req.user.roles || [];
+
+    // Base match criteria for Admin (all) or User (owned or member)
+    const matchCriteria = roles.includes("admin") ? {} : {
+      $or: [
+        { owner_id: new mongoose.Types.ObjectId(req.user.id) },
+        { "membership.user_id": new mongoose.Types.ObjectId(req.user.id), "membership.status": "Approved" }
+      ]
+    };
+
+    const communities = await Community.aggregate([
+      // 1. Lookup all memberships to find where user belongs
+      {
+        $lookup: {
+          from: "communitymembers",
+          localField: "_id",
+          foreignField: "community_id",
+          as: "membership"
+        }
+      },
+      // 2. Filter for user's communities
+      { $match: matchCriteria },
+      // 3. Recalculate real-time member count for these communities
+      {
+        $addFields: {
+          "stats.member_count": {
+            $size: {
+              $filter: {
+                input: "$membership",
+                as: "m",
+                cond: { $eq: ["$$m.status", "Approved"] }
+              }
+            }
+          }
+        }
+      },
+      // 4. Cleanup
+      { $project: { membership: 0 } }
+    ]);
+
+    res.status(200).json(communities);
+  } catch (err) {
+    console.error("Get My Communities Error:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};

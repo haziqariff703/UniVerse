@@ -1,88 +1,63 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Quote } from "lucide-react";
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 
 const testimonials = [
   {
-    id: 1,
-    name: "Alex Chen",
-    role: "Event Organizer",
-    content:
-      "UniVerse revolutionized how we manage our galactic gatherings. The interface is simply out of this world!",
-    avatar: "AC",
-    color: "bg-blue-500",
+    quote:
+      "UniVerse made organizing our IM Career Fair a breeze. We coordinated with record management students seamlessly.",
+    name: "Siti Khadijah",
+    title: "IM Faculty",
   },
   {
-    id: 2,
-    name: "Sarah Miller",
-    role: "Space Tourist",
-    content:
-      "Found the most amazing zero-gravity concert through this platform. Highly recommended for any traveler.",
-    avatar: "SM",
-    color: "bg-purple-500",
+    quote:
+      "Found my entire crew for the FiTA Theater Night through this platform. The talent is all here.",
+    name: "Megat Naufal",
+    title: "FiTA Faculty",
   },
   {
-    id: 3,
-    name: "Zorgon X",
-    role: "Interstellar DJ",
-    content:
-      "The best way to reach audiences across multiple solar systems. Engagement has increased by 300%.",
-    avatar: "ZX",
-    color: "bg-green-500",
+    quote:
+      "A definitive hub for both IM and FiTA. From coding workshops to screenings, I never feel disconnected.",
+    name: "Faris Afizuan",
+    title: "IM + FiTA",
+  },
+  {
+    quote:
+      "Discovered amazing film production workshops and connected with talented cinematographers. This platform brings our creative community together.",
+    name: "Nurul Aisyah",
+    title: "FiTA Faculty",
+  },
+  {
+    quote:
+      "From digital archives seminars to game dev meetups, UniVerse keeps me updated on everything happening across both faculties. It's indispensable.",
+    name: "Ahmad Zaki",
+    title: "IM Faculty",
   },
 ];
 
 const Testimonials = () => {
   return (
-    <section className="py-20 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-neuemontreal font-bold text-white mb-4">
-            Voices from the Void
+    <section className="py-32 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-clash font-bold text-foreground mb-4">
+            Voices from the{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Void
+            </span>
           </h2>
-          <p className="text-starlight/60">
-            What our community is saying about their cosmic experiences.
+          <p className="text-base text-muted-foreground">
+            Real stories from Puncak Perdana's IM and FiTA community
           </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.2 }}
-              className="glass-panel p-8 rounded-2xl relative"
-            >
-              <Quote className="absolute top-6 right-6 text-accent/20 w-12 h-12" />
-              <p className="text-starlight/80 mb-8 leading-relaxed relative z-10">
-                "{testimonial.content}"
-              </p>
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-12 h-12 rounded-full ${testimonial.color} flex items-center justify-center font-bold text-white shadow-lg`}
-                >
-                  {testimonial.avatar}
-                </div>
-                <div>
-                  <h4 className="font-bold text-white">{testimonial.name}</h4>
-                  <p className="text-sm text-starlight/50">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
         </div>
+
+        {/* Infinite Moving Cards */}
+        <InfiniteMovingCards
+          items={testimonials}
+          direction="left"
+          speed="slow"
+          pauseOnHover={true}
+        />
       </div>
     </section>
   );

@@ -1,40 +1,139 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  student_id: { 
-    type: String, 
-    required: true, 
+  student_id: {
+    type: String,
+    sparse: true, // Allows multiple null/undefined values
     unique: true,
-    trim: true 
+    trim: true,
+    minlength: 8, // More flexible - allow 8-15 characters
+    maxlength: 15,
   },
-  name: { 
-    type: String, 
-    required: true 
+  name: {
+    type: String,
+    required: true,
   },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    lowercase: true 
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
   },
-  password: { 
-    type: String, 
-    required: true 
+  password: {
+    type: String,
+    required: true,
   },
-  role: { 
-    type: String, 
-    enum: ['student', 'admin', 'staff'], 
-    default: 'student' 
+  role: {
+    type: String,
+    enum: ["student", "admin", "organizer", "association"],
+    default: "student",
+  },
+  roles: {
+    type: [String],
+    enum: ["student", "admin", "organizer", "association"],
+    default: ["student"],
   },
   preferences: {
-    type: [String], // Array of interests (e.g., ['Tech', 'Sports'])
-    default: []
+    type: [String],
+    default: [],
   },
-  created_at: { 
-    type: Date, 
-    default: Date.now 
-  }
+  gender: {
+    type: String,
+    enum: ["Male", "Female"],
+    required: false,
+  },
+  date_of_birth: {
+    type: Date,
+    required: false,
+  },
+  organizerRequest: {
+    type: Boolean,
+    default: false,
+  },
+  id_card_url: {
+    type: String,
+    required: false,
+  },
+  confirmation_letter_url: {
+    type: String,
+    required: false,
+  },
+  is_organizer_approved: {
+    type: Boolean,
+    default: false,
+  },
+  current_merit: {
+    type: Number,
+    default: 0,
+  },
+  merit_goal: {
+    type: Number,
+    default: 500,
+  },
+  avatar: {
+    type: String,
+    default: "",
+  },
+  coverImage: {
+    type: String,
+    default: "",
+  },
+  bio: {
+    type: String,
+    default: "",
+    maxlength: 140,
+  },
+  links: {
+    github: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
+    website: { type: String, default: "" },
+  },
+  dna: {
+    type: [String],
+    default: [],
+  },
+  assets: {
+    type: [
+      {
+        title: String,
+        name: String,
+        url: String,
+        fileType: String, // Renamed from 'type' to avoid Mongoose keyword collision
+        size: String,
+        date: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  },
+
+  settings: {
+    privacy: {
+      visibility: {
+        type: String,
+        enum: ["public", "campus", "ghost"],
+        default: "public",
+      },
+      searchable: { type: Boolean, default: true },
+      readReceipts: { type: Boolean, default: true },
+    },
+    notifications: {
+      mentions: { type: Boolean, default: true },
+      reminders: { type: Boolean, default: true },
+      announcements: { type: Boolean, default: true },
+      emailDigest: {
+        type: String,
+        enum: ["weekly", "off"],
+        default: "weekly",
+      },
+    },
+    recoveryEmail: { type: String, default: "" },
+  },
+
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 // Export the model so we can use it in our routes
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

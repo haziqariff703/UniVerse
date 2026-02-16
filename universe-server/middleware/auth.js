@@ -27,21 +27,32 @@ const auth = (req, res, next) => {
 /**
  * Role-based Authorization Middleware
  * Restricts access to specific roles.
- * @param  {...string} roles - Allowed roles (e.g., 'admin', 'staff')
+ * @param  {...string} roles - Allowed roles (e.g., 'admin', 'organizer')
  */
 const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required.' });
-    }
-    
-    if (!roles.includes(req.user.role)) {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required.' });
+      }
+      
+      // Check against new roles array if it exists in the token
+      if (req.user.roles && req.user.roles.some(r => roles.includes(r))) {
+        return next();
+      }
+
+      // Fallback to legacy single role field (Keep for now, but roles array is primary)
+      if (roles.includes(req.user.role)) {
+        return next();
+      }
+      
       return res.status(403).json({ 
         message: `Access denied. Required role: ${roles.join(' or ')}.` 
       });
+    } catch (error) {
+      console.error('Authorization Error:', error);
+      res.status(500).json({ message: 'Server error during authorization', error: error.message });
     }
-    
-    next();
   };
 };
 

@@ -1,0 +1,701 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Eye,
+  Calendar,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  BarChart3,
+  CalendarCheck,
+  CalendarX,
+  Layout,
+  FileText,
+  Users,
+  Clock,
+  MoreVertical,
+  TrendingUp,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { downloadCSV } from "@/lib/exportUtils";
+import {
+  ADMIN_FILTER_CONTAINER_CLASS,
+  AdminDateRangeFilter,
+  AdminExportCsvButton,
+} from "@/components/admin/shared/AdminListControls";
+import { matchesDateRange } from "@/lib/adminDateUtils";
+
+const KpiCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subValue,
+  trend,
+  description,
+}) => (
+  <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+    <div
+      className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}
+    >
+      {Icon && <Icon size={80} />}
+    </div>
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-starlight/60 text-xs font-bold uppercase tracking-wider mb-1">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-starlight leading-none">
+            {value}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl bg-white/5 ${color}`}>
+          {Icon && <Icon size={20} />}
+        </div>
+      </div>
+      {(subValue || trend || description) && (
+        <div className="space-y-2 mt-2">
+          {subValue && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {trend && <TrendingUp size={10} className="text-emerald-400" />}
+              <span className={`text-[10px] font-medium ${color}`}>
+                {subValue}
+              </span>
+            </div>
+          )}
+          {trend && !subValue && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-emerald-400 font-bold">{trend}</span>
+              <span className="text-starlight/40 font-medium">
+                vs last month
+              </span>
+            </div>
+          )}
+          {description && (
+            <p className="text-[10px] text-starlight/60 font-medium leading-relaxed italic border-t border-white/5 pt-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+/**
+ * EventsList "Command Center"
+ * A high-density dashboard for administrators to view ALL events.
+ */
+const EventsList = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [stats, setStats] = useState({
+    total: 0,
+    approved: 0,
+    rejected: 0,
+    pending: 0,
+    registrations: 0,
+  });
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  // Helper to ensure correct document/image URL
+  const resolveUrl = (url) => {
+    if (!url) return "";
+    let finalUrl = url.startsWith("http")
+      ? url
+      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+
+    // Fix common Cloudinary path issues
+    if (finalUrl.includes("cloudinary.com")) {
+      finalUrl = finalUrl.replace(/([^:])\/\//g, "$1/");
+    }
+    return finalUrl;
+  };
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(search && { search }),
+      });
+
+      const response = await fetch(`/api/admin/events?${params}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch events");
+
+      const data = await response.json();
+      setEvents(data.events);
+      setTotalPages(data.pagination.totalPages);
+      if (data.stats) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, search, itemsPerPage]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents, statusFilter]);
+
+  const handleExport = () => {
+    if (filteredEvents.length === 0) {
+      toast.error("No events to export");
+      return;
+    }
+
+    const exportData = filteredEvents.map((e) => ({
+      Title: e.title,
+      Organizer: e.organizer_id?.name || "N/A",
+      Category: e.category,
+      Status: e.status,
+      Date: new Date(e.date_time).toLocaleDateString(),
+      Capacity: e.capacity,
+      "Ticket Price": e.ticket_price === 0 ? "Free" : `RM ${e.ticket_price}`,
+    }));
+
+    downloadCSV(exportData, "UniVerse_Events_Registry");
+    toast.success("Events registry exported successfully");
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "approved":
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <CheckCircle size={12} /> Approved
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <XCircle size={12} /> Rejected
+          </span>
+        );
+      case "pending":
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <AlertCircle size={12} /> Pending
+          </span>
+        );
+      case "completed":
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <CheckCircle size={12} /> Completed
+          </span>
+        );
+      default:
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-white/5 text-starlight/60 border border-white/10">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  // Client-side filtering for status since API doesn't support it yet
+  const filteredEvents =
+    statusFilter === "all"
+      ? events
+      : events.filter((e) => e.status === statusFilter);
+  const dateFilteredEvents = filteredEvents.filter((event) =>
+    matchesDateRange(event, startDate, endDate, ["date_time", "created_at"]),
+  );
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* 1. Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-starlight to-starlight/60">
+            All Events
+          </h1>
+          <p className="text-starlight/40 text-sm">
+            Comprehensive list of all platform events.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setCurrentPage(1);
+              fetchEvents();
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm text-starlight/70 hover:text-white transition-colors"
+          >
+            <RefreshCw size={14} /> <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Total Events"
+          value={stats.total}
+          icon={Calendar}
+          trend={stats.growth}
+          color="text-violet-400"
+          subValue="System-wide registry"
+          description="Total number of events managed on the platform including past, active, and upcoming listings."
+        />
+        <KpiCard
+          title="Approved"
+          value={stats.approved}
+          icon={CheckCircle}
+          trend="+2 New"
+          color="text-emerald-400"
+          subValue="Live & visible"
+          description="Events that have been verified by administrators and are currently visible to all students."
+        />
+        <KpiCard
+          title="Pending"
+          value={stats.pending}
+          icon={Clock}
+          color="text-amber-400"
+          subValue="Awaiting review"
+          description="Newly submitted event proposals currently awaiting administrative moderation and certification."
+        />
+        <KpiCard
+          title="Total Registrations"
+          value={stats.registrations}
+          icon={BarChart3}
+          subValue="Aggregate attendance"
+          description="The aggregate number of tickets and seats reserved across all platform events."
+        />
+      </div>
+
+      {/* 3. Filter Matrix */}
+      <div className={`${ADMIN_FILTER_CONTAINER_CLASS} space-y-4`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-starlight/60"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-2.5 text-sm text-starlight focus:outline-none focus:border-violet-500/50 transition-all"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 px-3 bg-black/40 border border-white/5 rounded-xl h-10">
+              <Filter size={14} className="text-starlight/60" />
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-starlight/60 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-[#0A0A0A]">
+                  All Status
+                </option>
+                <option value="approved" className="bg-[#0A0A0A]">
+                  Approved
+                </option>
+                <option value="pending" className="bg-[#0A0A0A]">
+                  Pending
+                </option>
+                <option value="rejected" className="bg-[#0A0A0A]">
+                  Rejected
+                </option>
+                <option value="completed" className="bg-[#0A0A0A]">
+                  Completed
+                </option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+              <span className="text-xs font-bold text-starlight/40 uppercase tracking-widest whitespace-nowrap">
+                Limit:
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-black/20 border border-white/5 rounded-xl px-4 py-2 text-starlight focus:outline-none focus:border-violet-500/50 cursor-pointer font-bold text-xs"
+              >
+                <option value={10}>10 Entries</option>
+                <option value={25}>25 Entries</option>
+                <option value={50}>50 Entries</option>
+                <option value={100}>100 Entries</option>
+              </select>
+            </div>
+
+            <AdminDateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+
+            <AdminExportCsvButton
+              onClick={handleExport}
+              disabled={dateFilteredEvents.length === 0}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Table */}
+      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+        {loading ? (
+          <div className="p-12 text-center text-starlight/40">
+            Loading events...
+          </div>
+        ) : dateFilteredEvents.length === 0 ? (
+          <div className="p-12 text-center text-starlight/40">
+            No events found.
+          </div>
+        ) : (
+          <>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider pl-6">
+                      Event
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Logistics
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Organizer
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right">
+                      Registrations
+                    </th>
+                    <th className="p-4 text-xs font-medium text-starlight/40 uppercase tracking-wider text-right pr-6">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {dateFilteredEvents.map((event) => (
+                    <tr
+                      key={event._id}
+                      className="hover:bg-white/[0.02] transition-colors group"
+                    >
+                      <td className="p-4 pl-6 align-top">
+                        <div className="flex gap-4">
+                          <div className="shrink-0 w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/10">
+                            <span className="text-[10px] uppercase text-violet-400 font-bold">
+                              {new Date(event.date_time).toLocaleString(
+                                "en-MY",
+                                {
+                                  month: "short",
+                                },
+                              )}
+                            </span>
+                            <span className="text-lg font-bold text-starlight leading-none">
+                              {new Date(event.date_time).getDate()}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="text-starlight font-bold text-sm mb-1 group-hover:text-violet-300 transition-colors">
+                              {event.title}
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {event.tags?.slice(0, 2).map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-starlight/60 border border-white/5"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 align-top">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <Calendar size={12} className="text-violet-400" />
+                            <span>
+                              {new Date(event.date_time).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-starlight/70">
+                            <MapPin size={12} className="text-cyan-400" />
+                            <span className="truncate max-w-[150px]">
+                              {event.venue_id?.name || "No Venue"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 align-top">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-bold text-white uppercase">
+                            {event.organizer_id?.name?.substring(0, 2) || "U"}
+                          </div>
+                          <div>
+                            <p className="text-sm text-starlight font-medium">
+                              {event.organizer_id?.name}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 align-top">
+                        {getStatusBadge(event.status)}
+                      </td>
+                      <td className="p-4 align-middle text-right">
+                        <div className="flex items-center justify-end gap-2 text-starlight font-bold">
+                          <BarChart3 size={16} className="text-violet-400" />
+                          {event.registrationCount || 0}
+                        </div>
+                      </td>
+                      <td className="p-4 align-middle text-right pr-6">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-xl bg-white/5 text-starlight/40 hover:text-white hover:bg-white/10 transition-all">
+                                <MoreVertical size={18} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-48 glass-panel border-white/10"
+                            >
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-starlight/40">
+                                Event Operations
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
+                              <DropdownMenuItem
+                                onClick={() => setSelectedEvent(event)}
+                                className="flex items-center gap-2 p-3 text-starlight hover:bg-white/5 cursor-pointer rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                  <Eye size={16} />
+                                </div>
+                                <span className="font-bold text-xs">
+                                  Inspect Details
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/[0.01]">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-starlight/40 font-jakarta uppercase tracking-widest">
+                Page <span className="text-starlight">{currentPage}</span> of{" "}
+                {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-starlight/60 hover:text-starlight hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Event Details Modal */}
+      <Dialog
+        open={!!selectedEvent}
+        onOpenChange={(open) => !open && setSelectedEvent(null)}
+      >
+        <DialogContent className="max-w-2xl bg-[#0e0e12] border-white/10 text-starlight p-0 overflow-hidden">
+          <DialogDescription className="sr-only">
+            Event details and documentation overview.
+          </DialogDescription>
+          {selectedEvent && (
+            <>
+              {/* Header Image */}
+              <div className="w-full h-48 bg-white/5 relative">
+                {selectedEvent.image && (
+                  <img
+                    src={resolveUrl(selectedEvent.image)}
+                    alt={selectedEvent.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e12] to-transparent"></div>
+                <div className="absolute bottom-4 left-6">
+                  <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
+                  <p className="text-starlight/60">{selectedEvent.category}</p>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                {/* Description */}
+                <div>
+                  <h3 className="text-sm font-bold text-starlight/40 uppercase tracking-wider mb-2">
+                    Description
+                  </h3>
+                  <p className="text-starlight/80 leading-relaxed text-sm">
+                    {selectedEvent.description}
+                  </p>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Calendar className="text-violet-400" size={18} />
+                      <span className="text-sm font-bold text-starlight/80">
+                        Date & Time
+                      </span>
+                    </div>
+                    <p className="text-sm text-starlight ml-8">
+                      {new Date(selectedEvent.date_time).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <MapPin className="text-cyan-400" size={18} />
+                      <span className="text-sm font-bold text-starlight/80">
+                        Venue
+                      </span>
+                    </div>
+                    <p className="text-sm text-starlight ml-8">
+                      {selectedEvent.venue_id?.name || "Not Specified"}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Users className="text-emerald-400" size={18} />
+                      <span className="text-sm font-bold text-starlight/80">
+                        Organizer
+                      </span>
+                    </div>
+                    <p className="text-sm text-starlight ml-8">
+                      {selectedEvent.organizer_id?.name}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <BarChart3 className="text-amber-400" size={18} />
+                      <span className="text-sm font-bold text-starlight/80">
+                        Registrations
+                      </span>
+                    </div>
+                    <p className="text-sm text-starlight ml-8">
+                      {selectedEvent.registrationCount || 0} Pax
+                    </p>
+                  </div>
+                </div>
+
+                {/* Documentation Section */}
+                <div>
+                  <h3 className="text-sm font-bold text-starlight/40 uppercase tracking-wider mb-2">
+                    Required Documentation
+                  </h3>
+                  {selectedEvent.proposal ? (
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                          <FileText size={24} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-400">
+                            Event Proposal.pdf
+                          </p>
+                          <p className="text-xs text-blue-300/60">
+                            Official documentation
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={resolveUrl(selectedEvent.proposal)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Eye size={16} />
+                        View Document
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center gap-3 text-starlight/40">
+                      <AlertCircle size={20} />
+                      <span className="font-medium">
+                        No documentation available.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div>
+                  <h3 className="text-sm font-bold text-starlight/40 uppercase tracking-wider mb-2">
+                    Current Status
+                  </h3>
+                  {getStatusBadge(selectedEvent.status)}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+export default EventsList;

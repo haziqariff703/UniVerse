@@ -3,13 +3,27 @@ const router = express.Router();
 const eventController = require('../controllers/eventController');
 const { auth, authorize } = require('../middleware/auth');
 
-// Public routes
-router.get('/', eventController.getAllEvents);
-router.get('/:id', eventController.getEventById);
+// Protected routes (require authentication)
+const upload = require('../middleware/upload');
 
 // Protected routes (require authentication)
-router.post('/', auth, authorize('admin', 'staff'), eventController.createEvent);
-router.put('/:id', auth, eventController.updateEvent);
+router.get('/my-events', auth, eventController.getMyEvents);
+router.get('/organizer/analytics', auth, authorize('admin', 'organizer'), eventController.getOrganizerAnalytics);
+router.get('/organizer/reviews', auth, authorize('admin', 'organizer'), eventController.getOrganizerReviews);
+router.get('/organizer/finance-stats', auth, authorize('admin', 'organizer'), eventController.getOrganizerFinanceStats);
+router.get('/organizer/transactions', auth, authorize('admin', 'organizer'), eventController.getOrganizerTransactions);
+router.get('/organizer/category-intelligence', auth, authorize('admin', 'organizer'), eventController.getCategoryIntelligence);
+router.post('/', auth, authorize('admin', 'organizer'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), eventController.createEvent);
+router.put('/:id', auth, authorize('admin', 'organizer'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'proposal', maxCount: 1 }]), eventController.updateEvent);
 router.delete('/:id', auth, authorize('admin'), eventController.deleteEvent);
+
+// Public routes
+router.get('/', eventController.getAllEvents);
+router.get('/:id/analytics', auth, authorize('admin', 'organizer'), eventController.getEventAnalytics);
+router.put('/:id/schedule', auth, eventController.updateEventSchedule);
+router.put('/:id/tasks', auth, eventController.updateEventTasks);
+router.post('/:id/conclude', auth, authorize('admin', 'organizer'), eventController.concludeEvent);
+router.post('/:id/reviews', auth, upload.array('photos', 3), eventController.createReview);
+router.get('/:id', eventController.getEventById);
 
 module.exports = router;
