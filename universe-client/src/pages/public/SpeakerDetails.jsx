@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MOCK_SPEAKERS } from "@/data/mockSpeakers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { API_URL } from '@/config/api';
 
 const SpeakerDetails = () => {
   const { id } = useParams();
@@ -28,7 +29,7 @@ const SpeakerDetails = () => {
     const fetchSpeaker = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/speakers/${id}`,
+          `${API_URL}/speakers/${id}`,
         );
         if (!response.ok) throw new Error("Speaker not found");
         const data = await response.json();

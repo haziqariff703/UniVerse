@@ -38,6 +38,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 /**
  * KPI Card Component
@@ -113,7 +114,7 @@ const ReviewsList = () => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/reviews?${params}`,
+        `${API_URL}/admin/reviews?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -163,7 +164,7 @@ const ReviewsList = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/reviews/${id}`,
+        `${API_URL}/admin/reviews/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

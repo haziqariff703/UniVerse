@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API_URL } from '@/config/api';
 
 const Broadcast = () => {
   const [targetEvent, setTargetEvent] = useState("");
@@ -60,7 +61,7 @@ const Broadcast = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/notifications/organizer",
+        `${API_URL}/notifications/organizer`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -77,7 +78,7 @@ const Broadcast = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/events/my-events",
+        `${API_URL}/events/my-events`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -133,7 +134,7 @@ const Broadcast = () => {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/notifications/organizer",
+        `${API_URL}/notifications/organizer`,
         {
           method: "POST",
           headers: {
@@ -396,7 +397,7 @@ const Broadcast = () => {
                                 : "Amber (Alert)"}
                           </td>
                           <td className="px-4 py-2 text-center text-white/20">
-                            —
+                            â€”
                           </td>
                         </tr>
                         <tr>
@@ -404,7 +405,7 @@ const Broadcast = () => {
                             Priority (Hub)
                           </td>
                           <td className="px-4 py-2 text-center text-white/20">
-                            —
+                            â€”
                           </td>
                           <td className="px-4 py-2 text-center italic text-white/30 capitalize">
                             {intensity === "pulse"
@@ -469,7 +470,7 @@ const Broadcast = () => {
                             }}
                             className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl-lg text-white/60 hover:text-white"
                           >
-                            ×
+                            Ã—
                           </button>
                         </div>
                       )}

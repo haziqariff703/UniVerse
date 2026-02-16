@@ -176,7 +176,14 @@ The Admin Dashboard implements a unified, period-aware filtering system to provi
 
 ## 14. Infrastructure & Deployment Standards (Frontend)
 
-- **Relative API Routing**: The frontend uses relative paths (`/api/...`) rather than hardcoded URLs (e.g., `http://localhost:5000`). This ensures the application works seamlessly with the Vite development proxy and in production environments.
+- **Centralized API Configuration**: All frontend API calls use constants from `src/config/api.js`:
+  - `API_BASE`: The server origin (e.g., `http://localhost:5000` or `https://universe-api.onrender.com`). Reads from `VITE_API_BASE_URL` env var with localhost fallback.
+  - `API_URL`: `API_BASE + '/api'` for REST endpoints.
+  - All 42+ component/page files import from `@/config/api` — no hardcoded URLs.
+- **Deployment Strategy**: Split hosting — Vercel (frontend) + Render (backend). See `docs/DEPLOYMENT_GUIDE.md`.
+- **Environment Variables**:
+  - Vercel: `VITE_API_BASE_URL` → Render backend URL.
+  - Render: `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`.
 - **Icon Set Standardization**: Lucide-React is the primary icon provider. When introducing new loading states or visual metaphors, the system mandates the use of standardized components like `Loader2` (with `animate-spin`) to maintain UI consistency.
 
 ## 15. Responsive Admin Interface (UX/UI)

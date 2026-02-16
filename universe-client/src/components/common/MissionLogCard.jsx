@@ -1,6 +1,7 @@
 import React from "react";
 import { Calendar, MapPin, Star, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE } from '@/config/api';
 
 const MissionLogCard = ({ event, onReview }) => {
   return (
@@ -64,7 +65,7 @@ const MissionLogCard = ({ event, onReview }) => {
                 {event.review.photos && event.review.photos.length > 0 && (
                   <div className="flex gap-1 mt-1">
                     {event.review.photos.slice(0, 3).map((photo, idx) => {
-                      const baseUrl = "http://localhost:5000";
+                      const baseUrl = API_BASE;
                       const fullUrl = photo.startsWith("http")
                         ? photo
                         : `${baseUrl}${photo.startsWith("/") ? photo : "/" + photo}`;

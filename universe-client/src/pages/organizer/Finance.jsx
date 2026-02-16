@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import TransactionsModal from "@/components/organizer/finance/TransactionsModal";
+import { API_URL } from '@/config/api';
 
 const Finance = () => {
   const [loading, setLoading] = useState(true);
@@ -50,7 +51,7 @@ const Finance = () => {
 
       // Fetch Finance Stats
       const statsRes = await fetch(
-        "http://localhost:5000/api/events/organizer/finance-stats",
+        `${API_URL}/events/organizer/finance-stats`,
         { headers },
       );
       const statsData = await statsRes.json();
@@ -58,7 +59,7 @@ const Finance = () => {
 
       // Fetch Recent Transactions
       const transRes = await fetch(
-        "http://localhost:5000/api/events/organizer/transactions",
+        `${API_URL}/events/organizer/transactions`,
         { headers },
       );
       const transData = await transRes.json();
@@ -66,7 +67,7 @@ const Finance = () => {
 
       // Fetch Category Intelligence for revenue breakdown
       const categoryRes = await fetch(
-        "http://localhost:5000/api/events/organizer/category-intelligence",
+        `${API_URL}/events/organizer/category-intelligence`,
         { headers },
       );
       const categoryResData = await categoryRes.json();
@@ -430,7 +431,7 @@ const Finance = () => {
 
                   <div className="mt-2 flex items-center gap-4 text-[10px] text-white/40">
                     <span>{cat.totalAttendees} attendees</span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>RM{cat.avgRevenuePerEvent} avg/event</span>
                   </div>
                 </div>

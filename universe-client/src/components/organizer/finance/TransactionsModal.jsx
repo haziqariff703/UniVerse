@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Filter, DollarSign, Calendar, Download } from "lucide-react";
+import { API_URL } from '@/config/api';
 
 const TransactionsModal = ({ isOpen, onClose }) => {
   const [transactions, setTransactions] = useState([]);
@@ -10,7 +11,7 @@ const TransactionsModal = ({ isOpen, onClose }) => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "http://localhost:5000/api/events/organizer/transactions",
+        `${API_URL}/events/organizer/transactions`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

@@ -25,6 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { API_URL } from '@/config/api';
 
 const EventGuestList = () => {
   const { id } = useParams();
@@ -42,7 +43,7 @@ const EventGuestList = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/registrations/event/${id}`,
+        `${API_URL}/registrations/event/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -54,7 +55,7 @@ const EventGuestList = () => {
 
       // Fetch Reviews (Only fetch once or less frequently? For now keep it synced)
       const reviewsRes = await fetch(
-        `http://localhost:5000/api/events/organizer/reviews?event_id=${id}`,
+        `${API_URL}/events/organizer/reviews?event_id=${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -190,7 +191,7 @@ const EventGuestList = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5000/api/registrations/${registrationId}/status`,
+        `${API_URL}/registrations/${registrationId}/status`,
         {
           method: "PATCH",
           headers: {

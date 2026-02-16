@@ -24,8 +24,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 // Magic UI Simulated Border Beam
 const BorderBeam = () => (
@@ -726,7 +726,7 @@ const EventDetails = () => {
                   </div>
                   <p className="text-center text-[9px] font-bold text-rose-500/80 animate-pulse tracking-widest uppercase">
                     {fillPercentage > 80
-                      ? "Critical: Almost Full — Act Now"
+                      ? "Critical: Almost Full Ã¢â‚¬â€ Act Now"
                       : "Plenty of spots"}
                   </p>
                 </div>

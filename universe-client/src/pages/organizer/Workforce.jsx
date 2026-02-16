@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/dark.css";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 const Workforce = () => {
   const [activeTab, setActiveTab] = useState("applicants");
   const [communities, setCommunities] = useState([]);
@@ -477,7 +477,7 @@ const Workforce = () => {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
               <span className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-500">
-                ⌘K
+                Ã¢Å’ËœK
               </span>
             </div>
           </div>
@@ -669,7 +669,7 @@ const Workforce = () => {
                               {app.user_id?.name}
                             </h3>
                             <p className="text-white/40 text-xs">
-                              ID: {app.user_id?.student_id || "N/A"} • Applied{" "}
+                              ID: {app.user_id?.student_id || "N/A"} Ã¢â‚¬Â¢ Applied{" "}
                               {new Date(app.created_at).toLocaleDateString()}
                             </p>
                           </div>

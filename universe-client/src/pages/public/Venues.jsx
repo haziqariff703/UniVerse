@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import TrueFocus from "@/components/ui/TrueFocus";
 import { VIBE_TAGS } from "@/data/liveVenueStatus";
 import { Sparkles, X, BookOpen, Snowflake, Wifi, Users } from "lucide-react";
+import { API_BASE } from '@/config/api';
 
 const CATEGORIES = ["All", "Academic", "Residential", "Social", "Outdoor"];
 
@@ -28,8 +29,7 @@ const Venues = () => {
   const [activeVibe, setActiveVibe] = useState(null);
   const [user, setUser] = useState(null);
 
-  const API_BASE = "http://localhost:5000";
-
+  
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -229,7 +229,7 @@ const Venues = () => {
               className="text-center py-40 border border-white/5 rounded-[3rem] bg-slate-900/20 backdrop-blur-sm"
             >
               <div className="text-7xl mb-8 opacity-40 text-fuchsia-500">
-                🔍
+                ðŸ”
               </div>
               <h3 className="text-3xl font-bold text-white mb-4 font-clash tracking-tight">
                 No scenes found in this galaxy

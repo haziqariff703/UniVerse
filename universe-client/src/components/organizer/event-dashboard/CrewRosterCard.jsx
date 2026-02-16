@@ -10,6 +10,7 @@ import {
   Check,
 } from "lucide-react";
 import CrewRosterModal from "./CrewRosterModal";
+import { API_URL } from '@/config/api';
 
 const CrewRosterCard = ({
   eventId,
@@ -28,7 +29,7 @@ const CrewRosterCard = ({
   const fetchCrew = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`, {
+      const res = await fetch(`${API_URL}/crew/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -55,7 +56,7 @@ const CrewRosterCard = ({
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5000/api/crew/${editingMember}`,
+        `${API_URL}/crew/${editingMember}`,
         {
           method: "PUT",
           headers: {

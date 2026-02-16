@@ -4,6 +4,7 @@ import { Search, Linkedin, Twitter, Globe, Sparkles } from "lucide-react";
 import Typewriter from "typewriter-effect";
 import { cn } from "@/lib/utils";
 import BlurText from "@/components/ui/BlurText";
+import { API_URL } from '@/config/api';
 // import { MOCK_SPEAKERS } from "@/data/mockSpeakers";
 
 const FILTERS = ["All", "Science", "Tech", "Arts", "Leadership"];
@@ -20,7 +21,7 @@ const Speakers = () => {
 
   const fetchSpeakers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/speakers");
+      const response = await fetch(`${API_URL}/speakers`);
       const data = await response.json();
       setSpeakers(data.speakers || []);
     } catch (error) {
@@ -181,7 +182,7 @@ const AgentCard = ({ speaker, idx }) => {
             {/* Scanner Line (Identity Element) */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent -translate-y-full group-hover:translate-y-[500px] transition-transform duration-[1.5s] ease-in-out z-20 opacity-0 group-hover:opacity-100 delay-100" />
 
-            {/* Image with Grayscale → Color (Target Lock Effect) */}
+            {/* Image with Grayscale â†’ Color (Target Lock Effect) */}
             <img
               src={speaker.image}
               alt={speaker.name}

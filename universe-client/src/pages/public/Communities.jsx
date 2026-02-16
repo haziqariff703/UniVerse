@@ -14,8 +14,8 @@ import { EnhancedHoverEffect } from "@/components/ui/enhanced-card-hover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import ClubDetailModal from "@/components/common/ClubDetailModal";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "http://localhost:5000";
 
 // Helper for distinct fallback images based on category
 const getCategoryPlaceholder = (category) => {
@@ -447,7 +447,7 @@ const EmptyState = ({ searchTerm, message }) => (
     className="flex flex-col items-center justify-center py-20 px-4"
   >
     <div className="text-center max-w-md">
-      <div className="mb-4 text-6xl">🔍</div>
+      <div className="mb-4 text-6xl">ðŸ”</div>
       <h3 className="text-xl font-clash font-bold text-foreground mb-2">
         {message || "No organizations found"}
       </h3>

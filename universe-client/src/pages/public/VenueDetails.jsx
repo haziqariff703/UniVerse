@@ -22,8 +22,8 @@ import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom"; // Added useParams, useNavigate
 import { useState, useEffect } from "react"; // Added useState, useEffect
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 const VenueDetails = () => {
   const { id } = useParams();
@@ -181,7 +181,7 @@ const VenueDetails = () => {
                   <MapPin className={`w-4 h-4 ${accentColor}`} />
                 </div>
                 <span className="text-sm font-medium tracking-wide">
-                  Level {venue.location_code.split("-")[1] || "G"} • Main Wing
+                  Level {venue.location_code.split("-")[1] || "G"} Ã¢â‚¬Â¢ Main Wing
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -300,7 +300,7 @@ const VenueDetails = () => {
                             {new Date(event.date_time).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1.5 uppercase tracking-widest text-[10px] text-zinc-600">
-                            • {event.tags?.[0] || "General"}
+                            Ã¢â‚¬Â¢ {event.tags?.[0] || "General"}
                           </span>
                         </div>
                       </div>
@@ -426,7 +426,7 @@ const VenueDetails = () => {
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 </div>
                 <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                  Verified Safe Zone • Security Monitored
+                  Verified Safe Zone Ã¢â‚¬Â¢ Security Monitored
                 </p>
               </div>
 

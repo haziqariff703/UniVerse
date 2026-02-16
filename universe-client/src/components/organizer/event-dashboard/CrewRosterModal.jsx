@@ -10,6 +10,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
+import { API_URL } from '@/config/api';
 
 const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
   const [crew, setCrew] = useState([]);
@@ -21,7 +22,7 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
   const fetchRoster = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/crew/${eventId}`, {
+      const res = await fetch(`${API_URL}/crew/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -36,7 +37,7 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5000/api/crew/eligible/${eventId}`,
+        `${API_URL}/crew/eligible/${eventId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -61,7 +62,7 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
     setProcessing(userId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/crew`, {
+      const res = await fetch(`${API_URL}/crew`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,7 +102,7 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
     setProcessing(crewId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/crew/${crewId}`, {
+      const res = await fetch(`${API_URL}/crew/${crewId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -187,7 +188,7 @@ const CrewRosterModal = ({ isOpen, onClose, eventId, canEdit }) => {
                               {member.user_id?.name || "Unknown"}
                             </p>
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                              {member.role} • {member.department}
+                              {member.role} â€¢ {member.department}
                             </p>
                           </div>
                         </div>

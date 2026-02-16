@@ -47,6 +47,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 /**
  * Intelligence Card Component
@@ -129,7 +130,7 @@ const CategoryManager = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/admin/categories",
+        `${API_URL}/admin/categories`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -189,8 +190,8 @@ const CategoryManager = () => {
     try {
       const token = localStorage.getItem("token");
       const url = currentCategory
-        ? `http://localhost:5000/api/admin/categories/${currentCategory._id}`
-        : "http://localhost:5000/api/admin/categories";
+        ? `${API_URL}/admin/categories/${currentCategory._id}`
+        : `${API_URL}/admin/categories`;
 
       const response = await fetch(url, {
         method: currentCategory ? "PUT" : "POST",
@@ -230,7 +231,7 @@ const CategoryManager = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/categories/${id}`,
+        `${API_URL}/admin/categories/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

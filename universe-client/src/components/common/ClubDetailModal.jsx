@@ -18,8 +18,8 @@ import {
 import { getTagColor } from "@/data/clubsData";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "http://localhost:5000";
 
 const ClubDetailModal = ({ club, isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -205,7 +205,7 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
                         {m.user_id?.name || "Unknown User"}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {m.role || "Member"} • {m.department}
+                        {m.role || "Member"} â€¢ {m.department}
                       </p>
                     </div>
                   </div>
@@ -267,7 +267,7 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
                   Application Submitted
                 </>
               ) : (
-                "Apply for Committee (Workforce) →"
+                "Apply for Committee (Workforce) â†’"
               )}
             </button>
             <div className="flex gap-3">
@@ -295,7 +295,7 @@ const ClubDetailModal = ({ club, isOpen, onClose }) => {
                   shadow-[0_0_20px_rgba(168,85,247,0.3)]
                   hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]"
               >
-                Explore Events →
+                Explore Events â†’
               </button>
             </div>
           </div>

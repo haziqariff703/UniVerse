@@ -23,6 +23,7 @@ import { useRef } from "react";
 import useMalaysiaTime from "@/hooks/useMalaysiaTime";
 import SidePeek from "../admin/dashboard/SidePeek";
 import { swalConfirm } from "@/lib/swalConfig";
+import { API_URL } from '@/config/api';
 
 const FooterLogo = () => {
   const containerRef = useRef(null);
@@ -92,7 +93,7 @@ const AdminLayout = ({ ...props }) => {
   const fetchStats = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/stats", {
+      const response = await fetch(`${API_URL}/admin/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -320,7 +321,7 @@ const AdminLayout = ({ ...props }) => {
                 onClick={() => setIsAlertsOpen(false)}
                 className="mt-4 text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-widest"
               >
-                Go to Registry →
+                Go to Registry â†’
               </Link>
             </div>
           </div>

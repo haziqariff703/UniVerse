@@ -25,6 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { API_URL } from "@/config/api";
 
 const Analytics = () => {
   const [loading, setLoading] = useState(true);
@@ -49,10 +50,9 @@ const Analytics = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch Analytics Stats
-        const statsRes = await fetch(
-          "http://localhost:5000/api/events/organizer/analytics",
-          { headers },
-        );
+        const statsRes = await fetch(`${API_URL}/events/organizer/analytics`, {
+          headers,
+        });
         const statsData = await statsRes.json();
 
         if (statsData) {
@@ -66,24 +66,22 @@ const Analytics = () => {
         }
 
         // Fetch Recent Reviews (first 4-5 for the dashboard)
-        const reviewsRes = await fetch(
-          "http://localhost:5000/api/events/organizer/reviews",
-          { headers },
-        );
+        const reviewsRes = await fetch(`${API_URL}/events/organizer/reviews`, {
+          headers,
+        });
         const reviewsData = await reviewsRes.json();
         setReviews(reviewsData?.slice(0, 5) || []);
 
         // Fetch Events (for filtering in the modal)
-        const eventsRes = await fetch(
-          "http://localhost:5000/api/events/my-events",
-          { headers },
-        );
+        const eventsRes = await fetch(`${API_URL}/events/my-events`, {
+          headers,
+        });
         const eventsData = await eventsRes.json();
         setEvents(eventsData || []);
 
         // Fetch Category Intelligence
         const categoryRes = await fetch(
-          "http://localhost:5000/api/events/organizer/category-intelligence",
+          `${API_URL}/events/organizer/category-intelligence`,
           { headers },
         );
         const categoryResData = await categoryRes.json();

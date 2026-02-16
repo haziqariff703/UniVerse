@@ -8,14 +8,14 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE } from '@/config/api';
 
 const ModernProfileCard = ({ member, isOwner, onEdit }) => {
   const { user_id, role, department, status, joined_at } = member;
   const user = user_id || {};
   const { name, avatar, current_merit } = user;
 
-  const API_BASE = "http://localhost:5000";
-
+  
   // Resolve avatar URL
   const avatarUrl = avatar
     ? avatar.startsWith("http")

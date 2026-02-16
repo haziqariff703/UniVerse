@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Filter, Star, MessageSquare, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_URL } from '@/config/api';
 
 const ReviewsModal = ({ isOpen, onClose, events }) => {
   const [reviews, setReviews] = useState([]);
@@ -12,8 +13,8 @@ const ReviewsModal = ({ isOpen, onClose, events }) => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const url = selectedEventId
-        ? `http://localhost:5000/api/events/organizer/reviews?event_id=${selectedEventId}`
-        : `http://localhost:5000/api/events/organizer/reviews`;
+        ? `${API_URL}/events/organizer/reviews?event_id=${selectedEventId}`
+        : `${API_URL}/events/organizer/reviews`;
 
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -123,7 +124,7 @@ const ReviewsModal = ({ isOpen, onClose, events }) => {
                         <span>
                           {new Date(review.date).toLocaleDateString()}
                         </span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span className="text-violet-400 font-bold">
                           {review.event_title}
                         </span>

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { toast } from "sonner";
+import { API_URL } from '@/config/api';
 
 const NotificationsManager = () => {
   const [notifications, setNotifications] = useState([]);
@@ -66,7 +67,7 @@ const NotificationsManager = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/admin/notifications",
+        `${API_URL}/admin/notifications`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -104,7 +105,7 @@ const NotificationsManager = () => {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/admin/notifications",
+        `${API_URL}/admin/notifications`,
         {
           method: "POST",
           headers: {
@@ -137,7 +138,7 @@ const NotificationsManager = () => {
     if (!confirm("Delete this notification log?")) return;
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/admin/notifications/${id}`, {
+      await fetch(`${API_URL}/admin/notifications/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -275,7 +276,7 @@ const NotificationsManager = () => {
                         }}
                         className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl-lg text-white/60 hover:text-white"
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
                   )}
