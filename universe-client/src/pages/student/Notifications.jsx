@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { API_URL } from '@/config/api';
 
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -43,7 +44,7 @@ const Notifications = () => {
     try {
       if (!silent) setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/notifications", {
+      const response = await fetch(`${API_URL}/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch notifications");
@@ -115,7 +116,7 @@ const Notifications = () => {
   const markAllRead = async () => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/notifications/read-all", {
+      await fetch(`${API_URL}/notifications/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -128,7 +129,7 @@ const Notifications = () => {
   const markRead = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+      await fetch(`${API_URL}/notifications/${id}/read`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });

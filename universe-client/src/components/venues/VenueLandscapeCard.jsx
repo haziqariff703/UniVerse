@@ -23,6 +23,7 @@ import SpotlightCard from "@/components/ui/SpotlightCard";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 import { cn } from "@/lib/utils";
 import { getVenueStatus } from "@/lib/venueUtils";
+import { API_BASE } from '@/config/api';
 
 const facilityIconMap = {
   AC: <Wind className="w-3.5 h-3.5" />,
@@ -107,11 +108,11 @@ const VenueLandscapeCard = ({ venue, index, user }) => {
                 image
                   ? image.startsWith("http")
                     ? image
-                    : `http://localhost:5000/${image}`
+                    : `${API_BASE}/${image}`
                   : venue.images?.[0]
                     ? venue.images[0].startsWith("http")
                       ? venue.images[0]
-                      : `http://localhost:5000/${venue.images[0]}`
+                      : `${API_BASE}/${venue.images[0]}`
                     : "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800"
               }
               alt={name}

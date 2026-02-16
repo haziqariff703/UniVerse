@@ -40,6 +40,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 /**
  * Common facilities usually available on campus.
@@ -104,7 +105,7 @@ const VenueManager = ({ onBack }) => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/venues?${params}`,
+        `${API_URL}/admin/venues?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -315,8 +316,8 @@ const VenueManager = ({ onBack }) => {
       }
 
       const url = editingVenue
-        ? `http://localhost:5000/api/admin/venues/${editingVenue._id}`
-        : "http://localhost:5000/api/admin/venues";
+        ? `${API_URL}/admin/venues/${editingVenue._id}`
+        : `${API_URL}/admin/venues`;
 
       const response = await fetch(url, {
         method: editingVenue ? "PUT" : "POST",
@@ -353,7 +354,7 @@ const VenueManager = ({ onBack }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/venues/${id}`,
+        `${API_URL}/admin/venues/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

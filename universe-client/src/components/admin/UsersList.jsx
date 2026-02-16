@@ -46,6 +46,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 /**
  * UsersList "Command Center"
@@ -93,7 +94,7 @@ const UsersList = ({ onBack }) => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/users?${params}`,
+        `${API_URL}/admin/users?${params}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -137,7 +138,7 @@ const UsersList = ({ onBack }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/users/${userId}`,
+        `${API_URL}/admin/users/${userId}`,
         {
           method: "DELETE",
           headers: {
@@ -163,7 +164,7 @@ const UsersList = ({ onBack }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/users/${userId}/role`,
+        `${API_URL}/admin/users/${userId}/role`,
         {
           method: "PUT",
           headers: {
@@ -193,7 +194,7 @@ const UsersList = ({ onBack }) => {
     setCreateLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/users", {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

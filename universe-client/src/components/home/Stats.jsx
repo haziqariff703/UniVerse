@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import StatCard from "@/components/common/StatCard";
+import { API_URL } from '@/config/api';
 
 const Stats = () => {
   const [stats, setStats] = useState({
@@ -12,7 +13,7 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/public/stats");
+        const res = await fetch(`${API_URL}/public/stats`);
         if (res.ok) {
           const data = await res.json();
           setStats(data);

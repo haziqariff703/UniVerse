@@ -11,8 +11,8 @@ import {
   Ticket,
 } from "lucide-react";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 const EventCardCompact = ({ event }) => {
   const date = new Date(event.date_time);

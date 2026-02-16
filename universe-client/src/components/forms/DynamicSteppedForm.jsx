@@ -10,6 +10,7 @@ import {
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.css";
 import "flatpickr/dist/themes/dark.css";
+import { API_BASE } from '@/config/api';
 
 const DynamicSteppedForm = ({
   schema,
@@ -275,7 +276,7 @@ const DynamicSteppedForm = ({
                       <a
                         href={
                           typeof formData[field.name] === "string"
-                            ? `http://localhost:5000/${formData[field.name]}`
+                            ? `${API_BASE}/${formData[field.name]}`
                             : "#"
                         }
                         target="_blank"
@@ -297,7 +298,7 @@ const DynamicSteppedForm = ({
                         src={
                           formData[field.name] instanceof File
                             ? URL.createObjectURL(formData[field.name])
-                            : `http://localhost:5000/${formData[field.name]}`
+                            : `${API_BASE}/${formData[field.name]}`
                         }
                         alt="Preview"
                         className="w-full h-full object-cover"

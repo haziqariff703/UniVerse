@@ -22,8 +22,8 @@ import QRCode from "react-qr-code";
 import { toast } from "sonner";
 import { resolveUrl } from "@/utils/urlHelper";
 import { swalConfirm } from "@/lib/swalConfig";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 const MyBookings = () => {
   const [activeTab, setActiveTab] = useState("all");

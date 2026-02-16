@@ -11,6 +11,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE, API_URL } from "@/config/api";
 
 const ATMOS_METRICS = [
   {
@@ -91,7 +92,7 @@ const ReviewModal = ({
           if (p.includes(":/") || p.includes(":\\"))
             return "/placeholder-image.jpg"; // Filter out absolute local paths
           const normalizedPath = p.startsWith("/") ? p : `/${p}`;
-          return `http://localhost:5000${normalizedPath}`;
+          return `${API_BASE}${normalizedPath}`;
         });
         setPhotos(serverPhotos);
       } else {

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users, ArrowRight } from "lucide-react";
+import { API_BASE } from '@/config/api';
 
 const VenueCard = ({ venue }) => {
   const { id, name, location_code, max_capacity, image, facilities } = venue;
@@ -18,7 +19,7 @@ const VenueCard = ({ venue }) => {
             image
               ? image.startsWith("http")
                 ? image
-                : `http://localhost:5000/${image}`
+                : `${API_BASE}/${image}`
               : "/placeholder-venue.jpg"
           }
           alt={name}

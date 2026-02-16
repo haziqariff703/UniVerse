@@ -13,6 +13,7 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { API_URL } from '@/config/api';
 
 const ScanQR = () => {
   const [manualCode, setManualCode] = useState("");
@@ -72,7 +73,7 @@ const ScanQR = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/registrations/checkin",
+        `${API_URL}/registrations/checkin`,
         {
           method: "POST",
           headers: {
@@ -104,7 +105,7 @@ const ScanQR = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/registrations/checkin",
+        `${API_URL}/registrations/checkin`,
         {
           method: "POST",
           headers: {

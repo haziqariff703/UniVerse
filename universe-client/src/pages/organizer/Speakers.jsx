@@ -44,6 +44,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_URL } from '@/config/api';
 
 const OrganizerSpeakers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,8 +157,8 @@ const OrganizerSpeakers = () => {
 
       // Determine URL and Method based on mode
       const url = selectedSpeaker
-        ? `http://localhost:5000/api/speakers/${selectedSpeaker._id}`
-        : "http://localhost:5000/api/speakers/propose";
+        ? `${API_URL}/speakers/${selectedSpeaker._id}`
+        : `${API_URL}/speakers/propose`;
 
       const method = selectedSpeaker ? "PUT" : "POST";
 

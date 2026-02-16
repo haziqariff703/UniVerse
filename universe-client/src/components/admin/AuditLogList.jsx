@@ -28,6 +28,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 const KpiCard = ({
   title,
@@ -113,7 +114,7 @@ const AuditLogList = () => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/audit-logs?${params}`,
+        `${API_URL}/admin/audit-logs?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

@@ -48,8 +48,8 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_BASE, API_URL } from '@/config/api';
 
-const API_BASE = "http://localhost:5000";
 
 /**
  * Intelligence Card Component
@@ -143,7 +143,7 @@ const CommunityManager = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/admin/communities",
+        `${API_URL}/admin/communities`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -162,7 +162,7 @@ const CommunityManager = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/admin/users?limit=1000",
+        `${API_URL}/admin/users?limit=1000`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -216,8 +216,8 @@ const CommunityManager = () => {
     try {
       const token = localStorage.getItem("token");
       const url = currentCommunity
-        ? `http://localhost:5000/api/admin/communities/${currentCommunity._id}`
-        : "http://localhost:5000/api/admin/communities";
+        ? `${API_URL}/admin/communities/${currentCommunity._id}`
+        : `${API_URL}/admin/communities`;
 
       const submissionData = new FormData();
 
@@ -272,7 +272,7 @@ const CommunityManager = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/communities/${id}`,
+        `${API_URL}/admin/communities/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -567,7 +567,7 @@ const CommunityManager = () => {
                     )}
                   </div>
                   <p className="text-[10px] font-mono text-starlight/40 mb-3 tracking-tighter uppercase">
-                    /{comm.slug} • {comm.category}
+                    /{comm.slug} â€¢ {comm.category}
                   </p>
 
                   <p className="text-xs text-starlight/40 line-clamp-2 h-8 mb-4">

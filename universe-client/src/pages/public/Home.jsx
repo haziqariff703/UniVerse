@@ -9,8 +9,8 @@ import Newsletter from "@/components/home/Newsletter";
 import Communities from "@/components/home/Communities";
 import FeaturedEventSlider from "@/components/public/FeaturedEventSlider";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 const mapEventToCardProps = (event) => ({
   id: event._id,

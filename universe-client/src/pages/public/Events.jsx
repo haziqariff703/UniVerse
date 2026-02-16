@@ -15,8 +15,8 @@ import EventCard from "@/components/common/EventCard";
 import EventCarousel from "@/components/public/EventCarousel";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { resolveUrl } from "@/utils/urlHelper";
+import { API_BASE } from '@/config/api';
 
-const API_BASE = "";
 
 const mapEventToCardProps = (event) => ({
   id: event._id,

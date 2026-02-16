@@ -45,6 +45,7 @@ import {
   AdminExportCsvButton,
 } from "@/components/admin/shared/AdminListControls";
 import { matchesDateRange } from "@/lib/adminDateUtils";
+import { API_URL } from '@/config/api';
 
 const KpiCard = ({
   title,
@@ -150,7 +151,7 @@ const SpeakersList = () => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/speakers?${params}`,
+        `${API_URL}/admin/speakers?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -194,8 +195,8 @@ const SpeakersList = () => {
     try {
       const token = localStorage.getItem("token");
       const url = currentSpeaker
-        ? `http://localhost:5000/api/admin/speakers/${currentSpeaker._id}`
-        : "http://localhost:5000/api/admin/speakers";
+        ? `${API_URL}/admin/speakers/${currentSpeaker._id}`
+        : `${API_URL}/admin/speakers`;
 
       const method = currentSpeaker ? "PUT" : "POST";
 
@@ -244,7 +245,7 @@ const SpeakersList = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/admin/speakers/${id}`, {
+      await fetch(`${API_URL}/admin/speakers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

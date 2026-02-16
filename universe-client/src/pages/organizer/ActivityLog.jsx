@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { API_URL } from '@/config/api';
 
 const CircularProgress = ({ value, color, size = 60, strokeWidth = 5 }) => {
   const radius = (size - strokeWidth) / 2;
@@ -138,7 +139,7 @@ const ActivityLog = () => {
         params.append("action", actionFilter);
 
       const res = await fetch(
-        `http://localhost:5000/api/audit/organizer?${params}`,
+        `${API_URL}/audit/organizer?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

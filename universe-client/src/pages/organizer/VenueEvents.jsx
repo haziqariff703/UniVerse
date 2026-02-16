@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import DecryptedText from "@/components/ui/DecryptedText";
 import { getVenueStatus } from "@/lib/venueUtils";
+import { API_URL } from '@/config/api';
 
 const VenueEvents = () => {
   const { id } = useParams();
@@ -44,7 +45,7 @@ const VenueEvents = () => {
         const token = localStorage.getItem("token");
 
         // Fetch venue details
-        const venueRes = await fetch(`http://localhost:5000/api/admin/venues`, {
+        const venueRes = await fetch(`${API_URL}/admin/venues`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const venueData = await venueRes.json();
@@ -53,7 +54,7 @@ const VenueEvents = () => {
 
         // Fetch events specific to this venue (including all statuses)
         const eventsRes = await fetch(
-          `http://localhost:5000/api/venues/${id}/events?status=all`,
+          `${API_URL}/venues/${id}/events?status=all`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
         const eventsData = await eventsRes.json();
