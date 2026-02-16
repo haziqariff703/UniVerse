@@ -17,8 +17,6 @@ const speakerRoutes = require("./routes/speakerRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
 const hpp = require("hpp");
 const rateLimit = require("express-rate-limit");
 
@@ -29,8 +27,6 @@ app.use(express.json());
 
 // Security Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); // Allow images to load
-app.use(mongoSanitize()); // Prevent NoSQL injection
-app.use(xss()); // Prevent XSS attacks
 app.use(hpp()); // Prevent HTTP Parameter Pollution
 
 // Rate Limiting (100 requests per 10 mins)
