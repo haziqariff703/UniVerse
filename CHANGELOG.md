@@ -1,10 +1,21 @@
 # Changelog
 
+## [2026-02-13]
+
+- **Added**: Comprehensive `docs/QUERY_GUIDE.md` containing sample Mongoose CRUD and advanced aggregation queries for developers.
+- **Improved**: Documentation for financial analytics and event conflict resolution logic.
+- **Changed**: Rewrote `UniVerse_Event_System.groovy` to match all 14 current Mongoose models (was 8 outdated tables). Added `communities`, `community_members`, `event_crew`, `club_proposals`, `categories`, and `broadcast_logs` tables. Updated all existing table fields, enums, and notes.
+- **Added**: `docs/SECURITY_MEASURES.md` — comprehensive documentation of all 7 security layers (JWT auth, RBAC, data protection, audit logging, upload security, API security, soft deletion).
+- **Added**: `docs/DESIGN_DECISIONS.md` — documentation of 12 key architectural decisions with rationale and trade-offs (database choice, denormalization, atomic ops, soft deletion, dual roles, routing, hybrid storage, compound indexes, polymorphic refs, lifecycle state machine, MVC, auth sync).
+- **Added**: `docs/SYSTEM_TESTING.md` — comprehensive test specification with 115 test cases covering authentication, RBAC, ownership, database logic, data integrity, file uploads, audit trails, password exclusion, error handling, and concurrency.
+
 ## [2026-02-11]
 
 - **Removed**: Dead `temp_email` field from `eventCrew.js` schema — never read or written by any controller or frontend component.
 - **Removed**: `ic_number` field from `user.js` schema and all references across `authController.js`, `UsersList.jsx`, and `verify_workflow.js` for PDPA compliance — sensitive identity data should not be stored without encryption and consent mechanisms.
 - **Added**: `gender` and `date_of_birth` fields wired end-to-end — editable in Edit Profile modal (Identity tab), persisted via `userController.js`, and visible in Admin user details.
+- **Changed**: Updated `UniVerse_Event_System.groovy` to include a `user_id` relationship on the `Table speakers` definition, enabling the linking of internal User accounts (Students/Staff) to Speaker profiles.
+- **Changed**: Updated `UniVerse_Event_System.groovy` to include a `category_id` relationship on the `Table events` definition, linking events to the Admin-managed `categories` table.
 - **Added**: Admin Dashboard — Upcoming Events strip (next 7 days with venue + registration progress), Quick Actions panel (pending events/organizers/speakers), User Demographics donut chart (gender distribution).
 - **Changed**: Admin Dashboard — Trending Events capped to top 5, removed Export Report button from Daily Traffic card.
 

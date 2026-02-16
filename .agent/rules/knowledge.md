@@ -379,6 +379,189 @@ The Campus News Hub transforms the platform's internal broadcast logs into a pub
   - **Resolution**: Backend routes (`notificationRoutes.js`, `adminRoutes.js`) use `multer` to handle `poster` files, persisting them to Supabase Storage or local disk.
   - **Fallback**: The system automatically generates a standard "Information" signal if no poster is provided.
 
+## 33. NoSQL Collection Structure (Data Dictionary)
+
+The UniVerse platform utilizes a schema-flexible NoSQL architecture (MongoDB/Mongoose), optimized for high-read performance and operational integrity. Below is the comprehensive data dictionary for all system models.
+
+### 1. **Users Collection**
+
+- **Purpose**: Identity governance, achievement tracking, and portfolio assets.
+- **Key Fields**:
+  - `student_id`: Unique String (8-15 chars). Sparse index to allow for non-student accounts.
+  - `role`/`roles`: Dual-layer role logic (Enum: `student`, `admin`, `organizer`, `association`).
+  - `password`: Hashed String (Bcrypt).
+  - `id_card_url`/`confirmation_letter_url`: Supabase storage URLs for student verification.
+  - `current_merit`/`merit_goal`: Numeric XP trackers for gamification.
+  - `assets`: Array of Objects (Portfolio certificates with `title`, `url`, `fileType`, and `size`).
+  - `settings`: Nested Objects for granular privacy and notification control.
+
+### 2. **Events Collection**
+
+- **Purpose**: Core event metadata and booking intelligence.
+- **Key Fields**:
+  - `organizer_id`/`community_id`: ObjectIDs linking to `User` and `Community`.
+  - `venue_id`: ObjectID linking to `Venue` for location intelligence.
+  - `status`: Lifecycle Enum (`pending`, `approved`, `rejected`, `Open`, `SoldOut`, etc.).
+  - `image`/`proposal`: Storage URLs for the primary cinematic poster and the PDF proposal.
+  - `target_audience`: Enum for student faculty filtering (e.g., `FSKM Students`).
+  - `schedule`/`tasks`: Arrays of Objects for internal workforce and public timeline management.
+
+### 3. **Registrations Collection**
+
+- **Purpose**: Attendee tracking and digital pass generation.
+- **Key Fields**:
+  - `event_id`/`user_id`: ObjectIDs (Compound Unique Index to prevent duplicates).
+  - `status`: Attendance Enum (`Confirmed`, `CheckedIn`, `Waitlist`, `Cancelled`).
+  - `event_snapshot`: **Denormalized Object** (stores `title`, `venue`, `date_time`) to minimize lookups during pass rendering.
+  - `user_snapshot`: **Denormalized Object** (stores `name`, `student_id`) for high-speed check-in validation.
+  - `qr_code_string`: Unique identifier for Digital Pass generation.
+
+### 4. **Audit Logs Collection**
+
+- **Purpose**: Forensic tracking of all administrative and organizer actions.
+- **Key Fields**:
+  - `admin_id`: ObjectID of the acting administrator.
+  - `action`: Enum (e.g., `APPROVE_EVENT`, `DELETE_USER`, `UPDATE_VENUE`).
+  - `target_id`: ObjectID referencing the entity being modified (stored via `refPath`).
+  - `details`: Snapshot Object (stores the state of changes/metadata).
+  - `ip_address`: Tracking the origin of the administrative request.
+
+### 5. **Communities Collection**
+
+- **Purpose**: Student organization (Clubs/Associations) metadata.
+- **Key Fields**:
+  - `slug`: Unique lowercase URL-friendly name.
+  - `owner_id`: ObjectID identifying the President/Creator.
+  - `advisor`: Nested Object (stores names, titles, and emails).
+  - `stats`: Cached counts (`member_count`, `event_count`) for performance.
+
+### 6. **CommunityMember Collection**
+
+- **Purpose**: Workforce hierarchy and recruitment status.
+- **Key Fields**:
+  - `role`: Enum (`Member`, `President`, `Treasurer`, `Advisor`, etc.).
+  - `status`: Recruitment Lifecycle (`Applied`, `Approved`, `Inactive`).
+  - `interview_date`/`interview_note`: Metadata for HR-style recruitment flows.
+
+### 7. **Venues Collection**
+
+- **Purpose**: Campus location management and real-time status.
+- **Key Fields**:
+  - `location_code`: Standardized unique identifier (e.g., "A-101").
+  - `image`/`images`: Primary and gallery storage URLs.
+  - `occupancyStatus`: Live signal (`Available`, `Busy`, `Moderate`).
+  - `glowColor`: Cosmetic UI property for the Heatmap visualization.
+
+### 8. **Supporting Collections**
+
+- **ClubProposals**: Metadata for new club applications (includes `constitution_url`).
+- **EventCrew**: Staffing logic for specific events (roles like "Logistics" or "VIP Liaison").
+- **BroadcastLogs**: History of platform-wide signals and news Hub entries.
+- **Speakers**: Profiles for verified campus speakers and guest talent.
+- **Notifications**: Internal alert logs for user engagement.
+- **Reviews**: Aggregated feedback and Atmosphere metrics (`energy`, `welfare`, `value`).
+
+### 9. **Entity-Relationship Visual (Merid ER Diagram)**
+
+This diagram illustrates how the core entities in UniVerse interact, showing the flow from identity to event participation and governance.
+
+```mermaid
+erDiagram
+    USER ||--o{ EVENT : "organizes"
+    USER ||--o{ REGISTRATION : "attends"
+    USER ||--o{ COMMUNITY : "owns"
+    USER ||--o{ COMMUNITY_MEMBER : "joins"
+    USER ||--o{ CLUB_PROPOSAL : "proposes"
+    USER ||--o{ AUDIT_LOG : "triggers admin action"
+    USER ||--o{ NOTIFICATION : "receives"
+    USER ||--o{ REVIEW : "writes"
+
+    COMMUNITY ||--o{ EVENT : "hosts"
+    COMMUNITY ||--o{ COMMUNITY_MEMBER : "has"
+
+    EVENT ||--o{ REGISTRATION : "collects"
+    EVENT ||--o{ EVENT_CREW : "is staffed by"
+    EVENT ||--o{ REVIEW : "is evaluated by"
+    EVENT }o--|| VENUE : "booked at"
+    EVENT }o--o{ SPEAKER : "features"
+
+    AUDIT_LOG }o--|| EVENT : "tracks changes"
+    AUDIT_LOG }o--|| VENUE : "tracks changes"
+    AUDIT_LOG }o--|| USER : "tracks changes"
+
+    CLUB_PROPOSAL ||--o| COMMUNITY : "becomes upon approval"
+
+    EVENT_CREW }o--|| USER : "staffed by"
+
+    BROADCAST_LOG }o--|| USER : "sent by"
+    BROADCAST_LOG }o--|| EVENT : "related to (optional)"
+```
+
+## 34. Database Selection Rationale: Why MongoDB?
+
+The choice of **MongoDB** (a NoSQL, document-oriented database) for UniVerse was a strategic architectural decision driven by the project's focus on high-speed event discovery, real-time engagement, and agile evolution.
+
+### 1. **Schema Flexibility for Complex Event Data**
+
+Unlike traditional SQL databases with rigid rows and columns, MongoDB stores data in BSON (JSON-like) documents.
+
+- **Why it matters**: UniVerse handles complex, nested data like **Event Schedules** and **Workforce Tasks** directly within the `Event` document. This allows organizers to add as many sessions or tasks as needed without managing hundreds of foreign-key relationships.
+
+### 2. **High-Read Performance (Denormalization Strategy)**
+
+One of the core features of UniVerse is the **Digital Pass**.
+
+- **The Solution**: MongoDB excels at **Denormalization**. We store "Snapshots" of event dates and titles directly inside the `Registration` document.
+- **The Result**: When a student opens their Digital Pass at a crowded venue, the system performs a single, lightning-fast "Read" operation rather than an expensive, multi-table SQL "Join," ensuring the pass loads instantly.
+
+### 3. **Native MERN-Stack Synergy**
+
+The entire UniVerse ecosystem (Node.js, Express, React) speaks the language of JSON.
+
+- **Why it matters**: Storing data in a JSON-like format eliminates the "Impedance Mismatch" between the backend logic and the database. This allows for faster development cycles and easier data transformation before sending it to the React frontend.
+
+### 4. **Scalability for Rapid Campus Growth**
+
+As UniVerse expands from a single faculty to a whole university campus, the database must scale.
+
+- **Why it matters**: MongoDB is built for horizontal scalability (sharding). It can handle massive spikes in traffic during "Big Events" or "Club Recruitment Week" without a degradation in performance.
+
+### 5. **Rich Aggregation for Admin Intelligence**
+
+The **Admin Command Center** requires real-time KPIs (e.g., "Trending Events" or "Member Growth").
+
+- **The Solution**: MongoDB’s **Aggregation Framework** (using stages like `$lookup`, `$group`, and `$match`) allows the system to process thousands of registration records and calculate complex statistics in the background, providing admins with actionable intelligence in milliseconds.
+
+### 6. **Evolutionary Data Design**
+
+Student needs and administrative requirements change constantly.
+
+- **Why it matters**: We can add new fields—like **Atmosphere Metrics** for reviews or **Supabase storage URLs** for certificates—to existing entries without the downtime or complexity of full SQL migrations. This ensures UniVerse is always ready for the next "Live Feature."
+
+## 35. Core Architectural Patterns & Query Logic
+
+The UniVerse system follows specific Mongoose patterns to balance data integrity with high-read performance in a student-centric environment.
+
+### A. Atomic State Management
+
+- **Pattern**: Using `$inc` within `findByIdAndUpdate` for attendee counts.
+- **Why**: This ensures that even if multiple students register simultaneously, the `current_attendees` count remains accurate without requiring heavy database locks.
+
+### B. Defensive authorization Filters
+
+- **Pattern**: Injecting `organizer_id` or `community_id` directly into `find` or `update` queries.
+- **Why**: This "Security-at-Source" approach ensures that even if a frontend route is compromised, the database query itself will only return or modify data that the user is authorized to touch.
+
+### C. Denormalization for Mobile Performance
+
+- **Pattern**: "Snapshotting" critical data (Event Title, Venue Name) into the `Registration` document.
+- **Why**: Students often check in at high-occupancy venues with unstable network connections. Denormalizing this data allows the "Digital Pass" to load in a single round-trip without requiring a complex `$lookup` join to the `Event` and `Venue` collections.
+
+### D. Soft Deletion & Audit Integrity
+
+- **Pattern**: Transitioning records to a `Cancelled` status rather than permanent removal.
+- **Why**: Preserves historical data for the Admin Audit Logs, allowing organizers to see _why_ a metric shifted (e.g., a sudden drop in revenue due to a batch of cancellations).
+
 ---
 
 _Created by Antigravity_
