@@ -3,6 +3,7 @@
 ## [2026-02-18]
 
 - **Added**: Centralized API configuration — `src/config/api.js` exports `API_BASE` and `API_URL` from `VITE_API_BASE_URL` env var (falls back to `http://localhost:5000` locally).
+- **Changed**: Replaced all hardcoded relative `/api/` paths (17 files) with the centralized `API_URL` to prevent 404 leaks during Vercel deployment.
 - **Changed**: Replaced 70+ hardcoded `http://localhost:5000` URLs across 42 frontend files with `API_BASE`/`API_URL` from `@/config/api`.
 - **Changed**: Updated `src/api/axios.js` to use centralized API_URL.
 - **Fixed**: Asset Case-Sensitivity — Renamed `FPM.png` and `FITA.png` to lowercase to match imports and resolve Vercel/Linux build failures.

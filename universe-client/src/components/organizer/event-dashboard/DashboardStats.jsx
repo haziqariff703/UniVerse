@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, MapPin } from "lucide-react";
 
@@ -32,7 +33,7 @@ const DashboardStats = ({ events }) => {
     const fetchAnalytics = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/events/organizer/finance-stats", {
+        const res = await fetch(API_URL + "/events/organizer/finance-stats", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -92,3 +93,4 @@ const DashboardStats = ({ events }) => {
 };
 
 export default DashboardStats;
+

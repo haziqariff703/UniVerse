@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import { Activity, Bell, Settings, CheckCircle } from "lucide-react";
@@ -60,8 +61,8 @@ const InsightsPanel = (props) => {
 
         // Use event-specific endpoint if eventId is provided
         const endpoint = eventId
-          ? `/api/events/${eventId}/analytics`
-          : "/api/events/organizer/finance-stats";
+          ? `${API_URL}/events/${eventId}/analytics`
+          : API_URL + "/events/organizer/finance-stats";
 
         const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
@@ -216,3 +217,4 @@ const InsightsPanel = (props) => {
 };
 
 export default InsightsPanel;
+

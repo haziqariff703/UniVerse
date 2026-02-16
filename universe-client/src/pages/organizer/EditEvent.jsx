@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -31,14 +32,14 @@ const EditEvent = () => {
           communitiesRes,
           categoriesRes,
         ] = await Promise.all([
-          fetch(`/api/events/${id}`, { headers }),
-          fetch("/api/venues", { headers }),
-          fetch("/api/speakers", { headers }),
-          fetch("/api/events?status=all", { headers }),
-          fetch("/api/communities/my-communities", {
+          fetch(`${API_URL}/events/${id}`, { headers }),
+          fetch(API_URL + "/venues", { headers }),
+          fetch(API_URL + "/speakers", { headers }),
+          fetch(API_URL + "/events?status=all", { headers }),
+          fetch(API_URL + "/communities/my-communities", {
             headers,
           }),
-          fetch("/api/categories", { headers }),
+          fetch(API_URL + "/categories", { headers }),
         ]);
 
         if (eventRes.ok) {
@@ -204,7 +205,7 @@ const EditEvent = () => {
     }
 
     const token = localStorage.getItem("token");
-    const response = await fetch(`/api/events/${id}`, {
+    const response = await fetch(`${API_URL}/events/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -418,3 +419,4 @@ const EditEvent = () => {
 };
 
 export default EditEvent;
+

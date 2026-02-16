@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -92,7 +93,7 @@ const AccountTab = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/security/password", {
+      const res = await fetch(API_URL + "/users/security/password", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -125,7 +126,7 @@ const AccountTab = () => {
   const handleRecoveryEmailSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/settings", {
+      const res = await fetch(API_URL + "/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -309,7 +310,7 @@ const PrivacyTab = () => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/users/profile", {
+        const res = await fetch(API_URL + "/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -328,7 +329,7 @@ const PrivacyTab = () => {
   const updatePrivacySetting = async (field, value) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("/api/users/settings", {
+      await fetch(API_URL + "/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -349,7 +350,7 @@ const PrivacyTab = () => {
     setExporting(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/data/export", {
+      const res = await fetch(API_URL + "/users/data/export", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -493,7 +494,7 @@ const NotificationsTab = () => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/users/profile", {
+        const res = await fetch(API_URL + "/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -513,7 +514,7 @@ const NotificationsTab = () => {
   const updateNotificationSetting = async (field, value) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("/api/users/settings", {
+      await fetch(API_URL + "/users/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -730,3 +731,4 @@ const SettingsModal = ({ isOpen, onClose, initialTab = "account" }) => {
 };
 
 export default SettingsModal;
+

@@ -569,6 +569,35 @@ The UniVerse system follows specific Mongoose patterns to balance data integrity
 - **Pattern**: Transitioning records to a `Cancelled` status rather than permanent removal.
 - **Why**: Preserves historical data for the Admin Audit Logs, allowing organizers to see _why_ a metric shifted (e.g., a sudden drop in revenue due to a batch of cancellations).
 
+## 36. Deployment Resilience & Connectivity (Vercel/Render)
+
+The platform utilizes a multi-cloud hosting strategy (Vercel Frontend, Render Backend) which necessitates a hardened connectivity layer to prevent 404/500 errors.
+
+### A. Centralized API Resolution Ecosystem
+
+To eliminate hardcoded `localhost:5000` leaks and broken relative paths during deployment, the system enforces a strict import-only architecture for API endpoints.
+
+- **Config Core (`src/config/api.js`)**:
+  - `API_BASE`: Dynamically derived from `VITE_API_BASE_URL`.
+  - `API_URL`: Normalized `API_BASE + "/api"` string.
+  - No trailing slashes are allowed in the base URL to prevent `//api` malformations.
+- **Import Strategy**: Every component and Axios interceptor must import `API_URL` from `@/config/api`. Hardcoding `/api/...` strings is prohibited as it causes Vercel to attempt self-routing, leading to 404 "Page Not Found" errors.
+
+### B. Asset Portability (Case-Sensitivity)
+
+Hosting on Linux-based environments (Vercel/Render) requires strict case-sensitivity for asset resolution.
+
+- **Normalization Rule**: All logo assets (e.g., `fpm.png`, `fita.png`) are normalized to lowercase.
+- **Import Mapping**: Frontend components must use the exact lowercase filename in their import statements to ensure successful hydration on case-sensitive filesystems.
+
+### C. Build Validation Protocol
+
+The system mandates a successful `npm run build` locally before any deployment push. This verifies:
+
+1.  **Dependency Tree Integrity**: No missing or circular dependencies.
+2.  **Asset Resolution**: All images and fonts are correctly bundled.
+3.  **Environment Variable Substitution**: Confirming that `API_URL` constants are correctly injected into the production bundle.
+
 ---
 
 _Created by Antigravity_

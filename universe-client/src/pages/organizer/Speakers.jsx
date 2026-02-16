@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -44,7 +45,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { resolveUrl } from "@/utils/urlHelper";
-import { API_URL } from '@/config/api';
 
 const OrganizerSpeakers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,7 +72,7 @@ const OrganizerSpeakers = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/speakers/organizer", {
+      const response = await fetch(API_URL + "/speakers/organizer", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -118,7 +118,7 @@ const OrganizerSpeakers = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/speakers/${speakerId}`, {
+      const response = await fetch(`${API_URL}/speakers/${speakerId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

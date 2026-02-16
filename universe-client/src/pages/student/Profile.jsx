@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -186,10 +187,10 @@ const Profile = () => {
         const token = localStorage.getItem("token");
         if (token) {
           const [profileRes, bookingsRes] = await Promise.all([
-            fetch("/api/users/profile", {
+            fetch(API_URL + "/users/profile", {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            fetch("/api/registrations/my-bookings", {
+            fetch(API_URL + "/registrations/my-bookings", {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
@@ -260,7 +261,7 @@ const Profile = () => {
     // 2. Persist to Backend (only text fields, images are already uploaded via modal)
     try {
       const token = localStorage.getItem("token");
-      await fetch("/api/users/profile", {
+      await fetch(API_URL + "/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -677,7 +678,7 @@ const Profile = () => {
                                 try {
                                   const token = localStorage.getItem("token");
                                   const res = await fetch(
-                                    `/api/users/profile/assets/${cert._id}`,
+                                    `${API_URL}/users/profile/assets/${cert._id}`,
                                     {
                                       method: "DELETE",
                                       headers: {
@@ -715,3 +716,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

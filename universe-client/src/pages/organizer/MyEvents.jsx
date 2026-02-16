@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -29,7 +30,7 @@ const MyEvents = () => {
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/events/my-events", {
+      const response = await fetch(API_URL + "/events/my-events", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -253,3 +254,4 @@ const MyEvents = () => {
 };
 
 export default MyEvents;
+

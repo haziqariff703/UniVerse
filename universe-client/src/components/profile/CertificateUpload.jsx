@@ -1,3 +1,4 @@
+import { API_BASE, API_URL } from "@/config/api";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, X, Loader2, CheckCircle2 } from "lucide-react";
@@ -66,7 +67,7 @@ const CertificateUpload = ({ onUploadSuccess, compact = false }) => {
       formData.append("file", file);
 
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/profile/assets", {
+      const res = await fetch(API_URL + "/users/profile/assets", {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -256,3 +257,4 @@ const CertificateUpload = ({ onUploadSuccess, compact = false }) => {
 };
 
 export default CertificateUpload;
+
