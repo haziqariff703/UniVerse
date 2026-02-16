@@ -5,6 +5,7 @@
 - **Added**: Centralized API configuration — `src/config/api.js` exports `API_BASE` and `API_URL` from `VITE_API_BASE_URL` env var (falls back to `http://localhost:5000` locally).
 - **Changed**: Replaced 70+ hardcoded `http://localhost:5000` URLs across 42 frontend files with `API_BASE`/`API_URL` from `@/config/api`.
 - **Changed**: Updated `src/api/axios.js` to use centralized API_URL.
+- **Fixed**: Asset Case-Sensitivity — Renamed `FPM.png` and `FITA.png` to lowercase to match imports and resolve Vercel/Linux build failures.
 - **Fixed**: Removed `express-mongo-sanitize` and `xss-clean` from backend middleware (incompatible with Express 5 read-only `req.query`).
 - **Added**: `start` script to `universe-server/package.json` for Render production deployment.
 - **Added**: `docs/DEPLOYMENT_GUIDE.md` — step-by-step deployment guide for Vercel (frontend) + Render (backend) split hosting.
