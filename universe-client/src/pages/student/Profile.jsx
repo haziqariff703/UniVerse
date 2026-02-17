@@ -1,4 +1,4 @@
-import { API_BASE, API_URL } from "@/config/api";
+import { API_URL, toBackendUrl } from "@/config/api";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -119,7 +119,7 @@ const Profile = () => {
     if (!url) return "";
     let finalUrl = url.startsWith("http")
       ? url
-      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+      : toBackendUrl(`/public${url.startsWith("/") ? "" : "/"}${url}`);
 
     // Fix common Cloudinary path issues
     if (finalUrl.includes("cloudinary.com")) {

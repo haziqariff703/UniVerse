@@ -24,16 +24,25 @@ const rateLimit = require("express-rate-limit");
 // Middleware
 app.use(cors());
 app.use(express.json());
+const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS || "1", 10);
+app.set("trust proxy", Number.isNaN(trustProxyHops) ? 1 : trustProxyHops);
 
 // Security Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); // Allow images to load
 app.use(hpp()); // Prevent HTTP Parameter Pollution
 
-// Rate Limiting (100 requests per 10 mins)
+// Rate limiting with proxy-aware client IP handling for Render/Vercel traffic
+const rateLimitWindowMs =
+  Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || "", 10) || 10 * 60 * 1000;
+const rateLimitMax =
+  Number.parseInt(process.env.RATE_LIMIT_MAX || "", 10) || 300;
+
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, 
-  max: 100,
-  message: "Too many requests from this IP, please try again later."
+  windowMs: rateLimitWindowMs,
+  max: rateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests from this IP, please try again later." },
 });
 app.use("/api", limiter); // Apply to all API routes
 

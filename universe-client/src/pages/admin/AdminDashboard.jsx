@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "@/config/api";
 import {
   AreaChart,
   Area,
@@ -155,7 +156,7 @@ const AdminDashboard = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`/api/admin/stats?range=${range}`, {
+      const response = await fetch(`${API_URL}/admin/stats?range=${range}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {

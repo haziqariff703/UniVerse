@@ -1,0 +1,3 @@
+display_name: Changelog Enforcer
+short_description: Keep CHANGELOG.md updated for every code change.
+default_prompt: Apply requested changes and always append a concise, dated entry to CHANGELOG.md before finishing.

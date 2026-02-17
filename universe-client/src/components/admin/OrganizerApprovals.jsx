@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
+import { API_URL, toBackendUrl } from "@/config/api";
 import {
   ADMIN_FILTER_CONTAINER_CLASS,
   AdminDateRangeFilter,
@@ -114,7 +115,7 @@ const OrganizerApprovals = () => {
   // Helper to clean Cloudinary URLs and ensure safe access
   const resolveUrl = (url, isDocument = false) => {
     if (!url) return "";
-    let finalUrl = url.startsWith("http") ? url : `/public${url}`;
+    let finalUrl = url.startsWith("http") ? url : toBackendUrl(`/public${url}`);
 
     // Fix common Cloudinary path issues
     if (finalUrl.includes("cloudinary.com")) {
@@ -137,7 +138,7 @@ const OrganizerApprovals = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/admin/organizers/pending?${params}`, {
+      const response = await fetch(`${API_URL}/admin/organizers/pending?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -174,7 +175,7 @@ const OrganizerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/organizers/${id}/approve`, {
+      const response = await fetch(`${API_URL}/admin/organizers/${id}/approve`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -194,7 +195,7 @@ const OrganizerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/organizers/${id}/reject`, {
+      const response = await fetch(`${API_URL}/admin/organizers/${id}/reject`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -474,13 +475,7 @@ const OrganizerApprovals = () => {
                                   </div>
                                 ) : org.confirmation_letter_url ? (
                                   <a
-                                    href={
-                                      org.confirmation_letter_url?.startsWith(
-                                        "http",
-                                      )
-                                        ? org.confirmation_letter_url
-                                        : `/public${org.confirmation_letter_url}`
-                                    }
+                                    href={resolveUrl(org.confirmation_letter_url)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 w-full"
@@ -510,11 +505,7 @@ const OrganizerApprovals = () => {
                               >
                                 {org.id_card_url ? (
                                   <a
-                                    href={
-                                      org.id_card_url?.startsWith("http")
-                                        ? org.id_card_url
-                                        : `/public${org.id_card_url}`
-                                    }
+                                    href={resolveUrl(org.id_card_url)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 w-full"

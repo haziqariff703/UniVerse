@@ -15,7 +15,7 @@ import EventCard from "@/components/common/EventCard";
 import EventCarousel from "@/components/public/EventCarousel";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { resolveUrl } from "@/utils/urlHelper";
-import { API_BASE } from '@/config/api';
+import { API_URL } from "@/config/api";
 
 
 const mapEventToCardProps = (event) => ({
@@ -80,16 +80,16 @@ const Events = () => {
 
       const [featRes, upRes, pastRes, registrationsRes, catRes, commRes] =
         await Promise.all([
-          fetch(`/api/events?is_featured=true&upcoming=true`),
-          fetch(`/api/events?upcoming=true`),
-          fetch(`/api/events?upcoming=false`),
+          fetch(`${API_URL}/events?is_featured=true&upcoming=true`),
+          fetch(`${API_URL}/events?upcoming=true`),
+          fetch(`${API_URL}/events?upcoming=false`),
           token
-            ? fetch(`/api/registrations/my-bookings`, {
+            ? fetch(`${API_URL}/registrations/my-bookings`, {
                 headers: { Authorization: `Bearer ${token}` },
               })
             : Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
-          fetch(`/api/categories`),
-          fetch(`/api/communities`),
+          fetch(`${API_URL}/categories`),
+          fetch(`${API_URL}/communities`),
         ]);
 
       const [feat, up, past, regs, cats, comms] = await Promise.all([
@@ -150,7 +150,7 @@ const Events = () => {
 
       // Fetch user profile stats for merit tracking
       if (token) {
-        const profRes = await fetch(`/api/users/profile`, {
+        const profRes = await fetch(`${API_URL}/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (profRes.ok) {
