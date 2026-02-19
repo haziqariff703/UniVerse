@@ -73,7 +73,7 @@ npm install
 **Create a `.env` file in `universe-client/`:**
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5000
 ```
 
 **Start the Client:**
@@ -112,4 +112,4 @@ Use these pre-configured accounts to test different roles:
 ## ⚠️ Troubleshooting
 
 - **Database Connection Error**: Verify your `MONGO_URI` in `universe-server/.env`. ensure your IP is whitelisted in MongoDB Atlas.
-- **CORS Error**: Ensure `VITE_API_URL` matches the server's running port (default 5000).
+- **CORS Error**: Ensure `VITE_API_BASE_URL` matches the server's running port (default `http://localhost:5000`).

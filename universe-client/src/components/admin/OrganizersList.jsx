@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/exportUtils";
+import { API_URL, toBackendUrl } from "@/config/api";
 import {
   ADMIN_FILTER_CONTAINER_CLASS,
   AdminDateRangeFilter,
@@ -100,7 +101,7 @@ const OrganizersList = () => {
     if (!url) return "";
     let finalUrl = url.startsWith("http")
       ? url
-      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+      : toBackendUrl(`/public${url.startsWith("/") ? "" : "/"}${url}`);
 
     // Fix common Cloudinary path issues
     if (finalUrl.includes("cloudinary.com")) {
@@ -120,7 +121,7 @@ const OrganizersList = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/admin/users?${params}`, {
+      const response = await fetch(`${API_URL}/admin/users?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

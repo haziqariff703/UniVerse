@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
+import { API_URL, toBackendUrl } from "@/config/api";
 import {
   ADMIN_FILTER_CONTAINER_CLASS,
   AdminDateRangeFilter,
@@ -72,7 +73,7 @@ const EventApprovals = ({ onBack }) => {
   // Helper to ensure correct document URL (handles missing /public prefix if needed)
   const resolveUrl = (url) => {
     if (!url) return "";
-    let finalUrl = url.startsWith("http") ? url : `/public${url}`;
+    let finalUrl = url.startsWith("http") ? url : toBackendUrl(`/public${url}`);
 
     // Fix common Cloudinary path issues
     if (finalUrl.includes("cloudinary.com")) {
@@ -91,7 +92,7 @@ const EventApprovals = ({ onBack }) => {
         limit: itemsPerPage,
       });
 
-      const response = await fetch(`/api/admin/events/pending?${params}`, {
+      const response = await fetch(`${API_URL}/admin/events/pending?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -124,7 +125,7 @@ const EventApprovals = ({ onBack }) => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/events/${id}/approve`, {
+      const response = await fetch(`${API_URL}/admin/events/${id}/approve`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -143,7 +144,7 @@ const EventApprovals = ({ onBack }) => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/events/${id}/reject`, {
+      const response = await fetch(`${API_URL}/admin/events/${id}/reject`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

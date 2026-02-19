@@ -75,12 +75,16 @@ Fill in these settings **exactly**:
 1. Scroll down to **"Environment Variables"**.
 2. Click **"Add Environment Variable"** for each:
 
-| Key          | Value                                         |
-| :----------- | :-------------------------------------------- |
-| `PORT`       | `5000`                                        |
-| `MONGO_URI`  | `mongodb+srv://your_actual_connection_string` |
-| `JWT_SECRET` | `your_actual_secret_key`                      |
-| `NODE_ENV`   | `production`                                  |
+| Key                   | Value                                         |
+| :-------------------- | :-------------------------------------------- |
+| `MONGO_URI`           | `mongodb+srv://your_actual_connection_string` |
+| `JWT_SECRET`          | `your_actual_secret_key`                      |
+| `NODE_ENV`            | `production`                                  |
+| `TRUST_PROXY_HOPS`    | `1`                                           |
+| `RATE_LIMIT_MAX`      | `300`                                         |
+| `RATE_LIMIT_WINDOW_MS`| `600000`                                      |
+
+> Do **not** manually set `PORT` on Render. Render injects the correct runtime port automatically.
 
 > ⚠️ **IMPORTANT**: Use your REAL MongoDB Atlas URI here. The same one from your local `.env` file.
 

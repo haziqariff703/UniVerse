@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { downloadCSV } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { swalConfirm } from "@/lib/swalConfig";
+import { API_URL, toBackendUrl } from "@/config/api";
 import {
   ADMIN_FILTER_CONTAINER_CLASS,
   AdminDateRangeFilter,
@@ -108,7 +109,7 @@ const SpeakerApprovals = () => {
     if (!url) return "";
     let finalUrl = url.startsWith("http")
       ? url
-      : `/public${url.startsWith("/") ? "" : "/"}${url}`;
+      : toBackendUrl(`/public${url.startsWith("/") ? "" : "/"}${url}`);
 
     // Fix common Cloudinary path issues
     if (finalUrl.includes("cloudinary.com")) {
@@ -127,7 +128,7 @@ const SpeakerApprovals = () => {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/admin/speakers/pending?${params}`, {
+      const response = await fetch(`${API_URL}/admin/speakers/pending?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -163,7 +164,7 @@ const SpeakerApprovals = () => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/speakers/${id}/verify`, {
+      const response = await fetch(`${API_URL}/admin/speakers/${id}/verify`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

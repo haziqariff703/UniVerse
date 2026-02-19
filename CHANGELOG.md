@@ -13,6 +13,12 @@
 
 ## [2026-02-17]
 
+- **Fixed**: Production SPA refresh 404s by adding frontend route fallbacks in `universe-client/vercel.json` and `universe-client/public/_redirects`.
+- **Fixed**: Cross-domain API failures on Vercel + Render by normalizing backend URLs in `universe-client/src/config/api.js`, `universe-client/src/main.jsx`, and `universe-client/src/utils/urlHelper.js`.
+- **Changed**: Updated admin/event modules to use centralized API paths (`API_URL`) and backend-safe asset URLs (`toBackendUrl`) in `AdminDashboard`, `OrganizerApprovals`, `OrganizersList`, `EventApprovals`, `EventsList`, `SpeakerApprovals`, `Events`, and `Profile`.
+- **Changed**: Made backend rate limiting proxy-aware for Render by setting `trust proxy` and configurable rate-limit env controls in `universe-server/index.js`.
+- **Changed**: Corrected frontend environment variable documentation from `VITE_API_URL` to `VITE_API_BASE_URL` in `README.md`, and updated Render deployment guidance in `docs/DEPLOYMENT_GUIDE.md`.
+- **Added**: New Codex CLI skill `.agent/skills/changelog-enforcer/SKILL.md` (with `agents/openai.yaml`) to enforce `CHANGELOG.md` updates after code/config changes.
 - **Added**: Production Security Middleware — `helmet` (with cross-origin policy for images), `express-mongo-sanitize`, `xss-clean`, `hpp`, and `express-rate-limit` (100 req/10min) configured in `universe-server/index.js`.
 - **Changed**: Frontend SEO — Updated `index.html` with descriptive title ("UniVerse | Campus Event Management"), meta description, and Open Graph tags for social media previews.
 - **Added**: Compound Indexes for query performance — `event.js` (date_time+status, category+date_time, organizer_id+status), `auditLog.js` (admin_id+created_at, action+created_at, target_type+target_id). `registration.js` already had a unique compound index (event_id+user_id).
