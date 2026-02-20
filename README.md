@@ -93,7 +93,7 @@ Use these pre-configured accounts to test different roles:
 
 | Role          | Email                    | Password      | Access Rights                               |
 | :------------ | :----------------------- | :------------ | :------------------------------------------ |
-| **Admin**     | `admin@universe.com`     | `password123` | Manage Users, Approvals, System Settings    |
+| **Admin**     | `admin@universe.com`     | `admin123` | Manage Users, Approvals, System Settings    |
 | **Organizer** | `organizer@universe.com` | `password123` | Create Events, Manage Venues, View Scanners |
 | **Student**   | `student@universe.com`   | `password123` | Browse Events, Register, View Profile       |
 
