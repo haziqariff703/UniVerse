@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-07-23]
+
+- **Fixed**: Defensive Normalization for Finance Stats — Updated `eventController.js` (`getOrganizerFinanceStats`, `getOrganizerTransactions`, `getCategoryIntelligence`) with fallbacks for both `ticket_price` / `ticketPrice` naming and case-insensitive registration status matching (`Confirmed`/`confirmed`, `CheckedIn`/`checkedin`).
+
+## [2026-07-07]
+
+- **Added**: [DFD_DESIGN.md](file:///c:/Users/Muhammad%20Haziq/UniVerse/docs/DFD_DESIGN.md) containing DFD Level 0 (Context Diagram), DFD Level 1 (System Flow Diagram), and DFD Level 2 (Decomposed Diagrams for Event & Registration management) using the Gane and Sarson model based on [UniVerse_Event_System.groovy](file:///c:/Users/Muhammad%20Haziq/UniVerse/UniVerse_Event_System.groovy) ERD.
+
 ## [2026-02-18]
 
 - **Added**: Centralized API configuration — `src/config/api.js` exports `API_BASE` and `API_URL` from `VITE_API_BASE_URL` env var (falls back to `http://localhost:5000` locally).
