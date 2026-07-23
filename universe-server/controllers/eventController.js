@@ -718,19 +718,21 @@ exports.getOrganizerFinanceStats = async (req, res) => {
     // Get all accessible events (owned, crew, or community leader)
     const eventIds = await getAccessibleEventIds(organizerId);
 
-    // Get all valid registrations for these events
+    // Get all valid registrations for these events (case-insensitive status)
     const registrations = await Registration.find({ 
       event_id: { $in: eventIds },
-      status: { $in: ['Confirmed', 'CheckedIn'] }
-    }).populate('event_id', 'ticket_price title');
+      status: { $in: ['Confirmed', 'confirmed', 'CheckedIn', 'checkedin'] }
+    }).populate('event_id', 'ticket_price ticketPrice title');
 
     // Calculate Core Metrics
     let totalRevenue = 0;
     let ticketsSold = registrations.length;
-    let activeRegistrations = registrations.filter(r => r.status === 'Confirmed').length;
+    let activeRegistrations = registrations.filter(r => 
+      r.status === 'Confirmed' || r.status === 'confirmed'
+    ).length;
     
     registrations.forEach(r => {
-      totalRevenue += (r.event_id?.ticket_price || 0);
+      totalRevenue += (r.event_id?.ticket_price || r.event_id?.ticketPrice || 0);
     });
 
     const avgTicketPrice = ticketsSold > 0 ? (totalRevenue / ticketsSold).toFixed(2) : 0;
@@ -751,7 +753,7 @@ exports.getOrganizerFinanceStats = async (req, res) => {
       const date = new Date(r.booking_time);
       const monthLabel = monthNames[date.getMonth()];
       if (performanceMap[monthLabel]) {
-        performanceMap[monthLabel].revenue += (r.event_id?.ticket_price || 0);
+        performanceMap[monthLabel].revenue += (r.event_id?.ticket_price || r.event_id?.ticketPrice || 0);
         performanceMap[monthLabel].registrations += 1;
       }
     });
@@ -832,15 +834,15 @@ exports.getOrganizerTransactions = async (req, res) => {
     const registrations = await Registration.find({ 
       event_id: { $in: eventIds }
     })
-    .populate('event_id', 'title ticket_price')
+    .populate('event_id', 'title ticket_price ticketPrice')
     .sort({ booking_time: -1 });
 
     const transactions = registrations.map(r => ({
       id: r._id,
       event: r.event_id?.title || "Unknown Event",
-      amount: r.event_id?.ticket_price || 0,
+      amount: r.event_id?.ticket_price || r.event_id?.ticketPrice || 0,
       date: r.booking_time,
-      status: r.status.toLowerCase(),
+      status: r.status ? r.status.toLowerCase() : 'confirmed',
       type: "income"
     }));
 
@@ -1131,8 +1133,8 @@ exports.getCategoryIntelligence = async (req, res) => {
     // Get all registrations for these events
     const registrations = await Registration.find({
       event_id: { $in: eventIds },
-      status: { $in: ['Confirmed', 'CheckedIn'] }
-    }).populate('event_id', 'ticket_price category title');
+      status: { $in: ['Confirmed', 'confirmed', 'CheckedIn', 'checkedin'] }
+    }).populate('event_id', 'ticket_price ticketPrice category title');
 
     // Get all reviews for these events
     const reviews = await Review.find({ event_id: { $in: eventIds } }).populate('event_id', 'category');
@@ -1164,7 +1166,7 @@ exports.getCategoryIntelligence = async (req, res) => {
     registrations.forEach(reg => {
       const cat = reg.event_id?.category || 'Uncategorized';
       if (categoryStats[cat]) {
-        categoryStats[cat].totalRevenue += (reg.event_id?.ticket_price || 0);
+        categoryStats[cat].totalRevenue += (reg.event_id?.ticket_price || reg.event_id?.ticketPrice || 0);
         categoryStats[cat].totalAttendees++;
       }
     });
