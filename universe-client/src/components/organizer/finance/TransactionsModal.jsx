@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Filter, DollarSign, Calendar, Download } from "lucide-react";
+import { motion } from "framer-motion";
 import { API_URL } from '@/config/api';
 
 const TransactionsModal = ({ isOpen, onClose }) => {

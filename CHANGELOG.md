@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] - 2026-07-29
+
+### Fixed
+- Fixed blank screen error when clicking "View All" recent transactions by importing missing `motion` component from `framer-motion` in `TransactionsModal.jsx`.
+
+
+## [2026-07-29]
+
+- **Added**: [TEST_PLAN.md](file:///c:/Users/Muhammad%20Haziq/UniVerse/docs/TEST_PLAN.md) - Formal systems verification test plan documenting test strategies, realistic concurrency test datasets, and continuous integration pipeline setup for UniVerse.
+
 ## [2026-07-23]
 
 - **Fixed**: Defensive Normalization for Finance Stats — Updated `eventController.js` (`getOrganizerFinanceStats`, `getOrganizerTransactions`, `getCategoryIntelligence`) with fallbacks for both `ticket_price` / `ticketPrice` naming and case-insensitive registration status matching (`Confirmed`/`confirmed`, `CheckedIn`/`checkedin`).
