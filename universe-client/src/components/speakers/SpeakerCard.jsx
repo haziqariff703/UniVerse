@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Linkedin, Twitter, Globe, ArrowUpRight } from "lucide-react";
 
-const SpeakerCard = ({ speaker, index }) => {
+const SpeakerCard = ({ speaker }) => {
   const { id, name, expertise, image, social_links } = speaker;
 
   return (
