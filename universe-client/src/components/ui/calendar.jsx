@@ -26,8 +26,6 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn(
         "p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] bg-background group/calendar [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
-        // Using String.raw for rtl patterns to avoid escape issues in some environments, though standard strings often work fine in JSX if escaped correctly.
-        // Simplified here to avoid unescaped backslash issues in replacement tools.
         "rtl:**:[.rdp-button_next>svg]:rotate-180",
         "rtl:**:[.rdp-button_previous>svg]:rotate-180",
         className,
@@ -112,8 +110,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeftIcon className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRightIcon className="h-4 w-4" />,
+        IconLeft: () => <ChevronLeftIcon className="h-4 w-4" />,
+        IconRight: () => <ChevronRightIcon className="h-4 w-4" />,
         ...components,
       }}
       {...props}
