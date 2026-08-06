@@ -12,57 +12,43 @@ export const InfiniteMovingCards = ({
 }) => {
   const containerRef = React.useRef(null);
   const scrollerRef = React.useRef(null);
-
-  useEffect(() => {
-    addAnimation();
-  }, []);
-
   const [start, setStart] = useState(false);
 
-  function addAnimation() {
-    if (containerRef.current && scrollerRef.current) {
-      const scrollerContent = Array.from(scrollerRef.current.children);
+  useEffect(() => {
+    const container = containerRef.current;
+    const scroller = scrollerRef.current;
 
-      scrollerContent.forEach((item) => {
-        const duplicatedItem = item.cloneNode(true);
-        if (scrollerRef.current) {
-          scrollerRef.current.appendChild(duplicatedItem);
-        }
-      });
+    if (!container || !scroller) return undefined;
 
-      getDirection();
-      getSpeed();
-      setStart(true);
-    }
-  }
+    const originalItems = Array.from(scroller.children).filter(
+      (item) => !item.hasAttribute("data-loop-clone"),
+    );
 
-  const getDirection = () => {
-    if (containerRef.current) {
-      if (direction === "left") {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "forwards",
-        );
-      } else {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "reverse",
-        );
-      }
-    }
-  };
+    originalItems.forEach((item) => {
+      const duplicatedItem = item.cloneNode(true);
+      duplicatedItem.setAttribute("data-loop-clone", "true");
+      duplicatedItem.setAttribute("aria-hidden", "true");
+      scroller.appendChild(duplicatedItem);
+    });
 
-  const getSpeed = () => {
-    if (containerRef.current) {
-      if (speed === "fast") {
-        containerRef.current.style.setProperty("--animation-duration", "20s");
-      } else if (speed === "normal") {
-        containerRef.current.style.setProperty("--animation-duration", "40s");
-      } else {
-        containerRef.current.style.setProperty("--animation-duration", "80s");
-      }
-    }
-  };
+    container.style.setProperty(
+      "--animation-direction",
+      direction === "left" ? "forwards" : "reverse",
+    );
+
+    const duration =
+      speed === "fast" ? "20s" : speed === "normal" ? "40s" : "80s";
+    container.style.setProperty("--animation-duration", duration);
+
+    const animationFrame = requestAnimationFrame(() => setStart(true));
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      scroller
+        .querySelectorAll('[data-loop-clone="true"]')
+        .forEach((item) => item.remove());
+    };
+  }, [direction, speed]);
 
   return (
     <div
@@ -90,7 +76,6 @@ export const InfiniteMovingCards = ({
                 "{item.quote}"
               </span>
               <div className="relative z-20 mt-6 flex flex-row items-center gap-3">
-                {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
                   {item.name.charAt(0)}
                 </div>
