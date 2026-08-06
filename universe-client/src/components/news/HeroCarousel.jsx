@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Share2, MessageCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 
 const HeroCarousel = ({ slides }) => {
   const [current, setCurrent] = useState(0);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrent((prev) => (prev + 1) % slides.length);
-  };
+  }, [slides.length]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
-  };
+  }, [slides.length]);
 
   useEffect(() => {
     const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [nextSlide]);
 
   if (!slides || slides.length === 0) return null;
 
@@ -31,16 +31,13 @@ const HeroCarousel = ({ slides }) => {
           transition={{ duration: 0.5 }}
           className="absolute inset-0"
         >
-          {/* Background Image */}
           <img
             src={slides[current].image}
             alt={slides[current].title}
             className="w-full h-full object-cover"
           />
-          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
 
-          {/* Content */}
           <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-20">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -80,7 +77,6 @@ const HeroCarousel = ({ slides }) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation Buttons */}
       <button
         onClick={prevSlide}
         className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/20 text-white rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 border border-white/10"
@@ -94,7 +90,6 @@ const HeroCarousel = ({ slides }) => {
         <ChevronRight className="w-6 h-6" />
       </button>
 
-      {/* Indicators */}
       <div className="absolute bottom-8 right-8 flex gap-2 z-30">
         {slides.map((_, index) => (
           <button

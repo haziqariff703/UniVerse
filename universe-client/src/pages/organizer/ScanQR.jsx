@@ -86,7 +86,7 @@ const ScanQR = () => {
 
       const data = await response.json();
       handleCheckInResponse(response, data);
-    } catch (err) {
+    } catch {
       toast.error("Network Error", {
         description: "Please check your connection.",
       });
@@ -119,7 +119,7 @@ const ScanQR = () => {
       const data = await response.json();
       handleCheckInResponse(response, data);
       if (response.ok) setManualCode("");
-    } catch (error) {
+    } catch {
       toast.error("Network Error");
     } finally {
       setLoading(false);
@@ -160,7 +160,7 @@ const ScanQR = () => {
                   >
                     <Scanner
                       onScan={handleScan}
-                      onError={(err) => {
+                      onError={() => {
                         toast.error("Scanner Error", {
                           description: "Access denied.",
                         });

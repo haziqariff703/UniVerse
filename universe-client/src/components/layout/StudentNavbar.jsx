@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function StudentNavbar({
   user,
-  sidebarCollapsed,
   toggleSidebar,
   onLogout,
 }) {

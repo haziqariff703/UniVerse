@@ -7,7 +7,6 @@ export function PlaceholdersAndVanishInput({
   onChange,
   onSubmit,
   value: propValue,
-  setValue: setPropValue,
 }) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
 

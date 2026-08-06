@@ -4,14 +4,15 @@ import { useInView } from "framer-motion";
 const NumberTicker = ({ value, suffix = "", duration = 2 }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
+  const hasAnimatedRef = useRef(false);
   const isInView = useInView(ref, { once: true });
-  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
-    if (!isInView || hasAnimated) return;
+    if (!isInView || hasAnimatedRef.current) return;
 
-    setHasAnimated(true);
+    hasAnimatedRef.current = true;
     let startTime = null;
+    let animationFrameId;
     const startValue = 0;
     const endValue = typeof value === "string" ? parseFloat(value) : value;
 
@@ -29,14 +30,16 @@ const NumberTicker = ({ value, suffix = "", duration = 2 }) => {
       setCount(currentCount);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       } else {
         setCount(endValue);
       }
     };
 
-    requestAnimationFrame(animate);
-  }, [isInView, value, duration, hasAnimated]);
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isInView, value, duration]);
 
   const formatNumber = (num) => {
     if (suffix === "%") {

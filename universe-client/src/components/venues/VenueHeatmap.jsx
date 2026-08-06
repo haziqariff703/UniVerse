@@ -18,7 +18,6 @@ const VenueHeatmap = ({ venue, events = [] }) => {
   const isHourBooked = (hour) => {
     const today = new Date();
     today.setHours(hour, 0, 0, 0);
-    const hourTime = today.getTime();
 
     return events.some((event) => {
       const start = new Date(event.date_time).getTime();
