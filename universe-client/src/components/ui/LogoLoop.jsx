@@ -54,16 +54,6 @@ const LogoLoop = ({
 
   const getSpeed = () => {
     if (containerRef.current) {
-      // Calculate duration based on speed prop (simple inversed logic)
-      // fast (20s) -> slow (80s).
-      // If user passes number, try to map roughly.
-      // Current speed is 50. InfiniteCards uses 40s for normal.
-      // Let's dynamic calculate:
-      const duration = `${10000 / speed}s`; // 50 -> 200s is too slow?
-      // InfiniteMovingCards: fast=20s, normal=40s, slow=80s.
-      // Our previous speed=50 was decent.
-      // Let's stick to simple CSS Duration logic directly.
-
       const cssDuration = speed < 30 ? "80s" : speed > 60 ? "20s" : "40s";
       containerRef.current.style.setProperty(
         "--animation-duration",
@@ -75,6 +65,7 @@ const LogoLoop = ({
   return (
     <div
       ref={containerRef}
+      aria-label={ariaLabel}
       className="logoloop scroller relative z-20 w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_5%,white_95%,transparent)]"
     >
       <ul
