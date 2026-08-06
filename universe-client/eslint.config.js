@@ -28,6 +28,7 @@ export default defineConfig([
         {
           varsIgnorePattern: '^(?:[A-Z_]|motion$)',
           argsIgnorePattern: '^[A-Z_]',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
     },
