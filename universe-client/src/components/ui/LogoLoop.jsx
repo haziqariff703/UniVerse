@@ -15,52 +15,39 @@ const LogoLoop = ({
   const [start, setStart] = useState(false);
 
   useEffect(() => {
-    addAnimation();
-  }, []);
+    const container = containerRef.current;
+    const scroller = scrollerRef.current;
 
-  function addAnimation() {
-    if (containerRef.current && scrollerRef.current) {
-      const scrollerContent = Array.from(scrollerRef.current.children);
+    if (!container || !scroller) return undefined;
 
-      // Duplicate content to ensure seamless loop
-      scrollerContent.forEach((item) => {
-        const duplicatedItem = item.cloneNode(true);
-        if (scrollerRef.current) {
-          scrollerRef.current.appendChild(duplicatedItem);
-        }
-      });
+    const originalItems = Array.from(scroller.children).filter(
+      (item) => !item.hasAttribute("data-loop-clone"),
+    );
 
-      getDirection();
-      getSpeed();
-      setStart(true);
-    }
-  }
+    originalItems.forEach((item) => {
+      const duplicatedItem = item.cloneNode(true);
+      duplicatedItem.setAttribute("data-loop-clone", "true");
+      duplicatedItem.setAttribute("aria-hidden", "true");
+      scroller.appendChild(duplicatedItem);
+    });
 
-  const getDirection = () => {
-    if (containerRef.current) {
-      if (direction === "left") {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "forwards",
-        );
-      } else {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "reverse",
-        );
-      }
-    }
-  };
+    container.style.setProperty(
+      "--animation-direction",
+      direction === "left" ? "forwards" : "reverse",
+    );
 
-  const getSpeed = () => {
-    if (containerRef.current) {
-      const cssDuration = speed < 30 ? "80s" : speed > 60 ? "20s" : "40s";
-      containerRef.current.style.setProperty(
-        "--animation-duration",
-        cssDuration,
-      );
-    }
-  };
+    const cssDuration = speed < 30 ? "80s" : speed > 60 ? "20s" : "40s";
+    container.style.setProperty("--animation-duration", cssDuration);
+
+    const animationFrame = requestAnimationFrame(() => setStart(true));
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      scroller
+        .querySelectorAll('[data-loop-clone="true"]')
+        .forEach((item) => item.remove());
+    };
+  }, [direction, speed]);
 
   return (
     <div
@@ -76,7 +63,6 @@ const LogoLoop = ({
         style={{ columnGap: gap }}
       >
         {logos.map((item, idx) => {
-          // Determine logo type for glow effect
           const logoClass = item.isFPM ? "fpm-logo" : "campus-logo";
 
           return (
