@@ -8,10 +8,10 @@ export const TextGenerateEffect = ({
   className,
   filter = true,
   duration = 0.5,
-  staggerDelay = 0.4, // Slower default reveal
+  staggerDelay = 0.4,
 }) => {
   const [scope, animate] = useAnimate();
-  let wordsArray = typeof words === "string" ? words.split(" ") : words;
+  const wordsArray = typeof words === "string" ? words.split(" ") : words;
 
   useEffect(() => {
     animate(
@@ -21,11 +21,11 @@ export const TextGenerateEffect = ({
         filter: filter ? "blur(0px)" : "none",
       },
       {
-        duration: duration ? duration : 1,
+        duration: duration || 1,
         delay: stagger(staggerDelay),
       },
     );
-  }, [scope.current]);
+  }, [animate, duration, filter, staggerDelay]);
 
   const renderWords = () => {
     return (
