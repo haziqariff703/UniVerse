@@ -2,7 +2,7 @@ import { useMotionValue, motion, useMotionTemplate } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
-export const EvervaultCard = ({ text, className, children }) => {
+export const EvervaultCard = ({ className, children }) => {
   let mouseX = useMotionValue(0);
   let mouseY = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
