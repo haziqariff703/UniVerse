@@ -68,5 +68,8 @@ jobs:
       - name: Run backend lint
         run: npm run lint
 
+      - name: Run backend tests
+        run: npm test
+
       - name: Validate backend syntax
         run: node --check index.js
