@@ -1,5 +1,6 @@
 const Registration = require('../models/registration');
 const Event = require('../models/event');
+const EventCrew = require('../models/eventCrew');
 const User = require('../models/user');
 
 /**
@@ -104,6 +105,12 @@ exports.getEventRegistrations = async (req, res) => {
     
     const isOwner = event.organizer_id.toString() === req.user.id;
     const isAdmin = (req.user.roles || []).includes('admin');
+    const crewAssignment = await EventCrew.findOne({
+      event_id,
+      user_id: req.user.id,
+      status: 'accepted'
+    });
+    const isCrew = !!crewAssignment;
     
     let isCommunityMember = false;
     if (event.community_id) {

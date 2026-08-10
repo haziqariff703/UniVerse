@@ -37,6 +37,9 @@ jobs:
       - name: Run frontend lint
         run: npm run lint
 
+      - name: Run frontend tests
+        run: npm test
+
       - name: Build frontend
         run: npm run build
 
@@ -61,6 +64,12 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci
+
+      - name: Run backend lint
+        run: npm run lint
+
+      - name: Run backend tests
+        run: npm test
 
       - name: Validate backend syntax
         run: node --check index.js
