@@ -75,7 +75,6 @@ const ClubCard = ({
   image,
   tags,
   members,
-  founded,
   isMember,
   meritYield = "High",
   friends = [],
@@ -89,7 +88,6 @@ const ClubCard = ({
         !isMember && "group-hover:scale-[1.02]",
       )}
     >
-      {/* Image Header */}
       <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-purple-900/40 to-cyan-900/40 shrink-0">
         <img
           src={image}
@@ -101,7 +99,6 @@ const ClubCard = ({
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/50 to-slate-950/90" />
 
-        {/* Dynamic Badge: Member vs Merit */}
         <div className="absolute top-4 left-4">
           {isMember ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 backdrop-blur-md text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.3)]">
@@ -117,7 +114,6 @@ const ClubCard = ({
         </div>
       </div>
 
-      {/* Card Content */}
       <div className="relative z-5 p-6 -mt-6 flex flex-col flex-1">
         <h4 className="text-zinc-100 font-clash font-bold text-2xl tracking-tight mb-2 transition-colors group-hover:text-white">
           {title}
@@ -127,7 +123,6 @@ const ClubCard = ({
           "{tagline}"
         </p>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           {tags.slice(0, 3).map((tag, index) => (
             <span
@@ -146,7 +141,6 @@ const ClubCard = ({
           {description}
         </p>
 
-        {/* Dynamic Footer: Last Active vs Social Signal */}
         <div className="pt-4 border-t border-white/5 mb-4 min-h-[40px] flex items-center">
           {isMember ? (
             <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -158,7 +152,6 @@ const ClubCard = ({
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              {/* RESTRICTION: Hide friends/users info for public users */}
               {user && friends && friends.length > 0 ? (
                 <>
                   <div className="flex -space-x-2">
@@ -194,7 +187,6 @@ const ClubCard = ({
           )}
         </div>
 
-        {/* Dynamic Action Button */}
         <button
           className={cn(
             "w-full py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 border",

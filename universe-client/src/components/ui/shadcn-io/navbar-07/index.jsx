@@ -193,6 +193,15 @@ export const Navbar07 = React.forwardRef(
     },
     ref,
   ) => {
+    // Reserved for the disabled project, notification, and user menus.
+    void projects;
+    void defaultProject;
+    void userName;
+    void userEmail;
+    void userAvatar;
+    void notifications;
+    void onNotificationClick;
+
     return (
       <header
         className={cn(

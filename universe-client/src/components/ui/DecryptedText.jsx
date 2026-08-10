@@ -12,7 +12,7 @@ const DecryptedText = ({
   parentClassName = "",
   encryptedClassName = "",
   animateOnHover = false,
-  animateOn: _animateOn, // eslint-disable-line no-unused-vars
+  animateOn: _animateOn,
   ...props
 }) => {
   const [displayText, setDisplayText] = useState(text);

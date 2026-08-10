@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import "./LogoLoop.css";
 
 const LogoLoop = ({
@@ -15,66 +15,44 @@ const LogoLoop = ({
   const [start, setStart] = useState(false);
 
   useEffect(() => {
-    addAnimation();
-  }, []);
+    const container = containerRef.current;
+    const scroller = scrollerRef.current;
 
-  function addAnimation() {
-    if (containerRef.current && scrollerRef.current) {
-      const scrollerContent = Array.from(scrollerRef.current.children);
+    if (!container || !scroller) return undefined;
 
-      // Duplicate content to ensure seamless loop
-      scrollerContent.forEach((item) => {
-        const duplicatedItem = item.cloneNode(true);
-        if (scrollerRef.current) {
-          scrollerRef.current.appendChild(duplicatedItem);
-        }
-      });
+    const originalItems = Array.from(scroller.children).filter(
+      (item) => !item.hasAttribute("data-loop-clone"),
+    );
 
-      getDirection();
-      getSpeed();
-      setStart(true);
-    }
-  }
+    originalItems.forEach((item) => {
+      const duplicatedItem = item.cloneNode(true);
+      duplicatedItem.setAttribute("data-loop-clone", "true");
+      duplicatedItem.setAttribute("aria-hidden", "true");
+      scroller.appendChild(duplicatedItem);
+    });
 
-  const getDirection = () => {
-    if (containerRef.current) {
-      if (direction === "left") {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "forwards",
-        );
-      } else {
-        containerRef.current.style.setProperty(
-          "--animation-direction",
-          "reverse",
-        );
-      }
-    }
-  };
+    container.style.setProperty(
+      "--animation-direction",
+      direction === "left" ? "forwards" : "reverse",
+    );
 
-  const getSpeed = () => {
-    if (containerRef.current) {
-      // Calculate duration based on speed prop (simple inversed logic)
-      // fast (20s) -> slow (80s).
-      // If user passes number, try to map roughly.
-      // Current speed is 50. InfiniteCards uses 40s for normal.
-      // Let's dynamic calculate:
-      const duration = `${10000 / speed}s`; // 50 -> 200s is too slow?
-      // InfiniteMovingCards: fast=20s, normal=40s, slow=80s.
-      // Our previous speed=50 was decent.
-      // Let's stick to simple CSS Duration logic directly.
+    const cssDuration = speed < 30 ? "80s" : speed > 60 ? "20s" : "40s";
+    container.style.setProperty("--animation-duration", cssDuration);
 
-      const cssDuration = speed < 30 ? "80s" : speed > 60 ? "20s" : "40s";
-      containerRef.current.style.setProperty(
-        "--animation-duration",
-        cssDuration,
-      );
-    }
-  };
+    const animationFrame = requestAnimationFrame(() => setStart(true));
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      scroller
+        .querySelectorAll('[data-loop-clone="true"]')
+        .forEach((item) => item.remove());
+    };
+  }, [direction, speed]);
 
   return (
     <div
       ref={containerRef}
+      aria-label={ariaLabel}
       className="logoloop scroller relative z-20 w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_5%,white_95%,transparent)]"
     >
       <ul
@@ -85,7 +63,6 @@ const LogoLoop = ({
         style={{ columnGap: gap }}
       >
         {logos.map((item, idx) => {
-          // Determine logo type for glow effect
           const logoClass = item.isFPM ? "fpm-logo" : "campus-logo";
 
           return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import EventCard from "@/components/common/EventCard";
 import { cn } from "@/lib/utils";

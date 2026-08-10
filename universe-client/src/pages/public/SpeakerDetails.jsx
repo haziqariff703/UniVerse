@@ -15,7 +15,6 @@ import {
   Layers,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { MOCK_SPEAKERS } from "@/data/mockSpeakers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { API_URL } from '@/config/api';
