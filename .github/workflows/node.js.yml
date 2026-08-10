@@ -65,5 +65,8 @@ jobs:
       - name: Install backend dependencies
         run: npm ci
 
+      - name: Run backend lint
+        run: npm run lint
+
       - name: Validate backend syntax
         run: node --check index.js

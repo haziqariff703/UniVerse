@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint index.js controllers routes middleware models config",
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
@@ -29,6 +30,9 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
+    "globals": "^17.9.0",
     "nodemon": "^3.1.11"
   }
 }
